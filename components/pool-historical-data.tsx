@@ -46,7 +46,9 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                 <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                 <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(value: number) => value.toLocaleString()} />
+                <Tooltip formatter={(value: number) => value.toLocaleString(undefined, {
+                  maximumFractionDigits: 8
+                })} />
                 <Legend />
                 <Line
                   yAxisId="left"
@@ -73,7 +75,9 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                 <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                 <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(value: number) => value.toLocaleString()} />
+                <Tooltip formatter={(value: number) => value.toLocaleString(undefined, {
+                  maximumFractionDigits: 8
+                })} />
                 <Legend />
                 <Line
                   yAxisId="left"
