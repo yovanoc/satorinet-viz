@@ -26,17 +26,17 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({ poo
             Address: {poolData.pool_address}
           </p>
           <p className="text-xs md:text-sm font-bold">
-            Staking Power: {poolData.total_staking_power.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+            Staking Power: {poolData.total_staking_power.toLocaleString(undefined, { maximumFractionDigits: 8 })}
           </p>
           <p className="text-xs md:text-sm font-bold">Contributors: {poolData.contributor_count}</p>
           {poolData.worker_count && <p className="text-xs md:text-sm font-bold">Workers: {poolData.worker_count}</p>}
           {poolData.total_reward && (
             <p className="text-xs md:text-sm font-bold">
-              Daily Reward: {poolData.total_reward.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              Daily Reward: {poolData.total_reward.toLocaleString(undefined, { maximumFractionDigits: 8 })}
             </p>
           )}
           {poolData.avg_score && (
-            <p className="text-xs md:text-sm font-bold">Avg Score: {poolData.avg_score.toFixed(2)}</p>
+            <p className="text-xs md:text-sm font-bold">Avg Score: {poolData.avg_score.toFixed(8)}</p>
           )}
         </div>
       </CardContent>

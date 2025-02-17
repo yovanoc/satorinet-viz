@@ -34,7 +34,7 @@ const TopPools: FC<TopPoolsProps> = ({ pools }) => {
                   {pool.pool_address}
                 </TableCell>
                 <TableCell className="text-xs md:text-sm">
-                  {pool.total_staking_power.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  {pool.total_staking_power.toLocaleString(undefined, { maximumFractionDigits: 8 })}
                 </TableCell>
                 <TableCell className="text-xs md:text-sm">{pool.contributor_count}</TableCell>
               </TableRow>

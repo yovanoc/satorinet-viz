@@ -33,7 +33,7 @@ export default function RootLayout({
           </header>
           <main>{children}</main>
           <footer className="mt-8 text-xl font-bold">
-            <p>Data updated daily</p>
+            {/* <p>Data updated daily</p> */}
           </footer>
         </div>
       </body>

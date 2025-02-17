@@ -132,24 +132,26 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
           <PoolDataSection pool={selectedPool} />
         </Suspense>
       </div>
-      <div className="lg:w-2/3 space-y-4 md:space-y-8">
+      <div className="lg:w-1/3 space-y-4">
         <Suspense
           fallback={
-            <Card className="h-[400px] flex items-center justify-center">
-              <Loading />
-            </Card>
-          }
-        >
-          <TopPoolsCard />
-        </Suspense>
-        <Suspense
-          fallback={
-            <Card className="h-[400px] flex items-center justify-center">
+            <Card className="h-[500px] flex items-center justify-center">
               <Loading />
             </Card>
           }
         >
           <DailyWorkerCountsCard />
+        </Suspense>
+      </div>
+      <div className="lg:w-1/3 space-y-4">
+        <Suspense
+          fallback={
+            <Card className="h-[500px] flex items-center justify-center">
+              <Loading />
+            </Card>
+          }
+        >
+          <TopPoolsCard />
         </Suspense>
       </div>
     </div>
