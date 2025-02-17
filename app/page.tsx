@@ -12,7 +12,7 @@ export default async function Home() {
 
   return (
     <div>
-      <h1>Today's Contributors</h1>
+      <h1>Today&apos;s Contributors</h1>
       <p>Contributors for {today}</p>
       <div>
         {contributors.length} contributors today
