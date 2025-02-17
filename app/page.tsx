@@ -1,5 +1,4 @@
 import { db } from "@/lib/db";
-import Image from "next/image";
 import { eq } from "drizzle-orm";
 import { dailyContributorAddress } from "@/lib/db/schema";
 
