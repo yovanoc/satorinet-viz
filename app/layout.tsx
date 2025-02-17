@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import GitHubCorner from "@/components/github-corner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +29,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <div className="min-h-screen bg-yellow-100 text-black p-4">
+          <GitHubCorner />
           <header className="mb-8">
             <h1 className="text-6xl font-bold uppercase">Satori DataViz</h1>
           </header>
