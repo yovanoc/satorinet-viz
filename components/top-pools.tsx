@@ -15,24 +15,28 @@ interface TopPoolsProps {
 const TopPools: FC<TopPoolsProps> = ({ pools }) => {
   return (
     <Card className="bg-green-200 border-4 border-black">
-      <CardHeader>
-        <CardTitle className="text-3xl font-bold uppercase">Top 20 Pools</CardTitle>
+      <CardHeader className="p-2 md:p-4">
+        <CardTitle className="text-xl md:text-2xl font-bold uppercase">Top 20 Pools</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-2 md:p-4 overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-xl font-bold">Pool Address</TableHead>
-              <TableHead className="text-xl font-bold">Total Staking Power</TableHead>
-              <TableHead className="text-xl font-bold">Contributor Count</TableHead>
+              <TableHead className="text-sm md:text-base font-bold">Pool Address</TableHead>
+              <TableHead className="text-sm md:text-base font-bold">Total Staking Power</TableHead>
+              <TableHead className="text-sm md:text-base font-bold">Contributor Count</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {pools.map((pool) => (
               <TableRow key={pool.pool_address}>
-                <TableCell className="text-lg">{pool.pool_address}</TableCell>
-                <TableCell className="text-lg">{pool.total_staking_power.toFixed(2)}</TableCell>
-                <TableCell className="text-lg">{pool.contributor_count}</TableCell>
+                <TableCell className="text-xs md:text-sm">
+                  {pool.pool_address}
+                </TableCell>
+                <TableCell className="text-xs md:text-sm">
+                  {pool.total_staking_power.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                </TableCell>
+                <TableCell className="text-xs md:text-sm">{pool.contributor_count}</TableCell>
               </TableRow>
             ))}
           </TableBody>

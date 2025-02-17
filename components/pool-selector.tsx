@@ -10,14 +10,18 @@ interface PoolSelectorProps {
 const PoolSelector: FC<PoolSelectorProps> = ({ pools, selectedPool, onPoolChange }) => {
   return (
     <Select defaultValue={selectedPool} onValueChange={onPoolChange}>
-      <SelectTrigger className="select-trigger w-full md:w-[300px] text-xl">
+      <SelectTrigger className="w-full text-base md:text-xl bg-yellow-200 border-4 border-black font-bold">
         <SelectValue placeholder="Select a pool" />
       </SelectTrigger>
-      <SelectContent className="select-content">
+      <SelectContent className="bg-yellow-200 border-4 border-black">
         {pools.map((pool) => (
-          <SelectItem key={pool.address} value={pool.address} className="select-item">
+          <SelectItem
+            key={pool.address}
+            value={pool.address}
+            className="text-sm md:text-base font-bold hover:bg-black hover:text-yellow-200"
+          >
             <span>{pool.name}</span>
-            <span className="ml-2 text-sm">
+            <span className="ml-2 text-xs md:text-sm">
               ({pool.address})
             </span>
           </SelectItem>

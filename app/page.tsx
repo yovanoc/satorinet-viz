@@ -1,13 +1,15 @@
 import { Suspense } from "react"
 import { db } from "@/lib/db"
 import { eq, desc, sql, and } from "drizzle-orm"
-import { Card } from "@/components/ui/card"
-import { dailyContributorAddress, dailyPredictorAddress } from "@/lib/db/schema"
 import Loading from "./loading"
+import { Card } from "@/components/ui/card"
+import { getPoolHistoricalData, getPoolWorkerStats } from "@/lib/db"
+import { dailyContributorAddress, dailyPredictorAddress } from "@/lib/db/schema"
 import DailyContributorAddressCard from "@/components/daily-contributor-address-card"
-import TopPools from "@/components/top-pools"
-import DailyWorkerCounts from "@/components/daily-workers-count"
+import PoolHistoricalData from "@/components/pool-historical-data"
 import PoolSelectorWrapper from "@/components/pool-selector-wrapper"
+import TopPools from "@/components/top-pools"
+import DailyWorkerCounts from "@/components/daily-worker-counts"
 
 const knownPools = [
   {
@@ -20,18 +22,18 @@ const knownPools = [
     address: "ELs9eiFDCYAKBREL7g8d3WjQxrYDE7x5eY",
     vault_address: "EHAAy7YivL1Lba6azhMmfbLKRzdcBVAv5x",
   },
+  { name: "Dev Pool", address: "EZ7SCvVdDTR1e6B2532C85KDteYZ56KCiC" },
   {
     name: "Lightning",
     address: "EJSHjPzLpRmubnRm9ARNDRtrqNum7EU3mK",
     vault_address: "Ef6VmYt6ywXxpMikjKWQCnETpSBbF4z7yw",
   },
-  { name: "Dev Pool", address: "EZ7SCvVdDTR1e6B2532C85KDteYZ56KCiC" },
+  { name: "Zen Pool", address: "EeV6em8GHU9VeDepzsqbRmvA2NotMrTiK9" },
   {
     name: "Cost Pool",
     address: "EdC6EVXD54mhiVYBFF1Dw5P3xGNjBFiarq",
     vault_address: "EVednaMKprwVQzwAE1KFRYLx3vTbwUbXNk",
   },
-  { name: "Zen Pool", address: "EeV6em8GHU9VeDepzsqbRmvA2NotMrTiK9" },
   {
     name: "Angel Pool",
     address: "EPLuqZ592JG96kz8a1GCmCNcUAcA9gVikD",
@@ -47,7 +49,9 @@ async function getPoolData(poolAddress: string) {
       contributor_count: sql<number>`count(distinct ${dailyContributorAddress.contributor})`,
     })
     .from(dailyContributorAddress)
-    .where(and(eq(dailyContributorAddress.pool_address, poolAddress), eq(dailyContributorAddress.date, sql`current_date`)))
+    .where(
+      and(eq(dailyContributorAddress.pool_address, poolAddress), eq(dailyContributorAddress.date, sql`current_date`)),
+    )
     .groupBy(dailyContributorAddress.pool_address)
     .execute()
 
@@ -77,47 +81,79 @@ async function getDailyWorkerCounts() {
       diff_from_previous_day: sql<number>`count(distinct ${dailyPredictorAddress.worker_address}) - lag(count(distinct ${dailyPredictorAddress.worker_address})) over (order by ${dailyPredictorAddress.date})`,
     })
     .from(dailyPredictorAddress)
-    .where(sql`${dailyPredictorAddress.date} >= current_date - interval '20 days'`)
+    .where(sql`${dailyPredictorAddress.date} >= current_date - interval '1 day' * 18`)
     .groupBy(dailyPredictorAddress.date)
     .orderBy(desc(dailyPredictorAddress.date))
     .execute()
 }
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ pool?: string }> }) {
-  const selectedPool = (await searchParams).pool || knownPools[0].address
+async function PoolDataSection({ pool: { address, vault_address } }: { pool: { address: string, vault_address?: string } }) {
+  const [poolData, historicalData, workerStats] = await Promise.all([
+    getPoolData(address),
+    getPoolHistoricalData(address),
+    vault_address ? getPoolWorkerStats(vault_address) : null,
+  ])
 
-  console.log("selectedPool", selectedPool)
+  if (!poolData) {
+    return <Card className="h-[200px] flex items-center justify-center">No data available for this pool</Card>
+  }
+
+  const latestWorkerStats = workerStats ? workerStats[workerStats.length - 1] : null;
+  const enrichedPoolData = {
+    ...poolData,
+    worker_count: latestWorkerStats?.worker_count,
+    total_reward: latestWorkerStats?.total_reward,
+    avg_score: latestWorkerStats?.avg_score,
+  }
 
   return (
-    <div className="flex flex-col md:flex-row gap-8">
-      <div className="md:w-1/4">
-        <div className="mb-8">
-          <PoolSelectorWrapper pools={knownPools} selectedPool={selectedPool} />
-        </div>
-        <Suspense fallback={<Card className="h-[200px] flex items-center justify-center"><Loading /></Card>}>
-          <PoolDataCard poolAddress={selectedPool} />
-        </Suspense>
-      </div>
-      <div className="md:w-3/4">
-        <div className="grid gap-8">
-          <Suspense fallback={<Card className="h-[400px] flex items-center justify-center"><Loading /></Card>}>
-            <TopPoolsCard />
-          </Suspense>
-          <Suspense fallback={<Card className="h-[400px] flex items-center justify-center"><Loading /></Card>}>
-            <DailyWorkerCountsCard />
-          </Suspense>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <DailyContributorAddressCard poolData={enrichedPoolData} />
+      <PoolHistoricalData historicalData={historicalData} workerStats={workerStats ?? []} />
     </div>
   )
 }
 
-async function PoolDataCard({ poolAddress }: { poolAddress: string }) {
-  const poolData = await getPoolData(poolAddress)
-  if (!poolData) {
-    return <Card className="h-[300px] flex items-center justify-center">No data available for this pool</Card>
-  }
-  return <DailyContributorAddressCard poolData={poolData} />
+export default async function Home({ searchParams }: { searchParams: Promise<{ pool?: string }> }) {
+  const poolStr = (await searchParams).pool;
+  const selectedPool = poolStr ? knownPools.find((pool) => pool.address === poolStr) ?? knownPools[0] : knownPools[0];
+
+  return (
+    <div className="flex-grow flex flex-col lg:flex-row gap-4 md:gap-8">
+      <div className="lg:w-1/3 space-y-4">
+        <PoolSelectorWrapper pools={knownPools} selectedPool={selectedPool.address} />
+        <Suspense
+          fallback={
+            <Card className="h-[500px] flex items-center justify-center">
+              <Loading />
+            </Card>
+          }
+        >
+          <PoolDataSection pool={selectedPool} />
+        </Suspense>
+      </div>
+      <div className="lg:w-2/3 space-y-4 md:space-y-8">
+        <Suspense
+          fallback={
+            <Card className="h-[400px] flex items-center justify-center">
+              <Loading />
+            </Card>
+          }
+        >
+          <TopPoolsCard />
+        </Suspense>
+        <Suspense
+          fallback={
+            <Card className="h-[400px] flex items-center justify-center">
+              <Loading />
+            </Card>
+          }
+        >
+          <DailyWorkerCountsCard />
+        </Suspense>
+      </div>
+    </div>
+  )
 }
 
 async function TopPoolsCard() {
