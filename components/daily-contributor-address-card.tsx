@@ -30,10 +30,10 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({ poo
           <p className="text-xs md:text-sm font-bold">
             Staking Power: {poolData.total_staking_power.toLocaleString(undefined, { maximumFractionDigits: 8 })}
           </p>
+          <p className="text-xs md:text-sm font-bold">Contributors: {poolData.contributor_count}</p>
           <p className="text-xs md:text-sm font-bold">
             Contributors with Staking Power: {poolData.contributor_count_with_staking_power}
           </p>
-          <p className="text-xs md:text-sm font-bold">Contributors: {poolData.contributor_count}</p>
           <p className="text-xs md:text-sm font-bold">Workers: {poolData.worker_count ?? 0}</p>
           <p className="text-xs md:text-sm font-bold">
             Workers with Earnings: {poolData.worker_count_with_earnings ?? 0}

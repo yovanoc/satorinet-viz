@@ -30,7 +30,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
       <CardHeader className="p-2 md:p-4">
         <CardTitle className="text-xl md:text-2xl font-bold uppercase">Historical Data</CardTitle>
       </CardHeader>
-      <CardContent className="p-2 md:p-4">
+      <CardContent className="p-4 md:p-4">
         <Tabs defaultValue="staking" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-2 md:mb-4">
             <TabsTrigger value="staking" className="text-sm md:text-lg font-bold">
@@ -41,7 +41,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
             </TabsTrigger>
           </TabsList>
           <TabsContent value="staking">
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={400}>
               <LineChart data={historicalData}>
                 <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                 <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
@@ -66,11 +66,19 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                   strokeWidth={2}
                   name="Contributor Count"
                 />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="contributor_count_with_staking_power"
+                  stroke="#0000FF"
+                  strokeWidth={2}
+                  name="Contributor Count with Staking Power"
+                />
               </LineChart>
             </ResponsiveContainer>
           </TabsContent>
           <TabsContent value="workers">
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={400}>
               <LineChart data={workerStats}>
                 <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                 <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
@@ -98,8 +106,16 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                 <Line
                   yAxisId="right"
                   type="monotone"
-                  dataKey="avg_score"
+                  dataKey="worker_count_with_earnings"
                   stroke="#0000FF"
+                  strokeWidth={2}
+                  name="Worker Count with Earnings"
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="avg_score"
+                  stroke="#00FF00"
                   strokeWidth={2}
                   name="Average Score"
                 />
