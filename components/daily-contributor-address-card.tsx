@@ -5,7 +5,9 @@ interface PoolData {
   pool_address: string
   total_staking_power: number
   contributor_count: number
+  contributor_count_with_staking_power: number
   worker_count?: number
+  worker_count_with_earnings?: number
   total_reward?: number
   avg_score?: number
 }
@@ -28,13 +30,17 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({ poo
           <p className="text-xs md:text-sm font-bold">
             Staking Power: {poolData.total_staking_power.toLocaleString(undefined, { maximumFractionDigits: 8 })}
           </p>
+          <p className="text-xs md:text-sm font-bold">
+            Contributors with Staking Power: {poolData.contributor_count_with_staking_power}
+          </p>
           <p className="text-xs md:text-sm font-bold">Contributors: {poolData.contributor_count}</p>
-          {poolData.worker_count && <p className="text-xs md:text-sm font-bold">Workers: {poolData.worker_count}</p>}
-          {poolData.total_reward && (
-            <p className="text-xs md:text-sm font-bold">
-              Daily Reward: {poolData.total_reward.toLocaleString(undefined, { maximumFractionDigits: 8 })}
-            </p>
-          )}
+          <p className="text-xs md:text-sm font-bold">Workers: {poolData.worker_count ?? 0}</p>
+          <p className="text-xs md:text-sm font-bold">
+            Workers with Earnings: {poolData.worker_count_with_earnings ?? 0}
+          </p>
+          <p className="text-xs md:text-sm font-bold">
+            Daily Reward: {poolData.total_reward?.toLocaleString(undefined, { maximumFractionDigits: 8 }) ?? 0}
+          </p>
           {poolData.avg_score && (
             <p className="text-xs md:text-sm font-bold">Avg Score: {poolData.avg_score.toFixed(8)}</p>
           )}

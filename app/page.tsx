@@ -47,6 +47,7 @@ async function getPoolData(poolAddress: string) {
       pool_address: dailyContributorAddress.pool_address,
       total_staking_power: sql<number>`sum(${dailyContributorAddress.staking_power_contribution})`,
       contributor_count: sql<number>`count(distinct ${dailyContributorAddress.contributor})`,
+      contributor_count_with_staking_power: sql<number>`count(distinct ${dailyContributorAddress.contributor}) filter (where ${dailyContributorAddress.staking_power_contribution} > 0)`,
     })
     .from(dailyContributorAddress)
     .where(
@@ -102,6 +103,7 @@ async function PoolDataSection({ pool: { address, vault_address } }: { pool: { a
   const enrichedPoolData = {
     ...poolData,
     worker_count: latestWorkerStats?.worker_count,
+    worker_count_with_earnings: latestWorkerStats?.worker_count_with_earnings,
     total_reward: latestWorkerStats?.total_reward,
     avg_score: latestWorkerStats?.avg_score,
   }

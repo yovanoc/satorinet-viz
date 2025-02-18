@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { env } from '../env';
 import * as schema from './schema';
-import { desc, sql } from 'drizzle-orm';
+import { desc, sql, eq, and, gte } from "drizzle-orm";
 import { dailyContributorAddress, dailyPredictorAddress } from './schema';
 
 export const db = drizzle(env.DATABASE_URL, {
@@ -14,6 +14,7 @@ export async function getPoolHistoricalData(poolAddress: string, days = 30) {
       date: dailyContributorAddress.date,
       total_staking_power: sql<number>`sum(${dailyContributorAddress.staking_power_contribution})`,
       contributor_count: sql<number>`count(distinct ${dailyContributorAddress.contributor})`,
+      contributor_count_with_staking_power: sql<number>`count(distinct ${dailyContributorAddress.contributor}) filter (where ${dailyContributorAddress.staking_power_contribution} > 0)`,
     })
     .from(dailyContributorAddress)
     .where(
@@ -25,16 +26,15 @@ export async function getPoolHistoricalData(poolAddress: string, days = 30) {
     .execute()
 }
 
-import { eq, and, gte } from "drizzle-orm";
-
 export async function getPoolWorkerStats(poolAddress: string, days = 30) {
   return db
     .select({
       date: dailyPredictorAddress.date,
       worker_count: sql<number>`count(distinct ${dailyPredictorAddress.worker_address})`,
+      worker_count_with_earnings: sql<number>`count(distinct ${dailyPredictorAddress.worker_address}) filter (where ${dailyPredictorAddress.miner_earned} > 0)`,
       total_reward: sql<number>`sum(${dailyPredictorAddress.reward})`,
       total_miner_earned: sql<number>`sum(${dailyPredictorAddress.miner_earned})`,
-      avg_score: sql<number>`avg(${dailyPredictorAddress.score})`,
+      avg_score: sql<number>`avg(${dailyPredictorAddress.score}) filter (where ${dailyPredictorAddress.score} > 0)`,
     })
     .from(dailyPredictorAddress)
     .where(
