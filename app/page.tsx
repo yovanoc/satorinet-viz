@@ -10,6 +10,7 @@ import PoolHistoricalData from "@/components/pool-historical-data"
 import PoolSelectorWrapper from "@/components/pool-selector-wrapper"
 import TopPools from "@/components/top-pools"
 import DailyWorkerCounts from "@/components/daily-worker-counts"
+import DatePickerWrapper from "@/components/date-picker-wrapper"
 
 const knownPools = [
   {
@@ -41,7 +42,7 @@ const knownPools = [
   }
 ]
 
-async function getPoolData(poolAddress: string) {
+async function getPoolData(poolAddress: string, date: Date) {
   const data = await db
     .select({
       pool_address: dailyContributorAddress.pool_address,
@@ -51,7 +52,7 @@ async function getPoolData(poolAddress: string) {
     })
     .from(dailyContributorAddress)
     .where(
-      and(eq(dailyContributorAddress.pool_address, poolAddress), eq(dailyContributorAddress.date, sql`current_date`)),
+      and(eq(dailyContributorAddress.pool_address, poolAddress), eq(dailyContributorAddress.date, sql`${date}`)),
     )
     .groupBy(dailyContributorAddress.pool_address)
     .execute()
@@ -59,7 +60,7 @@ async function getPoolData(poolAddress: string) {
   return data[0] || null
 }
 
-async function getTopPools() {
+async function getTopPools(date: Date) {
   return db
     .select({
       pool_address: dailyContributorAddress.pool_address,
@@ -67,7 +68,7 @@ async function getTopPools() {
       contributor_count: sql<number>`count(distinct ${dailyContributorAddress.contributor})`,
     })
     .from(dailyContributorAddress)
-    .where(sql`${dailyContributorAddress.date} = current_date`)
+    .where(sql`${dailyContributorAddress.date} = ${date}`)
     .groupBy(dailyContributorAddress.pool_address)
     .orderBy(desc(sql`sum(${dailyContributorAddress.staking_power_contribution})`))
     .limit(20)
@@ -82,17 +83,17 @@ async function getDailyWorkerCounts() {
       diff_from_previous_day: sql<number>`count(distinct ${dailyPredictorAddress.worker_address}) - lag(count(distinct ${dailyPredictorAddress.worker_address})) over (order by ${dailyPredictorAddress.date})`,
     })
     .from(dailyPredictorAddress)
-    .where(sql`${dailyPredictorAddress.date} >= current_date - interval '1 day' * 18`)
+    .where(sql`${dailyPredictorAddress.date} >= current_date - interval '1 day' * 25`)
     .groupBy(dailyPredictorAddress.date)
     .orderBy(desc(dailyPredictorAddress.date))
     .execute()
 }
 
-async function PoolDataSection({ pool: { address, vault_address } }: { pool: { address: string, vault_address?: string } }) {
+async function PoolDataSection({ date, pool: { address, vault_address } }: { date: Date, pool: { address: string, vault_address?: string } }) {
   const [poolData, historicalData, workerStats] = await Promise.all([
-    getPoolData(address),
-    getPoolHistoricalData(address),
-    vault_address ? getPoolWorkerStats(vault_address) : null,
+    getPoolData(address, date),
+    getPoolHistoricalData(address, date),
+    vault_address ? getPoolWorkerStats(vault_address, date) : null,
   ])
 
   if (!poolData) {
@@ -103,8 +104,10 @@ async function PoolDataSection({ pool: { address, vault_address } }: { pool: { a
   const enrichedPoolData = {
     ...poolData,
     worker_count: latestWorkerStats?.worker_count,
+    worker_count_with_rewards: latestWorkerStats?.worker_count_with_rewards,
     worker_count_with_earnings: latestWorkerStats?.worker_count_with_earnings,
     total_reward: latestWorkerStats?.total_reward,
+    total_miner_earned: latestWorkerStats?.total_miner_earned,
     avg_score: latestWorkerStats?.avg_score,
   }
 
@@ -116,14 +119,24 @@ async function PoolDataSection({ pool: { address, vault_address } }: { pool: { a
   )
 }
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ pool?: string }> }) {
-  const poolStr = (await searchParams).pool;
+export default async function Home({ searchParams }: { searchParams: Promise<{ pool?: string, date?: string }> }) {
+  const params = await searchParams;
+
+  const poolStr = params.pool;
   const selectedPool = poolStr ? knownPools.find((pool) => pool.address === poolStr) ?? knownPools[0] : knownPools[0];
+
+  const dateStr = params.date;
+  let selectedDate = new Date();
+  if (dateStr) {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    selectedDate = new Date(Date.UTC(year, month - 1, day));
+  }
 
   return (
     <div className="flex-grow flex flex-col lg:flex-row gap-4 md:gap-8">
       <div className="lg:w-1/3 space-y-4">
         <PoolSelectorWrapper pools={knownPools} selectedPool={selectedPool.address} />
+        <DatePickerWrapper selectedDate={selectedDate} />
         <Suspense
           fallback={
             <Card className="h-[500px] flex items-center justify-center">
@@ -131,7 +144,18 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
             </Card>
           }
         >
-          <PoolDataSection pool={selectedPool} />
+          <PoolDataSection pool={selectedPool} date={selectedDate} />
+        </Suspense>
+      </div>
+      <div className="lg:w-1/3 space-y-4">
+        <Suspense
+          fallback={
+            <Card className="h-[500px] flex items-center justify-center">
+              <Loading />
+            </Card>
+          }
+        >
+          <TopPoolsCard  date={selectedDate} />
         </Suspense>
       </div>
       <div className="lg:w-1/3 space-y-4">
@@ -145,23 +169,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
           <DailyWorkerCountsCard />
         </Suspense>
       </div>
-      <div className="lg:w-1/3 space-y-4">
-        <Suspense
-          fallback={
-            <Card className="h-[500px] flex items-center justify-center">
-              <Loading />
-            </Card>
-          }
-        >
-          <TopPoolsCard />
-        </Suspense>
-      </div>
     </div>
   )
 }
 
-async function TopPoolsCard() {
-  const topPools = await getTopPools()
+async function TopPoolsCard({ date }: { date: Date }) {
+  const topPools = await getTopPools(date)
   return <TopPools pools={topPools} />
 }
 

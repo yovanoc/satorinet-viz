@@ -9,6 +9,7 @@ interface HistoricalData {
   date: string
   total_staking_power: number
   contributor_count: number
+  contributor_count_with_staking_power: number
 }
 
 interface WorkerStats {
@@ -28,7 +29,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
   return (
     <Card className="bg-orange-200 border-4 border-black">
       <CardHeader className="p-2 md:p-4">
-        <CardTitle className="text-xl md:text-2xl font-bold uppercase">Historical Data</CardTitle>
+        <CardTitle className="text-xl md:text-2xl font-bold uppercase">Historical Data (last 30 days)</CardTitle>
       </CardHeader>
       <CardContent className="p-4 md:p-4">
         <Tabs defaultValue="staking" className="w-full">
@@ -110,6 +111,14 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                   stroke="#0000FF"
                   strokeWidth={2}
                   name="Worker Count with Earnings"
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="worker_count_with_rewards"
+                  stroke="#c0c0c0"
+                  strokeWidth={2}
+                  name="Worker Count with Rewards"
                 />
                 <Line
                   yAxisId="right"
