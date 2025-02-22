@@ -3,34 +3,15 @@ import { env } from '../env';
 import * as schema from './schema';
 import { desc, sql, eq, and, gte, lte } from "drizzle-orm";
 import { dailyContributorAddress, dailyPredictorAddress } from './schema';
+import { unstable_cacheLife as cacheLife } from 'next/cache'
 
 export const db = drizzle(env.DATABASE_URL, {
   schema,
 });
 
-
-export async function getPoolData(poolAddress: string, date: Date) {
-  'use cache';
-
-  const data = await db
-    .select({
-      pool_address: dailyContributorAddress.pool_address,
-      total_staking_power: sql<number>`sum(${dailyContributorAddress.staking_power_contribution})`,
-      contributor_count: sql<number>`count(distinct ${dailyContributorAddress.contributor})`,
-      contributor_count_with_staking_power: sql<number>`count(distinct ${dailyContributorAddress.contributor}) filter (where ${dailyContributorAddress.staking_power_contribution} > 0)`,
-    })
-    .from(dailyContributorAddress)
-    .where(
-      and(eq(dailyContributorAddress.pool_address, poolAddress), eq(dailyContributorAddress.date, sql`${date}`)),
-    )
-    .groupBy(dailyContributorAddress.pool_address)
-    .execute()
-
-  return data[0] || null
-}
-
 export async function getTopPools(date: Date) {
   'use cache';
+  cacheLife('days');
 
   return db
     .select({
@@ -46,29 +27,50 @@ export async function getTopPools(date: Date) {
     .execute()
 }
 
-export async function getPoolHistoricalData(poolAddress: string, date: Date, days = 30) {
+export async function getPoolHistoricalData(
+  poolAddress: string,
+  poolVaultAddress: string | undefined,
+  date: Date,
+  days = 30
+) {
   'use cache';
+  cacheLife('days');
 
   return db
     .select({
       date: dailyContributorAddress.date,
-      total_staking_power: sql<number>`sum(${dailyContributorAddress.staking_power_contribution})`,
-      contributor_count: sql<number>`count(distinct ${dailyContributorAddress.contributor})`,
-      contributor_count_with_staking_power: sql<number>`count(distinct ${dailyContributorAddress.contributor}) filter (where ${dailyContributorAddress.staking_power_contribution} > 0)`,
+      total_staking_power: sql<number>`SUM(${dailyContributorAddress.staking_power_contribution})`,
+      contributor_count: sql<number>`COUNT(DISTINCT ${dailyContributorAddress.contributor})`,
+      contributor_count_with_staking_power: sql<number>`COUNT(DISTINCT ${dailyContributorAddress.contributor}) FILTER (WHERE ${dailyContributorAddress.staking_power_contribution} > 0)`,
+      earnings_per_staking_power: poolVaultAddress
+        ? sql<number>`COALESCE(
+            SUM(${dailyPredictorAddress.reward}) - SUM(${dailyPredictorAddress.miner_earned}),
+            0
+          ) / NULLIF(SUM(${dailyContributorAddress.staking_power_contribution}), 0)`
+        : sql<number>`0`
     })
     .from(dailyContributorAddress)
+    .leftJoin(
+      poolVaultAddress
+        ? dailyPredictorAddress
+        : sql`(SELECT 1 AS id)`, // If no poolVaultAddress, use dummy table to avoid unnecessary join
+      sql`TRUE`
+    )
     .where(
-      sql`${dailyContributorAddress.pool_address} = ${poolAddress}
-      AND ${dailyContributorAddress.date} >= ${date}::timestamp - interval '1 day' * ${days}
-      AND ${dailyContributorAddress.date} <= ${date}`,
+      and(
+        eq(dailyContributorAddress.pool_address, poolAddress),
+        gte(dailyContributorAddress.date, sql`${date}::timestamp - ${days} * interval '1 day'`),
+        lte(dailyContributorAddress.date, sql`${date}`)
+      )
     )
     .groupBy(dailyContributorAddress.date)
     .orderBy(dailyContributorAddress.date)
-    .execute()
+    .execute();
 }
 
-export async function getPoolWorkerStats(poolAddress: string, date: Date, days = 30) {
+export async function getPoolWorkerStats(poolVaultAddress: string, date: Date, days = 30) {
   'use cache';
+  cacheLife('days');
 
   return db
     .select({
@@ -83,7 +85,7 @@ export async function getPoolWorkerStats(poolAddress: string, date: Date, days =
     .from(dailyPredictorAddress)
     .where(
       and(
-        eq(dailyPredictorAddress.reward_address, poolAddress),
+        eq(dailyPredictorAddress.reward_address, poolVaultAddress),
         gte(dailyPredictorAddress.date, sql`${date}::timestamp - ${days} * interval '1 day'`),
         lte(dailyPredictorAddress.date, sql`${date}`),
       )
@@ -95,6 +97,7 @@ export async function getPoolWorkerStats(poolAddress: string, date: Date, days =
 
 export async function getDailyWorkerCounts() {
   'use cache';
+  cacheLife('days');
 
   return db
     .select({

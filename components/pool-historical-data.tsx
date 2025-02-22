@@ -11,6 +11,7 @@ interface HistoricalData {
   total_staking_power: number
   contributor_count: number
   contributor_count_with_staking_power: number
+  earnings_per_staking_power: number
 }
 
 interface WorkerStats {
@@ -29,8 +30,8 @@ interface PoolHistoricalDataProps {
 }
 
 const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, workerStats }) => {
-  const [stakingMetric, setStakingMetric] = useState<"total_staking_power" | "contributor_counts">(
-    "total_staking_power",
+  const [stakingMetric, setStakingMetric] = useState<"total_staking_power" | "contributor_counts" | "performance">(
+    "performance",
   )
   const [workerMetric, setWorkerMetric] = useState<"counts" | "rewards" | "performance">("counts")
 
@@ -53,7 +54,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
             <div className="mb-4">
               <Select
                 value={stakingMetric}
-                onValueChange={(value: "total_staking_power" | "contributor_counts") => setStakingMetric(value)}
+                onValueChange={(value: "total_staking_power" | "contributor_counts" | "performance") => setStakingMetric(value)}
               >
                 <SelectTrigger className="w-full bg-white border-2 border-black text-base font-semibold">
                   <SelectValue placeholder="Select metric" />
@@ -61,6 +62,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                 <SelectContent>
                   <SelectItem value="total_staking_power">Total Staking Power</SelectItem>
                   <SelectItem value="contributor_counts">Contributor Counts</SelectItem>
+                  <SelectItem value="performance">Performance</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -88,7 +90,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                     name="Total Staking Power"
                     dot={false}
                   />
-                ) : (
+                ) : stakingMetric === 'contributor_counts' ? (
                   [
                     <Line
                       key="contributor_count"
@@ -111,7 +113,19 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                       dot={false}
                     />
                   ]
-                )}
+                ) :
+                  (
+                    <Line
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="earnings_per_staking_power"
+                      stroke="#000000"
+                      strokeWidth={2}
+                      name="Earnings per Staking Power"
+                      dot={false}
+                    />
+                  )
+                }
               </LineChart>
             </ResponsiveContainer>
           </TabsContent>

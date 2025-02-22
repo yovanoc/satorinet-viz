@@ -1,9 +1,9 @@
 import { Suspense } from "react"
-import { getDailyWorkerCounts, getPoolData, getTopPools } from "@/lib/db"
+import { getDailyWorkerCounts, getTopPools } from "@/lib/db"
 import Loading from "./loading"
 import { Card } from "@/components/ui/card"
 import { getPoolHistoricalData, getPoolWorkerStats } from "@/lib/db"
-import DailyContributorAddressCard from "@/components/daily-contributor-address-card"
+import DailyContributorAddressCard, { type PoolData } from "@/components/daily-contributor-address-card"
 import PoolHistoricalData from "@/components/pool-historical-data"
 import PoolSelectorWrapper from "@/components/pool-selector-wrapper"
 import TopPools from "@/components/top-pools"
@@ -12,25 +12,25 @@ import DatePickerWrapper from "@/components/date-picker-wrapper"
 import { KNOWN_POOLS } from "@/lib/known-pools"
 
 async function PoolDataSection({ date, pool: { address, vault_address } }: { date: Date, pool: { address: string, vault_address?: string } }) {
-  const [poolData, historicalData, workerStats] = await Promise.all([
-    getPoolData(address, date),
-    getPoolHistoricalData(address, date),
+  const [historicalData, workerStats] = await Promise.all([
+    getPoolHistoricalData(address, vault_address, date),
     vault_address ? getPoolWorkerStats(vault_address, date) : null,
   ])
 
-  if (!poolData) {
-    return <Card className="h-[200px] flex items-center justify-center">No data available for this pool</Card>
-  }
-
   const latestWorkerStats = workerStats ? workerStats[workerStats.length - 1] : null;
-  const enrichedPoolData = {
-    ...poolData,
+  const latestHistoricalData = historicalData[historicalData.length - 1];
+  const enrichedPoolData: PoolData = {
     worker_count: latestWorkerStats?.worker_count,
     worker_count_with_rewards: latestWorkerStats?.worker_count_with_rewards,
     worker_count_with_earnings: latestWorkerStats?.worker_count_with_earnings,
     total_reward: latestWorkerStats?.total_reward,
     total_miner_earned: latestWorkerStats?.total_miner_earned,
     avg_score: latestWorkerStats?.avg_score,
+    contributor_count: latestHistoricalData?.contributor_count,
+    contributor_count_with_staking_power: latestHistoricalData?.contributor_count_with_staking_power,
+    pool_address: address,
+    total_staking_power: latestHistoricalData?.total_staking_power ?? 0,
+    earnings_per_staking_power: latestHistoricalData?.earnings_per_staking_power
   }
 
   return (

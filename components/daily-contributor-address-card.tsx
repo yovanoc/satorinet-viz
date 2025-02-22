@@ -2,7 +2,7 @@ import type { FC } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
 
-interface PoolData {
+export interface PoolData {
   pool_address: string
   total_staking_power: number
   contributor_count: number
@@ -12,7 +12,8 @@ interface PoolData {
   worker_count_with_rewards?: number
   total_reward?: number
   total_miner_earned?: number
-  avg_score?: number
+  avg_score?: number,
+  earnings_per_staking_power?: number
 }
 
 interface DailyContributorAddressCardProps {
@@ -45,32 +46,24 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({ poo
             Workers with Rewards: {poolData.worker_count_with_rewards ?? 0}
           </p>
           <p className="text-xs md:text-sm font-bold">
-            Total Miner Earned: {poolData.total_miner_earned?.toLocaleString(undefined, { maximumFractionDigits: 8 }) ?? 0}
+            Daily Reward: {poolData.total_reward?.toLocaleString(undefined, { maximumFractionDigits: 8 }) ?? 0}
           </p>
           <p className="text-xs md:text-sm font-bold">
-            Daily Reward: {poolData.total_reward?.toLocaleString(undefined, { maximumFractionDigits: 8 }) ?? 0}
+            Total Miner Earned: {poolData.total_miner_earned?.toLocaleString(undefined, { maximumFractionDigits: 8 }) ?? 0}
           </p>
           {poolData.avg_score && (
             <p className="text-xs md:text-sm font-bold">Avg Score: {poolData.avg_score.toFixed(8)}</p>
           )}
 
           <p className="text-xs md:text-sm font-bold">
-            Earn per satori stake:&nbsp;
+          Earnings per Staking Power:&nbsp;
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger> {poolData.total_staking_power > 0 ? (
-                  <span>
-                    {(
-                      ((poolData.total_reward ?? 0) - (poolData.total_miner_earned ?? 0)) /
-                      poolData.total_staking_power
-                    ).toLocaleString(undefined, { maximumFractionDigits: 8 })}
-                  </span>
-                ) : (
-                  <span>0</span>
-                )}</TooltipTrigger>
+                <TooltipTrigger>
+                  {poolData.earnings_per_staking_power?.toLocaleString(undefined, { maximumFractionDigits: 8 }) ?? 0}
+                </TooltipTrigger>
                 <TooltipContent>
                   (daily reward - total miner earned) / total staking power
-
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
