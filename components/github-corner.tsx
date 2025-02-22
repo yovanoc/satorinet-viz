@@ -1,5 +1,6 @@
+import { Fragment } from "react";
 import { Button } from "./ui/button";
-import { Github } from "lucide-react";
+import { siGithub } from "simple-icons";
 
 export default function GitHubCorner() {
   return (
@@ -10,8 +11,11 @@ export default function GitHubCorner() {
       className="fixed top-4 right-4 z-50"
     >
       <Button variant="outline" size="icon" className="rounded-full p-2 shadow-lg">
-        <Github className="w-64 h-64" />
+        <div dangerouslySetInnerHTML={{ __html: siGithub.svg }} />
       </Button>
+      <span className="ml-2 text-gray-400">
+        OpenSourced by DevChris
+      </span>
     </a>
   );
 }

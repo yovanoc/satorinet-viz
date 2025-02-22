@@ -4,11 +4,11 @@ import './lib/env'
 
 const nextConfig: NextConfig = {
   experimental: {
-    // useCache: true,
+    useCache: true,
     // webpackBuildWorker: true,
     // parallelServerCompiles: true,
-    // ppr: true,
-    // reactCompiler: true,
+    ppr: true,
+    reactCompiler: true,
   },
 };
 

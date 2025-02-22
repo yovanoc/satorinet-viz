@@ -8,7 +8,47 @@ export const db = drizzle(env.DATABASE_URL, {
   schema,
 });
 
+
+export async function getPoolData(poolAddress: string, date: Date) {
+  'use cache';
+
+  const data = await db
+    .select({
+      pool_address: dailyContributorAddress.pool_address,
+      total_staking_power: sql<number>`sum(${dailyContributorAddress.staking_power_contribution})`,
+      contributor_count: sql<number>`count(distinct ${dailyContributorAddress.contributor})`,
+      contributor_count_with_staking_power: sql<number>`count(distinct ${dailyContributorAddress.contributor}) filter (where ${dailyContributorAddress.staking_power_contribution} > 0)`,
+    })
+    .from(dailyContributorAddress)
+    .where(
+      and(eq(dailyContributorAddress.pool_address, poolAddress), eq(dailyContributorAddress.date, sql`${date}`)),
+    )
+    .groupBy(dailyContributorAddress.pool_address)
+    .execute()
+
+  return data[0] || null
+}
+
+export async function getTopPools(date: Date) {
+  'use cache';
+
+  return db
+    .select({
+      pool_address: dailyContributorAddress.pool_address,
+      total_staking_power: sql<number>`sum(${dailyContributorAddress.staking_power_contribution})`,
+      contributor_count: sql<number>`count(distinct ${dailyContributorAddress.contributor})`,
+    })
+    .from(dailyContributorAddress)
+    .where(sql`${dailyContributorAddress.date} = ${date}`)
+    .groupBy(dailyContributorAddress.pool_address)
+    .orderBy(desc(sql`sum(${dailyContributorAddress.staking_power_contribution})`))
+    .limit(20)
+    .execute()
+}
+
 export async function getPoolHistoricalData(poolAddress: string, date: Date, days = 30) {
+  'use cache';
+
   return db
     .select({
       date: dailyContributorAddress.date,
@@ -28,6 +68,8 @@ export async function getPoolHistoricalData(poolAddress: string, date: Date, day
 }
 
 export async function getPoolWorkerStats(poolAddress: string, date: Date, days = 30) {
+  'use cache';
+
   return db
     .select({
       date: dailyPredictorAddress.date,
@@ -52,6 +94,8 @@ export async function getPoolWorkerStats(poolAddress: string, date: Date, days =
 }
 
 export async function getDailyWorkerCounts() {
+  'use cache';
+
   return db
     .select({
       date: dailyPredictorAddress.date,
@@ -59,7 +103,7 @@ export async function getDailyWorkerCounts() {
       diff_from_previous_day: sql<number>`count(distinct ${dailyPredictorAddress.worker_address}) - lag(count(distinct ${dailyPredictorAddress.worker_address})) over (order by ${dailyPredictorAddress.date})`,
     })
     .from(dailyPredictorAddress)
-    .where(sql`${dailyPredictorAddress.date} >= current_date - interval '1 day' * 18`)
+    .where(sql`${dailyPredictorAddress.date} >= current_date - interval '1 day' * 25`)
     .groupBy(dailyPredictorAddress.date)
     .orderBy(desc(dailyPredictorAddress.date))
     .execute()

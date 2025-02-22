@@ -1,6 +1,7 @@
 import type { FC } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { KNOWN_POOLS } from "@/lib/known-pools"
 
 interface Pool {
   pool_address: string
@@ -31,7 +32,7 @@ const TopPools: FC<TopPoolsProps> = ({ pools }) => {
             {pools.map((pool) => (
               <TableRow key={pool.pool_address}>
                 <TableCell className="text-xs md:text-sm">
-                  {pool.pool_address}
+                  {pool.pool_address}{KNOWN_POOLS.find((p) => p.address === pool.pool_address) ? ` (${KNOWN_POOLS.find((p) => p.address === pool.pool_address)!.name})` : ""}
                 </TableCell>
                 <TableCell className="text-xs md:text-sm">
                   {pool.total_staking_power.toLocaleString(undefined, { maximumFractionDigits: 8 })}
