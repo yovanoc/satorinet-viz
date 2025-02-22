@@ -12,7 +12,7 @@ export default function GitHubCorner() {
       <Button variant="outline" size="icon" className="rounded-full p-2 shadow-lg">
         <div dangerouslySetInnerHTML={{ __html: siGithub.svg }} />
       </Button>
-      <span className="ml-2 text-gray-400">
+      <span className="ml-2 text-xs font-bold">
         OpenSourced by DevChris
       </span>
     </a>

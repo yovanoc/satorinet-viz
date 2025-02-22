@@ -29,17 +29,23 @@ const TopPools: FC<TopPoolsProps> = ({ pools }) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {pools.map((pool) => (
-              <TableRow key={pool.pool_address}>
-                <TableCell className="text-xs md:text-sm">
-                  {pool.pool_address}{KNOWN_POOLS.find((p) => p.address === pool.pool_address) ? ` (${KNOWN_POOLS.find((p) => p.address === pool.pool_address)!.name})` : ""}
-                </TableCell>
-                <TableCell className="text-xs md:text-sm">
-                  {pool.total_staking_power.toLocaleString(undefined, { maximumFractionDigits: 8 })}
-                </TableCell>
-                <TableCell className="text-xs md:text-sm">{pool.contributor_count}</TableCell>
-              </TableRow>
-            ))}
+            {pools.map((pool) => {
+              const knownPool = KNOWN_POOLS.find((p) => p.address === pool.pool_address);
+              return (
+                <TableRow key={pool.pool_address}>
+                  <TableCell className="text-xs md:text-sm">
+                    {knownPool &&
+                      <span className="mr-2 font-extrabold text-xl">({knownPool.name})</span>
+                    }
+                    {pool.pool_address}
+                  </TableCell>
+                  <TableCell className="text-xs md:text-sm">
+                    {pool.total_staking_power.toLocaleString(undefined, { maximumFractionDigits: 8 })}
+                  </TableCell>
+                  <TableCell className="text-xs md:text-sm">{pool.contributor_count}</TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       </CardContent>
