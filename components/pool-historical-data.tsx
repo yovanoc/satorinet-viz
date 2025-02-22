@@ -91,6 +91,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                 ) : (
                   [
                     <Line
+                      key="contributor_count"
                       yAxisId="left"
                       type="monotone"
                       dataKey="contributor_count"
@@ -100,6 +101,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                       dot={false}
                     />,
                     <Line
+                      key="contributor_count_with_staking_power"
                       yAxisId="right"
                       type="monotone"
                       dataKey="contributor_count_with_staking_power"
@@ -146,6 +148,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                 {workerMetric === "counts" && (
                   [
                     <Line
+                      key="worker_count"
                       yAxisId="left"
                       type="monotone"
                       dataKey="worker_count"
@@ -155,6 +158,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                       dot={false}
                     />,
                     <Line
+                      key="worker_count_with_earnings"
                       yAxisId="left"
                       type="monotone"
                       dataKey="worker_count_with_earnings"
@@ -164,6 +168,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                       dot={false}
                     />,
                     <Line
+                      key="worker_count_with_rewards"
                       yAxisId="left"
                       type="monotone"
                       dataKey="worker_count_with_rewards"
@@ -177,6 +182,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                 {workerMetric === "rewards" && (
                   [
                     <Line
+                      key="total_reward"
                       yAxisId="left"
                       type="monotone"
                       dataKey="total_reward"
@@ -186,6 +192,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                       dot={false}
                     />,
                     <Line
+                      key="total_miner_earned"
                       yAxisId="right"
                       type="monotone"
                       dataKey="total_miner_earned"
