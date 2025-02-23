@@ -36,7 +36,20 @@ export async function getPoolHistoricalData(
   'use cache';
   cacheLife('days');
 
-  return db
+  // Subquery: Pre-aggregate daily_predictor_address with explicit aliases
+  const predictorAgg = db
+    .select({
+      date: dailyPredictorAddress.date,
+      total_reward: sql<number>`SUM(${dailyPredictorAddress.reward})`.as('total_reward'),
+      total_miner_earned: sql<number>`SUM(${dailyPredictorAddress.miner_earned})`.as('total_miner_earned'),
+    })
+    .from(dailyPredictorAddress)
+    .where(eq(dailyPredictorAddress.reward_address, sql`${poolVaultAddress}`))
+    .groupBy(dailyPredictorAddress.date)
+    .as('predictor_agg');
+
+  // Main Query
+  const query = db
     .select({
       date: dailyContributorAddress.date,
       total_staking_power: sql<number>`SUM(${dailyContributorAddress.staking_power_contribution})`,
@@ -44,17 +57,15 @@ export async function getPoolHistoricalData(
       contributor_count_with_staking_power: sql<number>`COUNT(DISTINCT ${dailyContributorAddress.contributor}) FILTER (WHERE ${dailyContributorAddress.staking_power_contribution} > 0)`,
       earnings_per_staking_power: poolVaultAddress
         ? sql<number>`COALESCE(
-            SUM(${dailyPredictorAddress.reward}) - SUM(${dailyPredictorAddress.miner_earned}),
-            0
-          ) / NULLIF(SUM(${dailyContributorAddress.staking_power_contribution}), 0)`
+            (${predictorAgg.total_reward} - ${predictorAgg.total_miner_earned}) /
+            NULLIF(SUM(${dailyContributorAddress.staking_power_contribution}), 0),
+          0)`
         : sql<number>`0`
     })
     .from(dailyContributorAddress)
     .leftJoin(
-      poolVaultAddress
-        ? dailyPredictorAddress
-        : sql`(SELECT 1 AS id)`, // If no poolVaultAddress, use dummy table to avoid unnecessary join
-      sql`TRUE`
+      poolVaultAddress ? predictorAgg : sql`(SELECT 1 AS id)`, // Dummy table if no poolVaultAddress
+      eq(dailyContributorAddress.date, predictorAgg.date)
     )
     .where(
       and(
@@ -63,9 +74,14 @@ export async function getPoolHistoricalData(
         lte(dailyContributorAddress.date, sql`${date}`)
       )
     )
-    .groupBy(dailyContributorAddress.date)
-    .orderBy(dailyContributorAddress.date)
-    .execute();
+    .groupBy(dailyContributorAddress.date, predictorAgg.total_reward, predictorAgg.total_miner_earned)
+    .orderBy(dailyContributorAddress.date);
+
+  // Log Raw Query for Debugging
+  // const sqlQuery = query.toSQL();
+  // console.log("raw query", interpolateQuery(sqlQuery.sql, sqlQuery.params));
+
+  return query.execute();
 }
 
 export async function getPoolWorkerStats(poolVaultAddress: string, date: Date, days = 30) {
