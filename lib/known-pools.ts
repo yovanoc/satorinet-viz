@@ -27,3 +27,5 @@ export const KNOWN_POOLS = [
   //   vault_address: "EVednaMKprwVQzwAE1KFRYLx3vTbwUbXNk",
   // }
 ]
+
+export type Pool = typeof KNOWN_POOLS[number]

@@ -28,9 +28,10 @@ interface PoolHistoricalDataProps {
   historicalData: HistoricalData[]
   workerStats: WorkerStats[]
   date: Date
+  poolName: string
 }
 
-const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, workerStats, date }) => {
+const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, workerStats, date, poolName }) => {
   const [stakingMetric, setStakingMetric] = useState<"total_staking_power" | "contributor_counts" | "performance">(
     "performance",
   )
@@ -40,7 +41,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
     <Card className="bg-orange-200 border-4 border-black">
       <CardHeader className="p-2 md:p-4">
         <CardTitle className="text-xl md:text-2xl font-bold uppercase">
-          <span>Historical Data (last 30 days)</span>
+          <span>Historical Data for {poolName} (last 30 days)</span>
           <p className="text-xs md:text-sm font-bold float-right">
             {date.toLocaleDateString()}
           </p>

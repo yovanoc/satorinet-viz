@@ -9,9 +9,9 @@ import PoolSelectorWrapper from "@/components/pool-selector-wrapper"
 import TopPools from "@/components/top-pools"
 import DailyWorkerCounts from "@/components/daily-worker-counts"
 import DatePickerWrapper from "@/components/date-picker-wrapper"
-import { KNOWN_POOLS } from "@/lib/known-pools"
+import { KNOWN_POOLS, type Pool } from "@/lib/known-pools"
 
-async function PoolDataSection({ date, pool: { address, vault_address } }: { date: Date, pool: { address: string, vault_address?: string } }) {
+async function PoolDataSection({ date, pool: { address, vault_address, name } }: { date: Date, pool: Pool }) {
   const [historicalData, workerStats] = await Promise.all([
     vault_address ? getPoolHistoricalData(address, vault_address, date) : null,
     vault_address ? getPoolWorkerStats(vault_address, date) : null,
@@ -36,7 +36,7 @@ async function PoolDataSection({ date, pool: { address, vault_address } }: { dat
   return (
     <div className="space-y-4">
       <DailyContributorAddressCard poolData={enrichedPoolData} date={date} />
-      <PoolHistoricalData historicalData={historicalData ?? []} workerStats={workerStats ?? []} date={date} />
+      <PoolHistoricalData historicalData={historicalData ?? []} workerStats={workerStats ?? []} date={date} poolName={name} />
     </div>
   )
 }
