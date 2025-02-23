@@ -5,8 +5,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/t
 export interface PoolData {
   pool_address: string
   total_staking_power: number
-  contributor_count: number
-  contributor_count_with_staking_power: number
+  contributor_count?: number
+  contributor_count_with_staking_power?: number
   worker_count?: number
   worker_count_with_earnings?: number
   worker_count_with_rewards?: number
@@ -18,13 +18,19 @@ export interface PoolData {
 
 interface DailyContributorAddressCardProps {
   poolData: PoolData
+  date: Date
 }
 
-const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({ poolData }) => {
+const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({ poolData, date }) => {
   return (
     <Card className="bg-blue-200 border-4 border-black">
       <CardHeader className="p-2 md:p-4">
-        <CardTitle className="text-xl md:text-2xl font-bold uppercase">Current Pool Stats</CardTitle>
+        <CardTitle className="text-xl md:text-2xl font-bold uppercase">
+          <span>Current Pool Stats</span>
+          <p className="text-xs md:text-sm font-bold float-right">
+            {date.toLocaleDateString()}
+          </p>
+        </CardTitle>
       </CardHeader>
       <CardContent className="p-2 md:p-4">
         <div className="space-y-1 md:space-y-2">
@@ -34,9 +40,9 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({ poo
           <p className="text-xs md:text-sm font-bold">
             Staking Power: {poolData.total_staking_power.toLocaleString(undefined, { maximumFractionDigits: 8 })}
           </p>
-          <p className="text-xs md:text-sm font-bold">Contributors: {poolData.contributor_count}</p>
+          <p className="text-xs md:text-sm font-bold">Contributors: {poolData.contributor_count ?? 0}</p>
           <p className="text-xs md:text-sm font-bold">
-            Contributors with Staking Power: {poolData.contributor_count_with_staking_power}
+            Contributors with Staking Power: {poolData.contributor_count_with_staking_power ?? 0}
           </p>
           <p className="text-xs md:text-sm font-bold">Workers: {poolData.worker_count ?? 0}</p>
           <p className="text-xs md:text-sm font-bold">

@@ -13,12 +13,12 @@ import { KNOWN_POOLS } from "@/lib/known-pools"
 
 async function PoolDataSection({ date, pool: { address, vault_address } }: { date: Date, pool: { address: string, vault_address?: string } }) {
   const [historicalData, workerStats] = await Promise.all([
-    getPoolHistoricalData(address, vault_address, date),
+    vault_address ? getPoolHistoricalData(address, vault_address, date) : null,
     vault_address ? getPoolWorkerStats(vault_address, date) : null,
   ])
 
   const latestWorkerStats = workerStats ? workerStats[workerStats.length - 1] : null;
-  const latestHistoricalData = historicalData[historicalData.length - 1];
+  const latestHistoricalData = historicalData ? historicalData[historicalData.length - 1] : null;
   const enrichedPoolData: PoolData = {
     worker_count: latestWorkerStats?.worker_count,
     worker_count_with_rewards: latestWorkerStats?.worker_count_with_rewards,
@@ -35,8 +35,8 @@ async function PoolDataSection({ date, pool: { address, vault_address } }: { dat
 
   return (
     <div className="space-y-4">
-      <DailyContributorAddressCard poolData={enrichedPoolData} />
-      <PoolHistoricalData historicalData={historicalData} workerStats={workerStats ?? []} />
+      <DailyContributorAddressCard poolData={enrichedPoolData} date={date} />
+      <PoolHistoricalData historicalData={historicalData ?? []} workerStats={workerStats ?? []} date={date} />
     </div>
   )
 }
@@ -97,7 +97,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
 
 async function TopPoolsCard({ date }: { date: Date }) {
   const topPools = await getTopPools(date)
-  return <TopPools pools={topPools} />
+  return <TopPools pools={topPools} date={date} />
 }
 
 async function DailyWorkerCountsCard() {

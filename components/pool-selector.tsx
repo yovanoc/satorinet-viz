@@ -19,10 +19,11 @@ const PoolSelector: FC<PoolSelectorProps> = ({ pools, selectedPool, onPoolChange
             key={pool.address}
             value={pool.address}
             className="text-sm md:text-base font-bold hover:bg-black hover:text-yellow-200"
+            disabled={pool.vault_address === undefined}
           >
             <span>{pool.name}</span>
             <span className="ml-2 text-xs md:text-sm">
-              ({pool.address})
+              ({pool.address}){pool.vault_address ? ` - ${pool.vault_address}` : " - No vault address"}
             </span>
           </SelectItem>
         ))}

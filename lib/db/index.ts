@@ -29,7 +29,7 @@ export async function getTopPools(date: Date) {
 
 export async function getPoolHistoricalData(
   poolAddress: string,
-  poolVaultAddress: string | undefined,
+  poolVaultAddress: string,
   date: Date,
   days = 30
 ) {
@@ -55,16 +55,14 @@ export async function getPoolHistoricalData(
       total_staking_power: sql<number>`SUM(${dailyContributorAddress.staking_power_contribution})`,
       contributor_count: sql<number>`COUNT(DISTINCT ${dailyContributorAddress.contributor})`,
       contributor_count_with_staking_power: sql<number>`COUNT(DISTINCT ${dailyContributorAddress.contributor}) FILTER (WHERE ${dailyContributorAddress.staking_power_contribution} > 0)`,
-      earnings_per_staking_power: poolVaultAddress
-        ? sql<number>`COALESCE(
+      earnings_per_staking_power: sql<number>`COALESCE(
             (${predictorAgg.total_reward} - ${predictorAgg.total_miner_earned}) /
             NULLIF(SUM(${dailyContributorAddress.staking_power_contribution}), 0),
           0)`
-        : sql<number>`0`
     })
     .from(dailyContributorAddress)
     .leftJoin(
-      poolVaultAddress ? predictorAgg : sql`(SELECT 1 AS id)`, // Dummy table if no poolVaultAddress
+      predictorAgg,
       eq(dailyContributorAddress.date, predictorAgg.date)
     )
     .where(

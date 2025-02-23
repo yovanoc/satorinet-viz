@@ -11,13 +11,19 @@ interface Pool {
 
 interface TopPoolsProps {
   pools: Pool[]
+  date: Date
 }
 
-const TopPools: FC<TopPoolsProps> = ({ pools }) => {
+const TopPools: FC<TopPoolsProps> = ({ pools, date }) => {
   return (
     <Card className="bg-green-200 border-4 border-black">
       <CardHeader className="p-2 md:p-4">
-        <CardTitle className="text-xl md:text-2xl font-bold uppercase">Top 20 Pools</CardTitle>
+        <CardTitle className="text-xl md:text-2xl font-bold uppercase">
+          <span>Top 20 Pools</span>
+          <p className="text-xs md:text-sm font-bold float-right">
+            {date.toLocaleDateString()}
+          </p>
+        </CardTitle>
       </CardHeader>
       <CardContent className="p-2 md:p-4 overflow-x-auto">
         <Table>
