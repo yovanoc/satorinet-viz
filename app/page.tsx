@@ -13,36 +13,41 @@ import { KNOWN_POOLS, type Pool } from "@/lib/known-pools"
 import { getWorkerReward } from "@/lib/satorinet"
 
 async function PoolDataSection({ date, pool: { address, vault_address, name } }: { date: Date, pool: Pool }) {
-  const [historicalData, workerStats, workerReward] = await Promise.all([
-    vault_address ? getPoolHistoricalData(address, vault_address, date) : null,
-    vault_address ? getPoolWorkerStats(vault_address, date) : null,
-    getWorkerReward(address)
-  ])
+  try {
+    const [historicalData, workerStats, workerReward] = await Promise.all([
+      vault_address ? getPoolHistoricalData(address, vault_address, date) : null,
+      vault_address ? getPoolWorkerStats(vault_address, date) : null,
+      getWorkerReward(address)
+    ])
 
-  const latestWorkerStats = workerStats ? workerStats[workerStats.length - 1] : null;
-  const latestHistoricalData = historicalData ? historicalData[historicalData.length - 1] : null;
-  const enrichedPoolData: PoolData = {
-    workerReward,
-    worker_count: latestWorkerStats?.worker_count,
-    worker_count_with_rewards: latestWorkerStats?.worker_count_with_rewards,
-    worker_count_with_earnings: latestWorkerStats?.worker_count_with_earnings,
-    total_reward: latestWorkerStats?.total_reward,
-    total_miner_earned: latestWorkerStats?.total_miner_earned,
-    avg_score: latestWorkerStats?.avg_score,
-    contributor_count: latestHistoricalData?.contributor_count,
-    contributor_count_with_staking_power: latestHistoricalData?.contributor_count_with_staking_power,
-    pool_address: address,
-    total_staking_power: latestHistoricalData?.total_staking_power ?? 0,
-    earnings_per_staking_power: latestHistoricalData?.earnings_per_staking_power,
-    pool_miner_percent: latestWorkerStats?.pool_miner_percent,
+    const latestWorkerStats = workerStats ? workerStats[workerStats.length - 1] : null;
+    const latestHistoricalData = historicalData ? historicalData[historicalData.length - 1] : null;
+    const enrichedPoolData: PoolData = {
+      workerReward,
+      worker_count: latestWorkerStats?.worker_count,
+      worker_count_with_rewards: latestWorkerStats?.worker_count_with_rewards,
+      worker_count_with_earnings: latestWorkerStats?.worker_count_with_earnings,
+      total_reward: latestWorkerStats?.total_reward,
+      total_miner_earned: latestWorkerStats?.total_miner_earned,
+      avg_score: latestWorkerStats?.avg_score,
+      contributor_count: latestHistoricalData?.contributor_count,
+      contributor_count_with_staking_power: latestHistoricalData?.contributor_count_with_staking_power,
+      pool_address: address,
+      total_staking_power: latestHistoricalData?.total_staking_power ?? 0,
+      earnings_per_staking_power: latestHistoricalData?.earnings_per_staking_power,
+      pool_miner_percent: latestWorkerStats?.pool_miner_percent,
+    }
+
+    return (
+      <div className="space-y-4">
+        <DailyContributorAddressCard poolData={enrichedPoolData} date={date} poolName={name} />
+        <PoolHistoricalData historicalData={historicalData ?? []} workerStats={workerStats ?? []} date={date} poolName={name} />
+      </div>
+    )
+  } catch (e) {
+    console.error(e)
+    return <Card className="h-[500px] flex items-center justify-center">Error loading pool data</Card>
   }
-
-  return (
-    <div className="space-y-4">
-      <DailyContributorAddressCard poolData={enrichedPoolData} date={date} poolName={name} />
-      <PoolHistoricalData historicalData={historicalData ?? []} workerStats={workerStats ?? []} date={date} poolName={name} />
-    </div>
-  )
 }
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ pool?: string, date?: string }> }) {
