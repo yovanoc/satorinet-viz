@@ -30,12 +30,13 @@ async function PoolDataSection({ date, pool: { address, vault_address, name } }:
     contributor_count_with_staking_power: latestHistoricalData?.contributor_count_with_staking_power,
     pool_address: address,
     total_staking_power: latestHistoricalData?.total_staking_power ?? 0,
-    earnings_per_staking_power: latestHistoricalData?.earnings_per_staking_power
+    earnings_per_staking_power: latestHistoricalData?.earnings_per_staking_power,
+    pool_miner_percent: latestWorkerStats?.pool_miner_percent,
   }
 
   return (
     <div className="space-y-4">
-      <DailyContributorAddressCard poolData={enrichedPoolData} date={date} />
+      <DailyContributorAddressCard poolData={enrichedPoolData} date={date} poolName={name} />
       <PoolHistoricalData historicalData={historicalData ?? []} workerStats={workerStats ?? []} date={date} poolName={name} />
     </div>
   )

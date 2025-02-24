@@ -213,6 +213,16 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                       dot={false}
                     />,
                     <Line
+                      key="pool_miner_percent"
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="pool_miner_percent"
+                      stroke="#0000FF"
+                      strokeWidth={2}
+                      name="Pool Miner Percent"
+                      dot={false}
+                    />,
+                    <Line
                       key="total_miner_earned"
                       yAxisId="right"
                       type="monotone"

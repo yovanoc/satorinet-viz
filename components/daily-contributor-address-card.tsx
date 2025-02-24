@@ -14,19 +14,21 @@ export interface PoolData {
   total_miner_earned?: number
   avg_score?: number,
   earnings_per_staking_power?: number
+  pool_miner_percent?: number
 }
 
 interface DailyContributorAddressCardProps {
   poolData: PoolData
+  poolName: string
   date: Date
 }
 
-const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({ poolData, date }) => {
+const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({ poolData, poolName, date }) => {
   return (
     <Card className="bg-blue-200 border-4 border-black">
       <CardHeader className="p-2 md:p-4">
         <CardTitle className="text-xl md:text-2xl font-bold uppercase">
-          <span>Current Pool Stats</span>
+          <span>{poolName} Stats</span>
           <p className="text-xs md:text-sm font-bold float-right">
             {date.toLocaleDateString()}
           </p>
@@ -57,12 +59,13 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({ poo
           <p className="text-xs md:text-sm font-bold">
             Total Miner Earned: {poolData.total_miner_earned?.toLocaleString(undefined, { maximumFractionDigits: 8 }) ?? 0}
           </p>
-          {poolData.avg_score && (
-            <p className="text-xs md:text-sm font-bold">Avg Score: {poolData.avg_score.toFixed(8)}</p>
-          )}
+          <p className="text-xs md:text-sm font-bold">Avg Score: {poolData.avg_score?.toFixed(8) ?? 0}</p>
+          <p className="text-xs md:text-sm font-bold">
+            Pool Miner Percent: {poolData.pool_miner_percent?.toFixed(8) ?? 0}%
+          </p>
 
           <p className="text-xs md:text-sm font-bold">
-          Earnings per Staking Power:&nbsp;
+            Earnings per Staking Power:&nbsp;
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
