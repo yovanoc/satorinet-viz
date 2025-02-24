@@ -10,16 +10,19 @@ import TopPools from "@/components/top-pools"
 import DailyWorkerCounts from "@/components/daily-worker-counts"
 import DatePickerWrapper from "@/components/date-picker-wrapper"
 import { KNOWN_POOLS, type Pool } from "@/lib/known-pools"
+import { getWorkerReward } from "@/lib/satorinet"
 
 async function PoolDataSection({ date, pool: { address, vault_address, name } }: { date: Date, pool: Pool }) {
-  const [historicalData, workerStats] = await Promise.all([
+  const [historicalData, workerStats, workerReward] = await Promise.all([
     vault_address ? getPoolHistoricalData(address, vault_address, date) : null,
     vault_address ? getPoolWorkerStats(vault_address, date) : null,
+    getWorkerReward(address)
   ])
 
   const latestWorkerStats = workerStats ? workerStats[workerStats.length - 1] : null;
   const latestHistoricalData = historicalData ? historicalData[historicalData.length - 1] : null;
   const enrichedPoolData: PoolData = {
+    workerReward,
     worker_count: latestWorkerStats?.worker_count,
     worker_count_with_rewards: latestWorkerStats?.worker_count_with_rewards,
     worker_count_with_earnings: latestWorkerStats?.worker_count_with_earnings,
