@@ -9,7 +9,7 @@ import {
 import type { WorkerReward } from "@/lib/satorinet";
 
 export interface PoolData {
-  workerReward: WorkerReward;
+  workerReward: WorkerReward | null;
   pool_address: string;
   total_staking_power: number;
   contributor_count?: number;
@@ -95,11 +95,15 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({
             {poolData.pool_miner_percent?.toLocaleString(undefined, {
               maximumFractionDigits: 8,
             }) ?? 0}
-            % (Currently at{" "}
-            {poolData.workerReward.offer?.toLocaleString(undefined, {
-              maximumFractionDigits: 8,
-            }) ?? 0}
-            %)
+            %{
+              poolData.workerReward ? (
+                <span className="text-xs md:text-sm font-bold">
+                  &nbsp;(Currently at {poolData.workerReward.offer.toLocaleString(undefined, {
+                    maximumFractionDigits: 8,
+                  })}%)
+                </span>
+              ) : null
+            }
           </p>
 
           <p className="text-xs md:text-sm font-bold">

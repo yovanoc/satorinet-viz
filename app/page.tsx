@@ -10,14 +10,25 @@ import TopPools from "@/components/top-pools"
 import DailyWorkerCounts from "@/components/daily-worker-counts"
 import DatePickerWrapper from "@/components/date-picker-wrapper"
 import { KNOWN_POOLS, type Pool } from "@/lib/known-pools"
-import { getWorkerReward } from "@/lib/satorinet"
+import { getWorkerReward, type WorkerReward } from "@/lib/satorinet"
+
+const tryGetWorkerReward = async (address: string): Promise<WorkerReward | null> => {
+  try {
+    const res = await getWorkerReward(address);
+    return res;
+  }
+  catch (e) {
+    console.error(e)
+    return null
+  }
+}
 
 async function PoolDataSection({ date, pool: { address, vault_address, name } }: { date: Date, pool: Pool }) {
   try {
     const [historicalData, workerStats, workerReward] = await Promise.all([
       vault_address ? getPoolHistoricalData(address, vault_address, date) : null,
       vault_address ? getPoolWorkerStats(vault_address, date) : null,
-      getWorkerReward(address)
+      tryGetWorkerReward(address)
     ])
 
     const latestWorkerStats = workerStats ? workerStats[workerStats.length - 1] : null;
