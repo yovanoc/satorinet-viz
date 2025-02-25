@@ -36,7 +36,6 @@ async function PoolDataSection({ date, pool: { address, vault_address, name } }:
     const enrichedPoolData: PoolData = {
       workerReward,
       worker_count: latestWorkerStats?.worker_count,
-      worker_count_with_rewards: latestWorkerStats?.worker_count_with_rewards,
       worker_count_with_earnings: latestWorkerStats?.worker_count_with_earnings,
       total_reward: latestWorkerStats?.total_reward,
       total_miner_earned: latestWorkerStats?.total_miner_earned,
