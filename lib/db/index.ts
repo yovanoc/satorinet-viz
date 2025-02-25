@@ -91,7 +91,6 @@ export async function getPoolWorkerStats(poolVaultAddress: string, date: Date, d
       date: dailyPredictorAddress.date,
       worker_count: sql<number>`count(distinct ${dailyPredictorAddress.worker_address})`,
       worker_count_with_earnings: sql<number>`count(distinct ${dailyPredictorAddress.worker_address}) filter (where ${dailyPredictorAddress.miner_earned} > 0)`,
-      worker_count_with_rewards: sql<number>`count(distinct ${dailyPredictorAddress.worker_address}) filter (where ${dailyPredictorAddress.reward} > 0)`,
       total_reward: sql<number>`sum(${dailyPredictorAddress.reward})`,
       total_miner_earned: sql<number>`sum(${dailyPredictorAddress.miner_earned})`,
       avg_score: sql<number>`avg(${dailyPredictorAddress.score}) filter (where ${dailyPredictorAddress.score} > 0)`,

@@ -16,7 +16,6 @@ export interface PoolData {
   contributor_count_with_staking_power?: number;
   worker_count?: number;
   worker_count_with_earnings?: number;
-  worker_count_with_rewards?: number;
   total_reward?: number;
   total_miner_earned?: number;
   avg_score?: number;
@@ -70,10 +69,7 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({
             Workers with Earnings: {poolData.worker_count_with_earnings ?? 0}
           </p>
           <p className="text-xs md:text-sm font-bold">
-            Workers with Rewards: {poolData.worker_count_with_rewards ?? 0}
-          </p>
-          <p className="text-xs md:text-sm font-bold">
-            Daily Reward:{" "}
+            Daily Pool Reward:{" "}
             {poolData.total_reward?.toLocaleString(undefined, {
               maximumFractionDigits: 8,
             }) ?? 0}
@@ -107,7 +103,7 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({
           </p>
 
           <p className="text-xs md:text-sm font-bold">
-            Earnings per Staking Power:&nbsp;
+            Average Earnings per Staking Power:&nbsp;
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>

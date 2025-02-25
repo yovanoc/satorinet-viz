@@ -21,7 +21,6 @@ interface WorkerStats {
   total_miner_earned: number
   avg_score: number
   worker_count_with_earnings: number
-  worker_count_with_rewards: number
 }
 
 interface PoolHistoricalDataProps {
@@ -81,7 +80,6 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                   tickFormatter={(value) => new Date(value).toLocaleDateString()}
                 />
                 <YAxis yAxisId="left" tick={{ fontSize: 12 }} domain={["auto", "auto"]} />
-                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} domain={["auto", "auto"]} />
                 <Tooltip
                   formatter={(value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 8 })}
                   labelFormatter={(label) => new Date(label).toLocaleDateString()}
@@ -111,7 +109,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                     />,
                     <Line
                       key="contributor_count_with_staking_power"
-                      yAxisId="right"
+                      yAxisId="left"
                       type="monotone"
                       dataKey="contributor_count_with_staking_power"
                       stroke="#0000FF"
@@ -180,7 +178,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                     />,
                     <Line
                       key="worker_count_with_earnings"
-                      yAxisId="left"
+                      yAxisId="right"
                       type="monotone"
                       dataKey="worker_count_with_earnings"
                       stroke="#0000FF"
@@ -188,16 +186,6 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                       name="Workers with Earnings"
                       dot={false}
                     />,
-                    <Line
-                      key="worker_count_with_rewards"
-                      yAxisId="left"
-                      type="monotone"
-                      dataKey="worker_count_with_rewards"
-                      stroke="#FF0000"
-                      strokeWidth={2}
-                      name="Workers with Rewards"
-                      dot={false}
-                    />
                   ]
                 )}
                 {workerMetric === "rewards" && (
