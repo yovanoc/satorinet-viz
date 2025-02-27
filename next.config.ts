@@ -5,11 +5,12 @@ import './lib/env'
 const nextConfig: NextConfig = {
   experimental: {
     useCache: true,
-    dynamicIO: true,
     webpackBuildWorker: true,
     parallelServerCompiles: true,
-    ppr: true,
     reactCompiler: true,
+    // dynamicIO: true,
+    // ppr: true,
+    // viewTransition: true,
   },
   logging: {
     fetches: {
