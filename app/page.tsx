@@ -11,6 +11,7 @@ import DailyWorkerCounts from "@/components/daily-worker-counts"
 import DatePickerWrapper from "@/components/date-picker-wrapper"
 import { KNOWN_POOLS, type Pool } from "@/lib/known-pools"
 import { getWorkerReward, type WorkerReward } from "@/lib/satorinet"
+import { DailyStatsCard } from "@/components/daily-stats-card";
 
 const tryGetWorkerReward = async (address: string): Promise<WorkerReward | null> => {
   try {
@@ -96,6 +97,15 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
             </Card>
           }
         >
+          <DailyStatsCard date={selectedDate} />
+        </Suspense>
+        <Suspense
+          fallback={
+            <Card className="h-[500px] flex items-center justify-center">
+              <Loading />
+            </Card>
+          }
+        >
           <TopPoolsCard  date={selectedDate} />
         </Suspense>
       </div>
@@ -123,4 +133,3 @@ async function DailyWorkerCountsCard() {
   const dailyCounts = await getDailyWorkerCounts()
   return <DailyWorkerCounts dailyCounts={dailyCounts} />
 }
-

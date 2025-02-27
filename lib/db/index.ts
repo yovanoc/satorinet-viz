@@ -1,17 +1,17 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { env } from '../env';
-import * as schema from './schema';
-import { desc, sql, eq, and, gte, lte } from "drizzle-orm";
-import { dailyContributorAddress, dailyPredictorAddress } from './schema';
-import { unstable_cacheLife as cacheLife } from 'next/cache'
+import { drizzle } from "drizzle-orm/node-postgres";
+import { env } from "../env";
+import * as schema from "./schema";
+import { desc, sql, eq, and, gte, gt, lte } from "drizzle-orm";
+import { dailyContributorAddress, dailyPredictorAddress } from "./schema";
+import { unstable_cacheLife as cacheLife } from "next/cache";
 
 export const db = drizzle(env.DATABASE_URL, {
   schema,
 });
 
 export async function getTopPools(date: Date) {
-  'use cache';
-  cacheLife('default');
+  "use cache";
+  cacheLife("default");
 
   return db
     .select({
@@ -22,9 +22,11 @@ export async function getTopPools(date: Date) {
     .from(dailyContributorAddress)
     .where(sql`${dailyContributorAddress.date} = ${date}`)
     .groupBy(dailyContributorAddress.pool_address)
-    .orderBy(desc(sql`sum(${dailyContributorAddress.staking_power_contribution})`))
+    .orderBy(
+      desc(sql`sum(${dailyContributorAddress.staking_power_contribution})`)
+    )
     .limit(20)
-    .execute()
+    .execute();
 }
 
 export async function getPoolHistoricalData(
@@ -33,20 +35,25 @@ export async function getPoolHistoricalData(
   date: Date,
   days = 30
 ) {
-  'use cache';
-  cacheLife('default');
+  "use cache";
+  cacheLife("default");
 
   // Subquery: Pre-aggregate daily_predictor_address with explicit aliases
   const predictorAgg = db
     .select({
       date: dailyPredictorAddress.date,
-      total_reward: sql<number>`SUM(${dailyPredictorAddress.reward})`.as('total_reward'),
-      total_miner_earned: sql<number>`SUM(${dailyPredictorAddress.miner_earned})`.as('total_miner_earned'),
+      total_reward: sql<number>`SUM(${dailyPredictorAddress.reward})`.as(
+        "total_reward"
+      ),
+      total_miner_earned:
+        sql<number>`SUM(${dailyPredictorAddress.miner_earned})`.as(
+          "total_miner_earned"
+        ),
     })
     .from(dailyPredictorAddress)
     .where(eq(dailyPredictorAddress.reward_address, sql`${poolVaultAddress}`))
     .groupBy(dailyPredictorAddress.date)
-    .as('predictor_agg');
+    .as("predictor_agg");
 
   // Main Query
   const query = db
@@ -58,21 +65,25 @@ export async function getPoolHistoricalData(
       earnings_per_staking_power: sql<number>`COALESCE(
             (${predictorAgg.total_reward} - ${predictorAgg.total_miner_earned}) /
             NULLIF(SUM(${dailyContributorAddress.staking_power_contribution}), 0),
-          0)`
+          0)`,
     })
     .from(dailyContributorAddress)
-    .leftJoin(
-      predictorAgg,
-      eq(dailyContributorAddress.date, predictorAgg.date)
-    )
+    .leftJoin(predictorAgg, eq(dailyContributorAddress.date, predictorAgg.date))
     .where(
       and(
         eq(dailyContributorAddress.pool_address, poolAddress),
-        gte(dailyContributorAddress.date, sql`${date}::timestamp - ${days} * interval '1 day'`),
+        gte(
+          dailyContributorAddress.date,
+          sql`${date}::timestamp - ${days} * interval '1 day'`
+        ),
         lte(dailyContributorAddress.date, sql`${date}`)
       )
     )
-    .groupBy(dailyContributorAddress.date, predictorAgg.total_reward, predictorAgg.total_miner_earned)
+    .groupBy(
+      dailyContributorAddress.date,
+      predictorAgg.total_reward,
+      predictorAgg.total_miner_earned
+    )
     .orderBy(dailyContributorAddress.date);
 
   // Log Raw Query for Debugging
@@ -82,9 +93,13 @@ export async function getPoolHistoricalData(
   return query.execute();
 }
 
-export async function getPoolWorkerStats(poolVaultAddress: string, date: Date, days = 30) {
-  'use cache';
-  cacheLife('default');
+export async function getPoolWorkerStats(
+  poolVaultAddress: string,
+  date: Date,
+  days = 30
+) {
+  "use cache";
+  cacheLife("default");
 
   return db
     .select({
@@ -100,8 +115,11 @@ export async function getPoolWorkerStats(poolVaultAddress: string, date: Date, d
     .where(
       and(
         eq(dailyPredictorAddress.reward_address, poolVaultAddress),
-        gte(dailyPredictorAddress.date, sql`${date}::timestamp - ${days} * interval '1 day'`),
-        lte(dailyPredictorAddress.date, sql`${date}`),
+        gte(
+          dailyPredictorAddress.date,
+          sql`${date}::timestamp - ${days} * interval '1 day'`
+        ),
+        lte(dailyPredictorAddress.date, sql`${date}`)
       )
     )
     .groupBy(dailyPredictorAddress.date)
@@ -110,8 +128,8 @@ export async function getPoolWorkerStats(poolVaultAddress: string, date: Date, d
 }
 
 export async function getDailyWorkerCounts() {
-  'use cache';
-  cacheLife('default');
+  "use cache";
+  cacheLife("default");
 
   return db
     .select({
@@ -120,9 +138,33 @@ export async function getDailyWorkerCounts() {
       diff_from_previous_day: sql<number>`count(distinct ${dailyPredictorAddress.worker_address}) - lag(count(distinct ${dailyPredictorAddress.worker_address})) over (order by ${dailyPredictorAddress.date})`,
     })
     .from(dailyPredictorAddress)
-    .where(sql`${dailyPredictorAddress.date} >= current_date - interval '1 day' * 25`)
+    .where(
+      sql`${dailyPredictorAddress.date} >= current_date - interval '1 day' * 25`
+    )
     .groupBy(dailyPredictorAddress.date)
     .orderBy(desc(dailyPredictorAddress.date))
-    .execute()
+    .execute();
 }
 
+export async function getDailyMiningEarnings(date: Date) {
+  "use cache";
+  cacheLife("default");
+
+  const result = await db
+    .select({
+      total_miner_earned: sql<number>`sum(${dailyPredictorAddress.miner_earned})`,
+      avg_miner_earned: sql<number>`avg(${dailyPredictorAddress.miner_earned})`,
+    })
+    .from(dailyPredictorAddress)
+    .where(
+      and(
+        eq(dailyPredictorAddress.date, sql`${date}`),
+        gt(dailyPredictorAddress.miner_earned, 0)
+      )
+    )
+    .groupBy(dailyPredictorAddress.date)
+    .execute();
+
+  // If the result array has any values, return the first element
+  return result[0] || null; // Return null if no result is found
+}

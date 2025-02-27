@@ -22,6 +22,11 @@ export const KNOWN_POOLS = [
     vault_address: "EVednaMKprwVQzwAE1KFRYLx3vTbwUbXNk",
   },
   // {
+  //   name: 'Unknown',
+  //   address: 'ETU972nu9naUffZuUkVFoHGpq2AZJdBjFi',
+  //   vault_address: 'ETU972nu9naUffZuUkVFoHGpq2AZJdBjFi',
+  // }
+  // {
   //   name: "Angel Pool",
   //   address: "EPLuqZ592JG96kz8a1GCmCNcUAcA9gVikD",
   //   vault_address: "EVednaMKprwVQzwAE1KFRYLx3vTbwUbXNk",
