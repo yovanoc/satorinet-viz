@@ -67,11 +67,18 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
   const poolStr = params.pool;
   const selectedPool = poolStr ? KNOWN_POOLS.find((pool) => pool.address === poolStr) ?? KNOWN_POOLS[0] : KNOWN_POOLS[0];
 
+  if (!selectedPool) {
+    return <Card className="h-[500px] flex items-center justify-center">Pool not found</Card>
+  }
+
   const dateStr = params.date;
   let selectedDate = new Date();
   if (dateStr) {
     const [year, month, day] = dateStr.split('-').map(Number);
-    selectedDate = new Date(Date.UTC(year, month - 1, day));
+
+    if (year && month && day) {
+      selectedDate = new Date(Date.UTC(year, month - 1, day));
+    }
   }
 
   return (
