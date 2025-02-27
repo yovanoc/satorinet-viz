@@ -11,7 +11,7 @@ export const db = drizzle(env.DATABASE_URL, {
 
 export async function getTopPools(date: Date) {
   'use cache';
-  cacheLife('days');
+  cacheLife('default');
 
   return db
     .select({
@@ -34,7 +34,7 @@ export async function getPoolHistoricalData(
   days = 30
 ) {
   'use cache';
-  cacheLife('days');
+  cacheLife('default');
 
   // Subquery: Pre-aggregate daily_predictor_address with explicit aliases
   const predictorAgg = db
@@ -84,7 +84,7 @@ export async function getPoolHistoricalData(
 
 export async function getPoolWorkerStats(poolVaultAddress: string, date: Date, days = 30) {
   'use cache';
-  cacheLife('days');
+  cacheLife('default');
 
   return db
     .select({
@@ -111,7 +111,7 @@ export async function getPoolWorkerStats(poolVaultAddress: string, date: Date, d
 
 export async function getDailyWorkerCounts() {
   'use cache';
-  cacheLife('days');
+  cacheLife('default');
 
   return db
     .select({
