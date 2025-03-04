@@ -1,9 +1,10 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { env } from "../env";
 import * as schema from "./schema";
-import { desc, sql, eq, and, gte, gt, lte } from "drizzle-orm";
+import { desc, sql, eq, and, gte, gt, lte, inArray, or } from "drizzle-orm";
 import { dailyContributorAddress, dailyPredictorAddress } from "./schema";
 import { unstable_cacheLife as cacheLife } from "next/cache";
+import { interpolateQuery } from "./interpolate";
 
 export const db = drizzle(env.DATABASE_URL, {
   schema,
@@ -167,4 +168,15 @@ export async function getDailyMiningEarnings(date: Date) {
 
   // If the result array has any values, return the first element
   return result[0] || null; // Return null if no result is found
+}
+
+export async function getPoolsHistoricalEarnings(
+  pools: { address: string; vault_address: string }[], // Array of pool address and vault address pairs
+  date: Date,
+  days = 30
+) {
+  "use cache";
+  cacheLife("default");
+
+  return []
 }

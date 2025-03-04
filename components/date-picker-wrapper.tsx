@@ -26,7 +26,8 @@ export default function DatePickerWrapper({ selectedDate }: DatePickerWrapperPro
   }
 
   return (
-    <div className="w-full">
+    // Put at the end of the grid-cols-12
+    <div>
       <CalendarForm selectedDate={selectedDate} onDateChange={handleDateChange} />
     </div>
   )

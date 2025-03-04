@@ -2,9 +2,10 @@
 
 import { useRouter, useSearchParams } from "next/navigation"
 import PoolSelector from "./pool-selector"
+import type { Pool } from "@/lib/known-pools"
 
 interface PoolSelectorWrapperProps {
-  pools: Array<{ address: string; name: string; vault_address?: string }>
+  pools: Array<Pool>
   selectedPool: string
 }
 
@@ -21,7 +22,7 @@ export default function PoolSelectorWrapper({ pools, selectedPool }: PoolSelecto
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full py-2">
       <PoolSelector pools={pools} selectedPool={selectedPool} onPoolChange={handlePoolChange} />
     </div>
   )

@@ -16,7 +16,7 @@ interface TopPoolsProps {
 
 const TopPools: FC<TopPoolsProps> = ({ pools, date }) => {
   return (
-    <Card className="bg-green-200 border-4 border-black">
+    <Card className="col-span-12 2xl:col-span-8">
       <CardHeader className="p-2 md:p-4">
         <CardTitle className="text-xl md:text-2xl font-bold uppercase">
           <span>Top 20 Pools</span>

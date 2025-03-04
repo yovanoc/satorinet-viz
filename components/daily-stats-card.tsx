@@ -24,22 +24,22 @@ export const DailyStatsCard: FC<DailyStatsCardProps> = async ({ date }) => {
 
   if (!earningsData) {
     return (
-      <Card className="bg-green-200 border-4 border-black rounded-lg shadow-lg">
-        <CardHeader className="p-4 flex justify-between items-center">
-          <CardTitle className="text-xl md:text-2xl font-bold uppercase text-left">
-            Daily Mining Stats
+      <Card className="col-span-12 lg:col-span-4 h-[200px]">
+        <CardHeader className="p-2 md:p-4">
+          <CardTitle className="text-xl md:text-2xl font-bold uppercase">
+            <span>Daily Mining Stats</span>
+            <p className="text-xs md:text-sm font-bold float-right">
+              {date.toLocaleDateString()}
+            </p>
           </CardTitle>
-          <p className="text-xs md:text-sm font-bold text-right">
-            {date.toLocaleDateString()}
-          </p>
         </CardHeader>
 
-        <CardContent className="p-4 space-y-4">
+        <CardContent className="space-y-2">
           {/* Satori Price */}
-          <div className="text-xs md:text-sm font-semibold text-gray-700">
+          <div className="text-xs md:text-sm font-semibold">
             <p>
               <span>Satori Price: </span>
-              <span className="text-green-600">${formatCurrency(price)}</span>
+              <span className="text-[#A3E636]">${formatCurrency(price)}</span>
             </p>
           </div>
 
@@ -56,22 +56,22 @@ export const DailyStatsCard: FC<DailyStatsCardProps> = async ({ date }) => {
   const avgEarnedUSD = avg_miner_earned * price;
 
   return (
-    <Card className="bg-green-200 border-4 border-black rounded-lg shadow-lg">
-      <CardHeader className="p-4 flex justify-between items-center">
-        <CardTitle className="text-xl md:text-2xl font-bold uppercase text-left">
-          Daily Mining Stats
+    <Card className="col-span-12 lg:col-span-4 h-[200px]">
+      <CardHeader className="p-2 md:p-4">
+        <CardTitle className="text-xl md:text-2xl font-bold uppercase">
+          <span>Daily Mining Stats</span>
+          <p className="text-xs md:text-sm font-bold float-right">
+            {date.toLocaleDateString()}
+          </p>
         </CardTitle>
-        <p className="text-xs md:text-sm font-bold text-right">
-          {date.toLocaleDateString()}
-        </p>
       </CardHeader>
 
-      <CardContent className="p-4 space-y-4">
+      <CardContent className="space-y-4">
         {/* Satori Price */}
-        <div className="text-xs md:text-sm font-semibold text-gray-700">
+        <div className="text-xs md:text-sm font-semibold">
           <p>
             <span>Satori Price: </span>
-            <span className="text-green-600">${formatCurrency(price)}</span>
+            <span className="text-[#A3E636]">${formatCurrency(price)}</span>
           </p>
         </div>
 
@@ -79,11 +79,11 @@ export const DailyStatsCard: FC<DailyStatsCardProps> = async ({ date }) => {
         <div className="space-y-1">
           <p className="font-semibold text-xs md:text-sm">
             Total Earned Today:{" "}
-            <span className="text-green-600">
+            <span className="text-[#A3E636]">
               {formatSatori(total_miner_earned)}
             </span>{" "}
             SATORI{" "}
-            <span className="text-green-600">
+            <span className="text-[#A3E636]">
               ({formatUsd(totalEarnedUSD)})
             </span>
           </p>
@@ -93,11 +93,11 @@ export const DailyStatsCard: FC<DailyStatsCardProps> = async ({ date }) => {
         <div className="space-y-1">
           <p className="font-semibold text-xs md:text-sm">
             Average Earned Today:{" "}
-            <span className="text-green-600">
+            <span className="text-[#A3E636]">
               {formatSatori(avg_miner_earned)}
             </span>{" "}
             SATORI{" "}
-            <span className="text-green-600">
+            <span className="text-[#A3E636]">
               ({formatUsd(avgEarnedUSD, 8)})
             </span>
           </p>

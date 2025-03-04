@@ -12,6 +12,8 @@ import DatePickerWrapper from "@/components/date-picker-wrapper"
 import { KNOWN_POOLS, type Pool } from "@/lib/known-pools"
 import { getWorkerReward, type WorkerReward } from "@/lib/satorinet"
 import { DailyStatsCard } from "@/components/daily-stats-card";
+import { PoolsStakingComparison } from "@/components/pools-staking-comparison"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const tryGetWorkerReward = async (address: string): Promise<WorkerReward | null> => {
   try {
@@ -50,7 +52,7 @@ async function PoolDataSection({ date, pool: { address, vault_address, name } }:
     }
 
     return (
-      <div className="space-y-4">
+      <div className="grid grid-cols-12 gap-4">
         <DailyContributorAddressCard poolData={enrichedPoolData} date={date} poolName={name} />
         <PoolHistoricalData historicalData={historicalData ?? []} workerStats={workerStats ?? []} date={date} poolName={name} />
       </div>
@@ -60,6 +62,17 @@ async function PoolDataSection({ date, pool: { address, vault_address, name } }:
     return <Card className="h-[500px] flex items-center justify-center">Error loading pool data</Card>
   }
 }
+
+async function TopPoolsCard({ date }: { date: Date }) {
+  const topPools = await getTopPools(date)
+  return <TopPools pools={topPools} date={date} />
+}
+
+async function DailyWorkerCountsCard() {
+  const dailyCounts = await getDailyWorkerCounts()
+  return <DailyWorkerCounts dailyCounts={dailyCounts} />
+}
+
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ pool?: string, date?: string }> }) {
   const params = await searchParams;
@@ -82,41 +95,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
   }
 
   return (
-    <div className="flex-grow flex flex-col lg:flex-row gap-4 md:gap-8">
-      <div className="lg:w-1/3 space-y-4">
-        <PoolSelectorWrapper pools={KNOWN_POOLS} selectedPool={selectedPool.address} />
-        <DatePickerWrapper selectedDate={selectedDate} />
-        <Suspense
-          fallback={
-            <Card className="h-[500px] flex items-center justify-center">
-              <Loading />
-            </Card>
-          }
-        >
-          <PoolDataSection pool={selectedPool} date={selectedDate} />
-        </Suspense>
-      </div>
-      <div className="lg:w-1/3 space-y-4">
-        <Suspense
-          fallback={
-            <Card className="h-[500px] flex items-center justify-center">
-              <Loading />
-            </Card>
-          }
-        >
-          <DailyStatsCard date={selectedDate} />
-        </Suspense>
-        <Suspense
-          fallback={
-            <Card className="h-[500px] flex items-center justify-center">
-              <Loading />
-            </Card>
-          }
-        >
-          <TopPoolsCard  date={selectedDate} />
-        </Suspense>
-      </div>
-      <div className="lg:w-1/3 space-y-4">
+    <Tabs defaultValue="dashboard" className="w-full">
+      <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7 xl:grid-cols-9 2xl:grid-cols-12">
+        <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+        <TabsTrigger value="pools">Pools</TabsTrigger>
+        <TabsTrigger value="compare" disabled>Compare (Soon™)</TabsTrigger>
+      </TabsList>
+      <TabsContent value="dashboard" className="grid grid-cols-12 gap-4">
         <Suspense
           fallback={
             <Card className="h-[500px] flex items-center justify-center">
@@ -126,17 +111,53 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
         >
           <DailyWorkerCountsCard />
         </Suspense>
-      </div>
-    </div>
+      </TabsContent>
+      <TabsContent value="pools">
+        <Tabs defaultValue="global" className="w-full">
+          <div className="flex items-center justify-between w-full">
+            <TabsList className="grid grid-cols-2 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12 gap-4 w-full mr-2">
+              <TabsTrigger value="global">Global</TabsTrigger>
+              <TabsTrigger value="individual">Individual</TabsTrigger>
+            </TabsList>
+            <DatePickerWrapper selectedDate={selectedDate} />
+          </div>
+          <TabsContent value="global" className="grid grid-cols-12 gap-4">
+            <Suspense
+              fallback={
+                <Card className="h-[500px] flex items-center justify-center">
+                  <Loading />
+                </Card>
+              }
+            >
+              <DailyStatsCard date={selectedDate} />
+            </Suspense>
+            <Suspense
+              fallback={
+                <Card className="h-[500px] flex items-center justify-center">
+                  <Loading />
+                </Card>
+              }
+            >
+              <TopPoolsCard date={selectedDate} />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="individual">
+            <div>
+              <PoolSelectorWrapper pools={KNOWN_POOLS} selectedPool={selectedPool.address} />
+              <Suspense
+                fallback={
+                  <Card className="h-[500px] flex items-center justify-center">
+                    <Loading />
+                  </Card>
+                }
+              >
+                <PoolDataSection pool={selectedPool} date={selectedDate} />
+                <PoolsStakingComparison pools={KNOWN_POOLS} date={selectedDate} />
+              </Suspense>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </TabsContent>
+    </Tabs>
   )
-}
-
-async function TopPoolsCard({ date }: { date: Date }) {
-  const topPools = await getTopPools(date)
-  return <TopPools pools={topPools} date={date} />
-}
-
-async function DailyWorkerCountsCard() {
-  const dailyCounts = await getDailyWorkerCounts()
-  return <DailyWorkerCounts dailyCounts={dailyCounts} />
 }

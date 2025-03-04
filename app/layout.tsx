@@ -28,15 +28,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className="min-h-screen bg-yellow-100 text-black p-4">
+        <div className="min-h-screen min-w-screen bg-bg text-text p-8">
           <GitHubCorner />
-          <header className="mb-8">
-            <h1 className="text-6xl font-bold uppercase">Satori DataViz</h1>
+          <header className="w-full mb-8 flex items-center justify-center">
+            <h1 className="text-2xl font-bold uppercase">Satori DataViz</h1>
           </header>
           <main>{children}</main>
-          <footer className="mt-8 text-xl font-bold">
-            {/* <p>Data updated daily</p> */}
-          </footer>
+          {/* <footer className="mt-8 text-xl font-bold">
+            <p>Data updated daily</p>
+          </footer> */}
         </div>
       </body>
     </html>

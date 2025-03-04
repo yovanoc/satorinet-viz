@@ -35,7 +35,7 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({
   date,
 }) => {
   return (
-    <Card className="bg-blue-200 border-4 border-black">
+    <Card className="col-span-12 md:col-span-6">
       <CardHeader className="p-2 md:p-4">
         <CardTitle className="text-xl md:text-2xl font-bold uppercase">
           <span>{poolName} Stats</span>

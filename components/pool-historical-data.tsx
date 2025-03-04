@@ -37,7 +37,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
   const [workerMetric, setWorkerMetric] = useState<"counts" | "rewards" | "performance">("counts")
 
   return (
-    <Card className="bg-orange-200 border-4 border-black">
+    <Card className="col-span-12 md:col-span-6">
       <CardHeader className="p-2 md:p-4">
         <CardTitle className="text-xl md:text-2xl font-bold uppercase">
           <span>Historical Data for {poolName} (last 30 days)</span>
@@ -49,10 +49,10 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
       <CardContent className="p-4 md:p-4">
         <Tabs defaultValue="staking" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-2 md:mb-4">
-            <TabsTrigger value="staking" className="text-sm md:text-lg font-bold">
+            <TabsTrigger value="staking">
               Staking
             </TabsTrigger>
-            <TabsTrigger value="workers" className="text-sm md:text-lg font-bold">
+            <TabsTrigger value="workers">
               Workers
             </TabsTrigger>
           </TabsList>
@@ -62,7 +62,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                 value={stakingMetric}
                 onValueChange={(value: "total_staking_power" | "contributor_counts" | "performance") => setStakingMetric(value)}
               >
-                <SelectTrigger className="w-full bg-white border-2 border-black text-base font-semibold">
+                <SelectTrigger className="w-full text-base font-semibold">
                   <SelectValue placeholder="Select metric" />
                 </SelectTrigger>
                 <SelectContent>
@@ -140,7 +140,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({ historicalData, worke
                 value={workerMetric}
                 onValueChange={(value: "counts" | "rewards" | "performance") => setWorkerMetric(value)}
               >
-                <SelectTrigger className="w-full bg-white border-2 border-black text-base font-semibold">
+                <SelectTrigger className="w-full text-base font-semibold">
                   <SelectValue placeholder="Select metric" />
                 </SelectTrigger>
                 <SelectContent>
