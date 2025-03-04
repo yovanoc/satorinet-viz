@@ -28,9 +28,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className="min-h-screen min-w-screen bg-bg text-text p-8">
+        <div className="min-h-screen min-w-screen bg-bg text-text p-2 md:p-8">
           <GitHubCorner />
-          <header className="w-full mb-8 flex items-center justify-center">
+          <header className="w-full mb-2 md:mb-8 flex items-center justify-center">
             <h1 className="text-2xl font-bold uppercase">Satori DataViz</h1>
           </header>
           <main>{children}</main>
