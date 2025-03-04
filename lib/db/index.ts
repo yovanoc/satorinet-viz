@@ -1,10 +1,9 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { env } from "../env";
 import * as schema from "./schema";
-import { desc, sql, eq, and, gte, gt, lte, inArray, or } from "drizzle-orm";
+import { desc, sql, eq, and, gte, gt, lte } from "drizzle-orm";
 import { dailyContributorAddress, dailyPredictorAddress } from "./schema";
 import { unstable_cacheLife as cacheLife } from "next/cache";
-import { interpolateQuery } from "./interpolate";
 
 export const db = drizzle(env.DATABASE_URL, {
   schema,
@@ -177,6 +176,8 @@ export async function getPoolsHistoricalEarnings(
 ) {
   "use cache";
   cacheLife("default");
+
+  console.log({ pools, date, days });
 
   return []
 }
