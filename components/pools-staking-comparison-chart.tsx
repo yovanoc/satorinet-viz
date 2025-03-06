@@ -94,8 +94,8 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
                   name={`${pool.name} (${
                     hasMultipleFees ?
                       `${(min * 100).toFixed(2)}% - ${(max * 100).toFixed(2)}%` :
-                      `${(avgFee * 100).toFixed(2)}%`
-                  }%)`}
+                      `${avgFee.toFixed(2)}%`
+                  })`}
                   stroke={pool.color}
                   strokeWidth={4}
                   dot={false}
