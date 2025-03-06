@@ -91,7 +91,11 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
                     const gross = entry[pool.address] as number;
                     return showNetEarnings ? applyFee(gross, getAvgFee(pool)) : gross;
                   }}
-                  name={`${pool.name} (${avgFee.toFixed(2)}%)`}
+                  name={`${pool.name} (${
+                    hasMultipleFees ?
+                      `${(min * 100).toFixed(2)}% - ${(max * 100).toFixed(2)}%` :
+                      `${(avgFee * 100).toFixed(2)}%`
+                  }%)`}
                   stroke={pool.color}
                   strokeWidth={4}
                   dot={false}
