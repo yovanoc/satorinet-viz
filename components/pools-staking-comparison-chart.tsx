@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label'
 import { Switch } from "@/components/ui/switch"
 import type { Pool } from "@/lib/known-pools"
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts"
+import { ComposedChart, Line, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts"
 
 interface PoolsStakingComparisonProps {
   data: Record<string, number | Date>[]
@@ -15,14 +15,22 @@ interface PoolsStakingComparisonProps {
 export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingComparisonProps) {
   const [showNetEarnings, setShowNetEarnings] = useState(true);
 
+  function getFeeRange(pool: Pool): { min: number; max: number } {
+    if (!pool.staking_fees_percent?.length) return { min: 0, max: 0 };
+    return {
+      min: Math.min(...pool.staking_fees_percent),
+      max: Math.max(...pool.staking_fees_percent),
+    };
+  }
+
   function getAvgFee(pool: Pool): number {
     return pool.staking_fees_percent?.length
       ? pool.staking_fees_percent.reduce((a, b) => a + b, 0) / pool.staking_fees_percent.length
       : 0;
   }
 
-  function getNetEarnings(pool: Pool, grossEarnings: number): number {
-    return grossEarnings * (1 - getAvgFee(pool));
+  function applyFee(grossEarnings: number, fee: number): number {
+    return grossEarnings * (1 - fee);
   }
 
   return (
@@ -42,7 +50,7 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
         </div>
 
         <ResponsiveContainer width="100%" height={600}>
-          <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <ComposedChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <XAxis
               dataKey="date"
               tick={{ fontSize: 12 }}
@@ -56,15 +64,32 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
             <Legend />
 
             {pools.filter(p => p.vault_address !== undefined).map((pool) => {
+              const { min, max } = getFeeRange(pool);
               const avgFee = getAvgFee(pool) * 100; // Convert to percentage
-              return (
+              const hasMultipleFees = pool.staking_fees_percent?.length > 1;
+
+              return hasMultipleFees && showNetEarnings ? (
+                <Area
+                  key={`${pool.address}-area`}
+                  yAxisId="left"
+                  dataKey={(entry) => {
+                    const gross = entry[pool.address] as number;
+                    return [applyFee(gross, max), applyFee(gross, min)];
+                  }}
+                  name={`${pool.name} (${(min * 100).toFixed(2)}% - ${(max * 100).toFixed(2)}%)`}
+                  stroke={pool.color}
+                  fill={pool.color}
+                  fillOpacity={0.2}
+                  strokeWidth={2}
+                />
+              ) : (
                 <Line
                   key={pool.address}
                   yAxisId="left"
                   type="monotone"
                   dataKey={(entry) => {
                     const gross = entry[pool.address] as number;
-                    return showNetEarnings ? getNetEarnings(pool, gross) : gross;
+                    return showNetEarnings ? applyFee(gross, getAvgFee(pool)) : gross;
                   }}
                   name={`${pool.name} (${avgFee.toFixed(2)}%)`}
                   stroke={pool.color}
@@ -73,7 +98,7 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
                 />
               );
             })}
-          </LineChart>
+          </ComposedChart>
         </ResponsiveContainer>
       </CardContent>
     </Card>

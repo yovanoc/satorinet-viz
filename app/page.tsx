@@ -122,7 +122,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
             <DatePickerWrapper selectedDate={selectedDate} />
           </div>
           <TabsContent value="global" className="grid grid-cols-12 gap-4">
-            <div className="grid col-span-12 lg:col-span-4 gap-4">
+            <div className="col-span-12 md:col-span-6 lg:col-span-4 space-y-4">
               <Suspense
                 fallback={
                   <Card className="h-[500px] flex items-center justify-center">
@@ -142,7 +142,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
                 <TopPoolsCard date={selectedDate} />
               </Suspense>
             </div>
-            <div className="col-span-12 lg:col-span-8">
+            <div className="col-span-12 md:col-span-6 lg:col-span-8">
               <Suspense
                 fallback={
                   <Card className="h-[500px] flex items-center justify-center">
