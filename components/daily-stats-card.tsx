@@ -24,7 +24,7 @@ export const DailyStatsCard: FC<DailyStatsCardProps> = async ({ date }) => {
 
   if (!earningsData) {
     return (
-      <Card className="col-span-12 lg:col-span-4 h-[200px]">
+      <Card className="w-full h-[200px]">
         <CardHeader className="p-2 md:p-4">
           <CardTitle className="text-xl md:text-2xl font-bold uppercase">
             <span>Daily Mining Stats</span>
@@ -56,7 +56,7 @@ export const DailyStatsCard: FC<DailyStatsCardProps> = async ({ date }) => {
   const avgEarnedUSD = avg_miner_earned * price;
 
   return (
-    <Card className="col-span-12 lg:col-span-4 h-[200px]">
+    <Card className="w-full h-[200px]">
       <CardHeader className="p-2 md:p-4">
         <CardTitle className="text-xl md:text-2xl font-bold uppercase">
           <span>Daily Mining Stats</span>

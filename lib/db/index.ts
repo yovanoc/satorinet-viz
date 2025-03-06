@@ -177,7 +177,14 @@ export async function getPoolsHistoricalEarnings(
   "use cache";
   cacheLife("default");
 
-  console.log({ pools, date, days });
+  // TODO use a proper query
 
-  return []
+  return Promise.all(
+    pools.map(async (pool) =>
+    ({
+      pool_address: pool.address,
+      data: await getPoolHistoricalData(pool.address, pool.vault_address, date, days)
+    })
+    )
+  );
 }

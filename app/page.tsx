@@ -122,24 +122,37 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
             <DatePickerWrapper selectedDate={selectedDate} />
           </div>
           <TabsContent value="global" className="grid grid-cols-12 gap-4">
-            <Suspense
-              fallback={
-                <Card className="h-[500px] flex items-center justify-center">
-                  <Loading />
-                </Card>
-              }
-            >
-              <DailyStatsCard date={selectedDate} />
-            </Suspense>
-            <Suspense
-              fallback={
-                <Card className="h-[500px] flex items-center justify-center">
-                  <Loading />
-                </Card>
-              }
-            >
-              <TopPoolsCard date={selectedDate} />
-            </Suspense>
+            <div className="grid col-span-12 lg:col-span-4 gap-4">
+              <Suspense
+                fallback={
+                  <Card className="h-[500px] flex items-center justify-center">
+                    <Loading />
+                  </Card>
+                }
+              >
+                <DailyStatsCard date={selectedDate} />
+              </Suspense>
+              <Suspense
+                fallback={
+                  <Card className="h-[500px] flex items-center justify-center">
+                    <Loading />
+                  </Card>
+                }
+              >
+                <TopPoolsCard date={selectedDate} />
+              </Suspense>
+            </div>
+            <div className="col-span-12 lg:col-span-8">
+              <Suspense
+                fallback={
+                  <Card className="h-[500px] flex items-center justify-center">
+                    <Loading />
+                  </Card>
+                }
+              >
+                <PoolsStakingComparison pools={KNOWN_POOLS} date={selectedDate} />
+              </Suspense>
+            </div>
           </TabsContent>
           <TabsContent value="individual">
             <div>
@@ -152,7 +165,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
                 }
               >
                 <PoolDataSection pool={selectedPool} date={selectedDate} />
-                <PoolsStakingComparison pools={KNOWN_POOLS} date={selectedDate} />
               </Suspense>
             </div>
           </TabsContent>
