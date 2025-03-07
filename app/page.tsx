@@ -30,7 +30,7 @@ async function PoolDataSection({ date, pool: { address, vault_address, name } }:
   try {
     const [historicalData, workerStats, workerReward] = await Promise.all([
       vault_address ? getPoolHistoricalData(address, vault_address, date) : null,
-      vault_address ? getPoolWorkerStats(vault_address, date) : null,
+      vault_address ? getPoolWorkerStats(address, vault_address, date) : null,
       tryGetWorkerReward(address)
     ])
 

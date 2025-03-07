@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { env } from "../env";
 import * as schema from "./schema";
-import { desc, sql, eq, and, gte, gt, lte } from "drizzle-orm";
+import { desc, sql, eq, and, gte, gt, lte, or } from "drizzle-orm";
 import { dailyContributorAddress, dailyPredictorAddress } from "./schema";
 import { unstable_cacheLife as cacheLife } from "next/cache";
 
@@ -51,7 +51,10 @@ export async function getPoolHistoricalData(
         ),
     })
     .from(dailyPredictorAddress)
-    .where(eq(dailyPredictorAddress.reward_address, sql`${poolVaultAddress}`))
+    .where(or(
+      eq(dailyPredictorAddress.reward_address, sql`${poolAddress}`),
+      eq(dailyPredictorAddress.reward_address, sql`${poolVaultAddress}`)
+    ))
     .groupBy(dailyPredictorAddress.date)
     .as("predictor_agg");
 
@@ -94,6 +97,7 @@ export async function getPoolHistoricalData(
 }
 
 export async function getPoolWorkerStats(
+  poolAddress: string,
   poolVaultAddress: string,
   date: Date,
   days = 30
@@ -114,7 +118,10 @@ export async function getPoolWorkerStats(
     .from(dailyPredictorAddress)
     .where(
       and(
-        eq(dailyPredictorAddress.reward_address, poolVaultAddress),
+        or(
+          eq(dailyPredictorAddress.reward_address, poolAddress),
+          eq(dailyPredictorAddress.reward_address, poolVaultAddress),
+        ),
         gte(
           dailyPredictorAddress.date,
           sql`${date}::timestamp - ${days} * interval '1 day'`
