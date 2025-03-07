@@ -66,23 +66,20 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({
             Workers: {poolData.worker_count ?? 0}
           </p>
           <p className="text-xs md:text-sm font-bold">
-            Workers with Earnings: {poolData.worker_count_with_earnings ?? 0}
+            Public Workers with Earnings: {poolData.worker_count_with_earnings ?? 0}
           </p>
           <p className="text-xs md:text-sm font-bold">
-            Daily Pool Reward:{" "}
+            Private Workers: {(poolData.worker_count ?? 0) - (poolData.worker_count_with_earnings ?? 0)}
+          </p>
+          <p className="text-xs md:text-sm font-bold">
+            Daily Rewards:{" "}
             {poolData.total_reward?.toLocaleString(undefined, {
               maximumFractionDigits: 8,
             }) ?? 0}
           </p>
           <p className="text-xs md:text-sm font-bold">
-            Total Miner Earned:{" "}
+            Total Public Workers Earned:{" "}
             {poolData.total_miner_earned?.toLocaleString(undefined, {
-              maximumFractionDigits: 8,
-            }) ?? 0}
-          </p>
-          <p className="text-xs md:text-sm font-bold">
-            Avg Score:{" "}
-            {poolData.avg_score?.toLocaleString(undefined, {
               maximumFractionDigits: 8,
             }) ?? 0}
           </p>
@@ -100,6 +97,12 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({
                 </span>
               ) : null
             }
+          </p>
+          <p className="text-xs md:text-sm font-bold">
+            Avg Score:{" "}
+            {poolData.avg_score?.toLocaleString(undefined, {
+              maximumFractionDigits: 8,
+            }) ?? 0}
           </p>
 
           <p className="text-xs md:text-sm font-bold">
