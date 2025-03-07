@@ -38,17 +38,16 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
       <CardHeader>
         <CardTitle>
           <Label>Staking Earnings Comparison</Label>
+          <div className="float-right flex items-center gap-2 mb-4">
+            <Label>Show Net Earnings</Label>
+            <Switch checked={showNetEarnings} onCheckedChange={setShowNetEarnings} />
+          </div>
         </CardTitle>
         <CardDescription>
           How many SATORI tokens you would have earned if you staked in each pool.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center gap-2 mb-4">
-          <Label>Show Net Earnings</Label>
-          <Switch checked={showNetEarnings} onCheckedChange={setShowNetEarnings} />
-        </div>
-
         <ResponsiveContainer width="100%" height={600}>
           <ComposedChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <XAxis
@@ -91,11 +90,10 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
                     const gross = entry[pool.address] as number;
                     return showNetEarnings ? applyFee(gross, getAvgFee(pool)) : gross;
                   }}
-                  name={`${pool.name} (${
-                    hasMultipleFees ?
-                      `${(min * 100).toFixed(2)}% - ${(max * 100).toFixed(2)}%` :
-                      `${avgFee.toFixed(2)}%`
-                  })`}
+                  name={`${pool.name} (${hasMultipleFees ?
+                    `${(min * 100).toFixed(2)}% - ${(max * 100).toFixed(2)}%` :
+                    `${avgFee.toFixed(2)}%`
+                    })`}
                   stroke={pool.color}
                   strokeWidth={4}
                   dot={false}
