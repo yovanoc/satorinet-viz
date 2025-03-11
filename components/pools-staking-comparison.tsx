@@ -35,7 +35,7 @@ function transformData(
 
 export async function PoolsStakingComparison({ pools, date }: PoolsStakingComparisonProps) {
   const validPools = pools.filter(pool => typeof pool.vault_address === 'string');
-  const data = await getPoolsHistoricalEarnings(validPools, date, 10);
+  const data = await getPoolsHistoricalEarnings(validPools, date, 14);
 
   return <PoolsStakingComparisonChart data={transformData(data)} pools={pools} />
 }
