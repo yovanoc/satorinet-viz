@@ -39,12 +39,12 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
         <CardTitle>
           <Label>Staking Earnings Comparison</Label>
           <div className="float-right flex items-center gap-2 mb-4">
-            <Label>Show Net Earnings</Label>
+            <Label>{showNetEarnings ? "Net Earnings" : "Gross Earnings"}</Label>
             <Switch checked={showNetEarnings} onCheckedChange={setShowNetEarnings} />
           </div>
         </CardTitle>
         <CardDescription>
-          How many SATORI tokens you would have earned if you staked in each pool.
+          How many SATORI tokens you would have earned if you staked 1 SATORI in each pool these days.
         </CardDescription>
       </CardHeader>
       <CardContent>

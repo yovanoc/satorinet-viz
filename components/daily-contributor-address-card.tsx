@@ -6,7 +6,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip";
-import type { WorkerReward } from "@/lib/satorinet";
+import type { WorkerReward } from "@/lib/satorinet/central";
 
 export interface PoolData {
   workerReward: WorkerReward | null;

@@ -10,10 +10,11 @@ import TopPools from "@/components/top-pools"
 import DailyWorkerCounts from "@/components/daily-worker-counts"
 import DatePickerWrapper from "@/components/date-picker-wrapper"
 import { KNOWN_POOLS, type Pool } from "@/lib/known-pools"
-import { getWorkerReward, type WorkerReward } from "@/lib/satorinet"
+import { getWorkerReward, type WorkerReward } from "@/lib/satorinet/central"
 import { DailyStatsCard } from "@/components/daily-stats-card";
 import { PoolsStakingComparison } from "@/components/pools-staking-comparison"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { HoldersSummary } from "@/components/holders-summary"
 
 const tryGetWorkerReward = async (address: string): Promise<WorkerReward | null> => {
   try {
@@ -110,6 +111,15 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
           }
         >
           <DailyWorkerCountsCard />
+        </Suspense>
+        <Suspense
+          fallback={
+            <Card className="h-[500px] flex items-center justify-center">
+              <Loading />
+            </Card>
+          }
+        >
+          <HoldersSummary />
         </Suspense>
       </TabsContent>
       <TabsContent value="pools">

@@ -1,0 +1,47 @@
+DEV Wallet Balances (45,441 Satori)
+13,997 - ES48mkqM5wMjoaZZLyezfrMXowWuhZ8u66 // DEV
+7,842 - EMR2q6gEBtjj9YU6y9LShc697Wuy3Tx24t
+7,691 - EWye9fTV7B6WXufg7nxzR9oLdiqVMjAy4M // RESERVES
+6,644 - EUgwgDXHK56Bo1mz92SeCVzrN9c6tVjSei
+5,540 - Efnsr27fc276Wp7hbAqZ5uo7Rn4ybrUqmi // MANAGERS
+3,727 - EbccivHNKBPRefS4PwcwTPSiLT68nnUmHc // RESERVES
+
+MegaWhale Breakdown (131,026 Satori)
+10,000+ = 1 Wallet (11433 Satori)
+9000 = 1 Wallet (9657 Satori)
+6000 = 1 Wallet (6360 Satori)
+5000+ = 3 Wallets (16539 Satori)
+4000+ = 1 Wallet (4898 Satori)
+3000+ = 5 Wallets (16447 Satori)
+2000+ = 5 Wallets (11366 Satori)
+1000+ = 36 Wallets (41939 Satori)
+900+ = 7 Wallets (6668 Satori)
+
+Whale Breakdown (50,879 Satori)
+800+ = 10 Wallets (8471 Satori)
+700+ = 4 Wallets (3020 Satori)
+600+ = 11 Wallets (7054 Satori)
+500+ = 19 Wallets (10331 Satori)
+400+ = 15 Wallets (6562 Satori)
+300+ = 23 Wallets (7991 Satori)
+200+ = 30 Wallets (7450 Satori)
+
+Percent of Distribution Breakdown
+Current Distributed Supply = 336,985
+DEVS = 45,441 Satori (13.48%)
+MegaWhales = 131,026 Satori (38.88%)
+Whales = 50,879 Satori (15.09%)
+
+
+Pool Breakdown
+Total Satori in Pools = 101,301 Satori (30.06%)
+Unique Wallets Pooling (at least 0.01) = 672 Wallets
+
+DEV Pooling = 39,759 Satori
+DEVs account for 39.24% of ALL pooled funds
+
+MegaWhales Pooling = 42,067 Satori (32.10% of MegaWhales).
+MegaWhales account for 41.52% of ALL pooled funds
+
+Whales Pooling = 14,355 Satori (28.21% of Whale Total)
+Whales account for 14.17% of ALL pooled funds
