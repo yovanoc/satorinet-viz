@@ -1,6 +1,6 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { classifyAssetHolders, getAllSatoriHolders, type TierName, tiers as tiersInfo } from "@/lib/satorinet/holders";
+import { classifyAssetHolders, getAllSatoriHolders, tiers as tiersInfo } from "@/lib/satorinet/holders";
 
 export const HoldersSummary = async () => {
   const holders = await getAllSatoriHolders();
