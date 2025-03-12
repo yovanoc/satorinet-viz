@@ -3,7 +3,7 @@ import { ElectrumxClient, type AssetHolder } from './electrumx';
 
 export const getAllSatoriHolders = async () => {
   'use cache';
-  cacheLife('minutes');
+  cacheLife('hours');
 
   const client = new ElectrumxClient();
   await client.connectToServer();
