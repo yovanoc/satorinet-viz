@@ -12,7 +12,7 @@ export const getAllSatoriHolders = async () => {
   return holders;
 }
 
-const tiers = [
+export const tiers = [
   { name: '🦐 Shrimp', min: 0, max: 0.19 },
   { name: '🦀 Crab', min: 0.19, max: 1.90 },
   { name: '🐙 Octopus', min: 1.90, max: 9.52 },

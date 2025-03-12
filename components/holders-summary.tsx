@@ -1,6 +1,6 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { classifyAssetHolders, getAllSatoriHolders } from "@/lib/satorinet/holders";
+import { classifyAssetHolders, getAllSatoriHolders, type TierName, tiers as tiersInfo } from "@/lib/satorinet/holders";
 
 export const HoldersSummary = async () => {
   const holders = await getAllSatoriHolders();
@@ -15,9 +15,7 @@ export const HoldersSummary = async () => {
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <div>
-            <strong>Total Satori:</strong> {totalSatori.toLocaleString(undefined, {
-              maximumFractionDigits: 8,
-            })} Satori
+            <strong>Total Satori:</strong> {totalSatori.toLocaleString(undefined, { maximumFractionDigits: 8 })} Satori
           </div>
           <div>
             <strong>Total Holders:</strong> {Object.values(tiers).reduce((acc, tier) => acc + tier.count, 0)}
@@ -28,6 +26,7 @@ export const HoldersSummary = async () => {
           <TableHeader>
             <TableRow>
               <TableHead>Tier</TableHead>
+              <TableHead>Min / Max</TableHead>
               <TableHead>Total Satori</TableHead>
               <TableHead>Holders Count</TableHead>
               <TableHead>Percent of Total</TableHead>
@@ -36,19 +35,15 @@ export const HoldersSummary = async () => {
           <TableBody>
             {Object.entries(tiers).map(([tierName, tierData]) => {
               const { total, count, percentAmount, percentCount } = tierData;
+              const tier = tiersInfo.find(tier => tier.name === tierName);
 
               return (
                 <TableRow key={tierName}>
                   <TableCell>{tierName}</TableCell>
-                  <TableCell>{total.toLocaleString(undefined, {
-                    maximumFractionDigits: 8,
-                  })} Satori</TableCell>
+                  <TableCell>{`${tier?.min.toLocaleString(undefined, { maximumFractionDigits: 8 })} - ${tier?.max.toLocaleString(undefined, { maximumFractionDigits: 8 })}`} Satori</TableCell>
+                  <TableCell>{total.toLocaleString(undefined, { maximumFractionDigits: 8 })} Satori</TableCell>
                   <TableCell>{count}</TableCell>
-                  <TableCell>{`${percentAmount.toLocaleString(undefined, {
-                    maximumFractionDigits: 2,
-                  })}% (Amount), ${percentCount.toLocaleString(undefined, {
-                    maximumFractionDigits: 2,
-                  })}% (Count)`}</TableCell>
+                  <TableCell>{`${percentAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}% (Amount), ${percentCount.toLocaleString(undefined, { maximumFractionDigits: 2 })}% (Count)`}</TableCell>
                 </TableRow>
               );
             })}
