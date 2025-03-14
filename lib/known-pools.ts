@@ -4,7 +4,7 @@ export const KNOWN_POOLS = [
     color: "#0072ff",
     address: "EcJRjWynLxVZcGSY5nXXXMmrQvddeLQRVY",
     vault_address: "EKKtydH4pbq86aJmiNuEVR4kP17exCcV25",
-    staking_fees_percent: [0.09, 0.14]
+    staking_fees_percent: [0.08, 0.14]
   },
   {
     name: "Pool Mudita",
