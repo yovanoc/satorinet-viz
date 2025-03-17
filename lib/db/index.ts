@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { env } from "../env";
 import * as schema from "./schema";
-import { desc, sql, eq, and, gte, gt, lte, or } from "drizzle-orm";
+import { desc, sql, eq, and, gte, gt, lte, or, ne, isNull } from "drizzle-orm";
 import { dailyContributorAddress, dailyPredictorAddress } from "./schema";
 import { unstable_cacheLife as cacheLife } from "next/cache";
 
@@ -51,9 +51,16 @@ export async function getPoolHistoricalData(
         ),
     })
     .from(dailyPredictorAddress)
-    .where(or(
-      eq(dailyPredictorAddress.reward_address, sql`${poolAddress}`),
-      eq(dailyPredictorAddress.reward_address, sql`${poolVaultAddress}`)
+    .where(and(
+      ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_address),
+      or(
+        isNull(dailyPredictorAddress.worker_vault_address),
+        ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_vault_address),
+      ),
+      or(
+        eq(dailyPredictorAddress.reward_address, poolAddress),
+        eq(dailyPredictorAddress.reward_address, poolVaultAddress)
+      ),
     ))
     .groupBy(dailyPredictorAddress.date)
     .as("predictor_agg");
@@ -118,9 +125,14 @@ export async function getPoolWorkerStats(
     .from(dailyPredictorAddress)
     .where(
       and(
+        ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_address),
+        or(
+          isNull(dailyPredictorAddress.worker_vault_address),
+          ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_vault_address),
+        ),
         or(
           eq(dailyPredictorAddress.reward_address, poolAddress),
-          eq(dailyPredictorAddress.reward_address, poolVaultAddress),
+          eq(dailyPredictorAddress.reward_address, poolVaultAddress)
         ),
         gte(
           dailyPredictorAddress.date,
