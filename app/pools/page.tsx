@@ -1,7 +1,7 @@
 import TabsLayout from "@/components/TabsLayout"
 import { DailyStatsCard } from "@/components/daily-stats-card"
 import { PoolsStakingComparison } from "@/components/pools-staking-comparison"
-import { KNOWN_POOLS, type Pool } from "@/lib/known-pools"
+import { KNOWN_POOLS, type Pool } from "@/lib/known_pools"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import DatePickerWrapper from "@/components/date-picker-wrapper"

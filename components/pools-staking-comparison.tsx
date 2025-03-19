@@ -1,5 +1,5 @@
 import { getPoolsHistoricalEarnings } from "@/lib/db"
-import type { Pool } from "@/lib/known-pools"
+import type { Pool } from "@/lib/known_pools"
 import { PoolsStakingComparisonChart } from "./pools-staking-comparison-chart";
 
 interface PoolsStakingComparisonProps {

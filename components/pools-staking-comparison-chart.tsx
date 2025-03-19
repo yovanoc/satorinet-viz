@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Switch } from "@/components/ui/switch"
-import type { Pool } from "@/lib/known-pools"
+import type { Pool } from "@/lib/known_pools"
 import { ComposedChart, Line, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts"
 
 interface PoolsStakingComparisonProps {

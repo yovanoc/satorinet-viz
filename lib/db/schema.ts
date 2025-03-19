@@ -22,3 +22,12 @@ export const dailyContributorAddress = pgTable("daily_contributor_address", {
   staking_power_contribution: doublePrecision().notNull(),
   contributor_vault: varchar({ length: 255 }),
 });
+
+export const dailyInviterAddress = pgTable("daily_inviter_address", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  date: date().notNull(),
+  sponsor_address: varchar({ length: 255 }).notNull(),
+  wallet: varchar({ length: 255 }),
+  vault: varchar({ length: 255 }),
+  credit: varchar({ length: 255 }).notNull(), // TODO enum?
+});

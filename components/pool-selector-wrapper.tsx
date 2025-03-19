@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation"
 import PoolSelector from "./pool-selector"
-import type { Pool } from "@/lib/known-pools"
+import type { Pool } from "@/lib/known_pools"
 
 interface PoolSelectorWrapperProps {
   pools: Array<Pool>

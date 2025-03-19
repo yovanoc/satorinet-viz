@@ -1,11 +1,17 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { KNOWN_ADDRESSES } from "@/lib/known_addresses";
 import { classifyAssetHolders, getAllSatoriHolders, tiers as tiersInfo } from "@/lib/satorinet/holders";
 
 export const HoldersSummary = async () => {
   const holders = await getAllSatoriHolders();
   const summary = classifyAssetHolders(holders);
   const { totalSatori, tiers } = summary;
+
+  const knownAddresses = KNOWN_ADDRESSES.map(({ address, name }) => {
+    const balance = holders.find(holder => holder.address === address)?.balance ?? 0;
+    return { address, name, balance };
+  });
 
   return (
     <Card className="col-span-12 md:col-span-10 lg:col-span-8 2xl:col-span-6">
@@ -57,6 +63,7 @@ export const HoldersSummary = async () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Address</TableHead>
+                  <TableHead>Name</TableHead>
                   <TableHead>Balance</TableHead>
                 </TableRow>
               </TableHeader>
@@ -67,6 +74,7 @@ export const HoldersSummary = async () => {
                   .map((holder, index) => (
                     <TableRow key={index}>
                       <TableCell>{holder.address}</TableCell>
+                      <TableCell>{KNOWN_ADDRESSES.find(k => k.address === holder.address)?.name ?? 'Unknown'}</TableCell>
                       <TableCell>{holder.balance.toLocaleString(undefined, { maximumFractionDigits: 8 })} Satori</TableCell>
                     </TableRow>
                   ))}
@@ -74,6 +82,28 @@ export const HoldersSummary = async () => {
             </Table>
           </div>
         )}
+
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold">Known Addresses</h2>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Address</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Balance</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {knownAddresses.map((holder, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{holder.address}</TableCell>
+                    <TableCell>{holder.name ?? "Unknown"}</TableCell>
+                    <TableCell>{holder.balance.toLocaleString(undefined, { maximumFractionDigits: 8 })} Satori</TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );
