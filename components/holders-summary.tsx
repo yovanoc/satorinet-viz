@@ -11,7 +11,7 @@ export const HoldersSummary = async () => {
   const knownAddresses = KNOWN_ADDRESSES.map(({ address, name }) => {
     const balance = holders.find(holder => holder.address === address)?.balance ?? 0;
     return { address, name, balance };
-  });
+  }).sort((a, b) => b.balance - a.balance);
 
   return (
     <Card className="col-span-12 md:col-span-10 lg:col-span-8 2xl:col-span-6">
