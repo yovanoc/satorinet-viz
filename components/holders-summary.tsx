@@ -49,6 +49,31 @@ export const HoldersSummary = async () => {
             })}
           </TableBody>
         </Table>
+
+        {tiersInfo.some(tier => tier.name === "🔱 Aquaman") && (
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold">Top Holders - 🔱 Aquaman</h2>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Address</TableHead>
+                  <TableHead>Balance</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Object.entries(tiers).find(([tierName]) => tierName === "🔱 Aquaman")?.[1]?.wallets
+                  .sort((a, b) => b.balance - a.balance)
+                  .slice(0, 10)
+                  .map((holder, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{holder.address}</TableCell>
+                      <TableCell>{holder.balance.toLocaleString(undefined, { maximumFractionDigits: 8 })} Satori</TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
