@@ -14,6 +14,7 @@ import type { PoolData } from "@/components/daily-contributor-address-card"
 import DailyContributorAddressCard from "@/components/daily-contributor-address-card"
 import PoolHistoricalData from "@/components/pool-historical-data"
 import TopPools from "@/components/top-pools"
+import { RealtimeInfoCard } from "@/components/realtime-info"
 
 const tryGetWorkerReward = async (address: string): Promise<WorkerReward | null> => {
   try {
@@ -101,6 +102,15 @@ export default async function PoolsPage({ searchParams }: { searchParams: Promis
         </div>
         <TabsContent value="global" className="grid grid-cols-12 gap-4">
           <div className="col-span-12 md:col-span-6 lg:col-span-4 space-y-4">
+          <Suspense
+              fallback={
+                <Card className="h-[200px] flex items-center justify-center">
+                  <Loading />
+                </Card>
+              }
+            >
+              <RealtimeInfoCard />
+            </Suspense>
             <Suspense
               fallback={
                 <Card className="h-[200px] flex items-center justify-center">

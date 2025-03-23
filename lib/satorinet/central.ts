@@ -29,3 +29,12 @@ export async function getMiningMode(address: string): Promise<boolean> {
   const res = await ky.get(`${BASE_URL}/worker/mining/mode/get/${address}`).text()
   return res === "True";
 }
+
+export async function getAvailablePublicWorkersCount(): Promise<number> {
+  'use cache';
+  cacheLife('minutes');
+
+  const res = await ky.get(`${BASE_URL}/api/v0/get/worker/public/available/count`).text()
+  const num = parseInt(res);
+  return Number.isNaN(num) ? -1 : num;
+}
