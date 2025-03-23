@@ -81,12 +81,18 @@ export default async function PoolsPage({ searchParams }: { searchParams: Promis
   }
 
   const dateStr = params.date;
-  let selectedDate = new Date();
+  let selectedDate = new Date(Date.UTC(
+    new Date().getUTCFullYear(),
+    new Date().getUTCMonth(),
+    new Date().getUTCDate(),
+    0, 0, 0
+  ));
+
   if (dateStr) {
     const [year, month, day] = dateStr.split('-').map(Number);
 
     if (year && month && day) {
-      selectedDate = new Date(Date.UTC(year, month - 1, day));
+      selectedDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
     }
   }
 
@@ -102,7 +108,7 @@ export default async function PoolsPage({ searchParams }: { searchParams: Promis
         </div>
         <TabsContent value="global" className="grid grid-cols-12 gap-4">
           <div className="col-span-12 md:col-span-6 lg:col-span-4 space-y-4">
-          <Suspense
+            <Suspense
               fallback={
                 <Card className="h-[200px] flex items-center justify-center">
                   <Loading />
