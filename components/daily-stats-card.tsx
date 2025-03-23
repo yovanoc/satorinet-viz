@@ -2,7 +2,6 @@ import type { FC } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
 import { getDailyMiningEarnings } from "@/lib/db";
-import { getAvailablePublicWorkersCount } from "@/lib/satorinet/central";
 import { formatCurrency, formatSatori, formatUsd } from "@/lib/format";
 
 interface DailyStatsCardProps {
@@ -10,10 +9,9 @@ interface DailyStatsCardProps {
 }
 
 export const DailyStatsCard: FC<DailyStatsCardProps> = async ({ date }) => {
-  const [price, earningsData, currentAvailablePublicWorkersCount] = await Promise.all([
+  const [price, earningsData] = await Promise.all([
     getSatoriPriceForDate(date),
     getDailyMiningEarnings(date),
-    getAvailablePublicWorkersCount()
   ]);
 
   if (!earningsData) {
@@ -66,16 +64,6 @@ export const DailyStatsCard: FC<DailyStatsCardProps> = async ({ date }) => {
           <p>
             <span>Satori Price: </span>
             <span className="text-[#A3E636]">${formatCurrency(price)}</span>
-          </p>
-        </div>
-
-        {/* Available Public Workers */}
-        <div className="space-y-1">
-          <p className="font-semibold text-xs md:text-sm">
-            Available Public Workers:{" "}
-            <span className="text-[#A3E636]">
-              {currentAvailablePublicWorkersCount}
-            </span>
           </p>
         </div>
 
