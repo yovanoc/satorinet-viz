@@ -1,6 +1,7 @@
 import { getPoolsHistoricalEarnings } from "@/lib/db"
 import type { Pool } from "@/lib/known_pools"
 import { PoolsStakingComparisonChart } from "./pools-staking-comparison-chart";
+import { unstable_cacheLife as cacheLife } from "next/cache";
 
 interface PoolsStakingComparisonProps {
   pools: Array<Pool>
@@ -34,6 +35,9 @@ function transformData(
 }
 
 export async function PoolsStakingComparison({ pools, date }: PoolsStakingComparisonProps) {
+  "use cache";
+  cacheLife("default");
+
   const validPools = pools.filter(pool => typeof pool.vault_address === 'string');
   const data = await getPoolsHistoricalEarnings(validPools, date, 28);
 

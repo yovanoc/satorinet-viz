@@ -55,7 +55,7 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
               tick={{ fontSize: 12 }}
               tickFormatter={(value) => new Date(value).toLocaleDateString()}
             />
-            <YAxis yAxisId="left" tick={{ fontSize: 12 }} domain={["auto", "auto"]} />
+            <YAxis yAxisId="left" tick={{ fontSize: 12 }} domain={[0.002, 0.006]}  />
             <Tooltip
               formatter={(value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 8 })}
               labelFormatter={(label) => new Date(label).toLocaleDateString()}
@@ -79,7 +79,7 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
                   stroke={pool.color}
                   fill={pool.color}
                   fillOpacity={0.2}
-                  strokeWidth={2}
+                  strokeWidth={3}
                 />
               ) : (
                 <Line
@@ -95,7 +95,7 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
                     `${avgFee.toFixed(2)}%`
                     })`}
                   stroke={pool.color}
-                  strokeWidth={4}
+                  strokeWidth={3}
                   dot={false}
                 />
               );
