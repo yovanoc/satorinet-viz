@@ -45,9 +45,9 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
         return sum + value;
       }, 0) / data.length;
 
-      acc[pool.address] = mean;
+      acc[pool.address] = { value: mean };
       return acc;
-    }, {} as Record<string, number>);
+    }, {} as Record<string, { value: number }>);
   }, [data, pools, showNetEarnings]);
 
   return (
@@ -78,11 +78,20 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
               labelFormatter={(label) => new Date(label).toLocaleDateString()}
             />
             <Legend
-              payload={pools.filter(p => p.vault_address !== undefined).map(pool => ({
-                value: `${pool.name} (Mean: ${meanValues[pool.address]?.toFixed(4)})`,
-                type: "line",
-                color: pool.color
-              }))}
+              payload={pools.filter(p => p.vault_address !== undefined).map(pool => {
+                const { min, max } = getFeeRange(pool);
+                const avgFee = getAvgFee(pool) * 100; // Convert to percentage
+                const hasMultipleFees = pool.staking_fees_percent?.length > 1;
+                const feeDisplay = hasMultipleFees
+                  ? `${(min * 100).toFixed(2)}% - ${(max * 100).toFixed(2)}%`
+                  : `${avgFee.toFixed(2)}%`;
+
+                return {
+                  value: `${pool.name} (${feeDisplay}) (Mean: ${meanValues[pool.address]?.value.toLocaleString(undefined, { maximumFractionDigits: 4 })})`,
+                  type: "line",
+                  color: pool.color
+                };
+              })}
             />
 
             {pools.filter(p => p.vault_address !== undefined).map((pool) => {
