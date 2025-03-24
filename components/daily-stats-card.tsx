@@ -31,7 +31,7 @@ export const DailyStatsCard: FC<DailyStatsCardProps> = async ({ date }) => {
           <div className="text-xs md:text-sm font-semibold">
             <p>
               <span>Satori Price: </span>
-              <span className="text-[#A3E636]">${formatCurrency(price)}</span>
+              <span className="text-emerald-900">${formatCurrency(price)}</span>
             </p>
           </div>
 
@@ -63,7 +63,7 @@ export const DailyStatsCard: FC<DailyStatsCardProps> = async ({ date }) => {
         <div className="text-xs md:text-sm font-semibold">
           <p>
             <span>Satori Price: </span>
-            <span className="text-[#A3E636]">${formatCurrency(price)}</span>
+            <span className="text-emerald-900">${formatCurrency(price)}</span>
           </p>
         </div>
 
@@ -71,11 +71,11 @@ export const DailyStatsCard: FC<DailyStatsCardProps> = async ({ date }) => {
         <div className="space-y-1">
           <p className="font-semibold text-xs md:text-sm">
             Total Earned Today:{" "}
-            <span className="text-[#A3E636]">
+            <span className="text-emerald-900">
               {formatSatori(total_miner_earned)}
             </span>{" "}
             SATORI{" "}
-            <span className="text-[#A3E636]">
+            <span className="text-emerald-900">
               ({formatUsd(totalEarnedUSD)})
             </span>
           </p>
@@ -85,11 +85,11 @@ export const DailyStatsCard: FC<DailyStatsCardProps> = async ({ date }) => {
         <div className="space-y-1">
           <p className="font-semibold text-xs md:text-sm">
             Average Earned Today:{" "}
-            <span className="text-[#A3E636]">
+            <span className="text-emerald-900">
               {formatSatori(avg_miner_earned)}
             </span>{" "}
             SATORI{" "}
-            <span className="text-[#A3E636]">
+            <span className="text-emerald-900">
               ({formatUsd(avgEarnedUSD, 8)})
             </span>
           </p>

@@ -22,7 +22,7 @@ export const RealtimeInfoCard: FC = async () => {
         <div className="space-y-1">
           <p className="font-semibold text-xs md:text-sm">
             Available Public Workers:{" "}
-            <span className="text-[#A3E636]">
+            <span className={currentAvailablePublicWorkersCount > 0 ? "text-emerald-900" : "text-red-900"}>
               {currentAvailablePublicWorkersCount}
             </span>
           </p>
@@ -32,7 +32,7 @@ export const RealtimeInfoCard: FC = async () => {
         <div className="space-y-1">
           <p className="font-semibold text-xs md:text-sm">
             Satori Price:{" "}
-            <span className="text-[#A3E636]">${formatCurrency(price)}</span>
+            <span className="text-emerald-900">${formatCurrency(price)}</span>
           </p>
         </div>
       </CardContent>
