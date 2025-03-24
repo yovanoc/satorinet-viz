@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Switch } from "@/components/ui/switch"
@@ -36,6 +36,20 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
     return grossEarnings * (1 - fee);
   }
 
+  const meanValues = useMemo(() => {
+    return pools.filter(p => p.vault_address !== undefined).reduce((acc, pool) => {
+      const avgFee = getAvgFee(pool);
+      const mean = data.reduce((sum, entry) => {
+        const gross = entry[pool.address] as number;
+        const value = showNetEarnings ? applyFee(gross, avgFee) : gross;
+        return sum + value;
+      }, 0) / data.length;
+
+      acc[pool.address] = mean;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [data, pools, showNetEarnings]);
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -63,11 +77,17 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
               formatter={(value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 8 })}
               labelFormatter={(label) => new Date(label).toLocaleDateString()}
             />
-            <Legend />
+            <Legend
+              payload={pools.filter(p => p.vault_address !== undefined).map(pool => ({
+                value: `${pool.name} (Mean: ${meanValues[pool.address]?.toFixed(4)})`,
+                type: "line",
+                color: pool.color
+              }))}
+            />
 
             {pools.filter(p => p.vault_address !== undefined).map((pool) => {
               const { min, max } = getFeeRange(pool);
-              const avgFee = getAvgFee(pool) * 100; // Convert to percentage
+              const avgFee = getAvgFee(pool) * 100;
               const hasMultipleFees = pool.staking_fees_percent?.length > 1;
 
               return hasMultipleFees && showNetEarnings ? (
