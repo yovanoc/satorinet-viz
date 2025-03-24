@@ -39,7 +39,7 @@ export async function PoolsStakingComparison({ pools, date }: PoolsStakingCompar
   cacheLife("default");
 
   const validPools = pools.filter(pool => typeof pool.vault_address === 'string');
-  const data = await getPoolsHistoricalEarnings(validPools, date, 28);
+  const data = await getPoolsHistoricalEarnings(validPools, date);
 
   return <PoolsStakingComparisonChart data={transformData(data)} pools={pools} />
 }

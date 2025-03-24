@@ -12,6 +12,9 @@ interface PoolsStakingComparisonProps {
   pools: Pool[]
 }
 
+const MIN = 0.001;
+const MAX = 0.006;
+
 export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingComparisonProps) {
   const [showNetEarnings, setShowNetEarnings] = useState(true);
 
@@ -55,7 +58,7 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
               tick={{ fontSize: 12 }}
               tickFormatter={(value) => new Date(value).toLocaleDateString()}
             />
-            <YAxis yAxisId="left" tick={{ fontSize: 12 }} domain={[0.002, 0.006]}  />
+            <YAxis yAxisId="left" tick={{ fontSize: 12 }} domain={["auto", "auto"]} />
             <Tooltip
               formatter={(value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 8 })}
               labelFormatter={(label) => new Date(label).toLocaleDateString()}
@@ -88,7 +91,8 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
                   type="monotone"
                   dataKey={(entry) => {
                     const gross = entry[pool.address] as number;
-                    return showNetEarnings ? applyFee(gross, getAvgFee(pool)) : gross;
+                    const value = showNetEarnings ? applyFee(gross, getAvgFee(pool)) : gross;
+                    return value >= MIN && value <= MAX ? value : null;
                   }}
                   name={`${pool.name} (${hasMultipleFees ?
                     `${(min * 100).toFixed(2)}% - ${(max * 100).toFixed(2)}%` :
