@@ -13,7 +13,8 @@ interface PoolsStakingComparisonProps {
 }
 
 const MIN = 0.001;
-const MAX = 0.005;
+const MAX_GROSS = 0.005;
+const MAX_NET = 0.004;
 
 export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingComparisonProps) {
   const [showNetEarnings, setShowNetEarnings] = useState(true);
@@ -121,7 +122,8 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
                   dataKey={(entry) => {
                     const gross = entry[pool.address] as number;
                     const value = showNetEarnings ? applyFee(gross, getAvgFee(pool)) : gross;
-                    return value >= MIN && value <= MAX ? value : null;
+                    const max = showNetEarnings ? MAX_NET : MAX_GROSS
+                    return value >= MIN && value <= max ? value : null;
                   }}
                   name={`${pool.name} (${hasMultipleFees ?
                     `${(min * 100).toFixed(2)}% - ${(max * 100).toFixed(2)}%` :
