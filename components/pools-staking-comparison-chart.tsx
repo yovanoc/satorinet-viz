@@ -13,8 +13,8 @@ interface PoolsStakingComparisonProps {
 }
 
 const MIN = 0.001;
-const MAX_GROSS = 0.005;
-const MAX_NET = 0.004;
+const MAX_GROSS = 0.009;
+const MAX_NET = 0.009;
 
 export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingComparisonProps) {
   const [showNetEarnings, setShowNetEarnings] = useState(true);
