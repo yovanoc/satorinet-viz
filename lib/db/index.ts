@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { env } from "../env";
 import * as schema from "./schema";
-import { desc, sql, eq, and, gte, gt, lte, or, ne, isNull } from "drizzle-orm";
+import { desc, sql, eq, and, gte, gt, lte, or } from "drizzle-orm";
 import { dailyContributorAddress, dailyPredictorAddress } from "./schema";
 import { unstable_cacheLife as cacheLife } from "next/cache";
 

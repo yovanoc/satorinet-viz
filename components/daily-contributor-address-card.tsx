@@ -72,7 +72,7 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({
             }) ?? 0}
           </p>
           <p className="text-xs md:text-sm font-bold">
-            Pool's Own Staking Power:{" "}
+            Pool&apos;s Own Staking Power:{" "}
             {poolData.pools_own_staking_power?.toLocaleString(undefined, {
               maximumFractionDigits: 8,
             }) ?? 0}
