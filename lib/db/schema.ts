@@ -21,6 +21,7 @@ export const dailyContributorAddress = pgTable("daily_contributor_address", {
   pool_address: varchar({ length: 255 }).notNull(),
   staking_power_contribution: doublePrecision().notNull(),
   contributor_vault: varchar({ length: 255 }),
+  pools_own_staking_power: doublePrecision(),
 });
 
 export const dailyInviterAddress = pgTable("daily_inviter_address", {

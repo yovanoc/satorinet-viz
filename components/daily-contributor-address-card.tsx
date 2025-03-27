@@ -18,7 +18,11 @@ export interface PoolData {
   worker_count_with_earnings?: number;
   total_reward?: number;
   total_miner_earned?: number;
+  total_delegated_stake?: number;
+  total_balance?: number;
+  pool_balance?: number;
   avg_score?: number;
+  pools_own_staking_power?: number;
   earnings_per_staking_power?: number;
   pool_miner_percent?: number;
 }
@@ -50,10 +54,34 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({
             Address: {poolData.pool_address}
           </p>
           <p className="text-xs md:text-sm font-bold">
-            Staking Power:{" "}
+            Staking Power Received:{" "}
             {poolData.total_staking_power.toLocaleString(undefined, {
               maximumFractionDigits: 8,
             })}
+          </p>
+          <p className="text-xs md:text-sm font-bold">
+            Total Balance already on workers:{" "}
+            {poolData.total_balance?.toLocaleString(undefined, {
+              maximumFractionDigits: 8,
+            }) ?? 0}
+          </p>
+          <p className="text-xs md:text-sm font-bold">
+            Pool Balance:{" "}
+            {poolData.pool_balance?.toLocaleString(undefined, {
+              maximumFractionDigits: 8,
+            }) ?? 0}
+          </p>
+          <p className="text-xs md:text-sm font-bold">
+            Pool's Own Staking Power:{" "}
+            {poolData.pools_own_staking_power?.toLocaleString(undefined, {
+              maximumFractionDigits: 8,
+            }) ?? 0}
+          </p>
+          <p className="text-xs md:text-sm font-bold">
+            Total Delegated Stake:{" "}
+            {poolData.total_delegated_stake?.toLocaleString(undefined, {
+              maximumFractionDigits: 8,
+            }) ?? 0}
           </p>
           <p className="text-xs md:text-sm font-bold">
             Contributors: {poolData.contributor_count ?? 0}
@@ -66,10 +94,13 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({
             Workers: {poolData.worker_count ?? 0}
           </p>
           <p className="text-xs md:text-sm font-bold">
-            Public Workers with Earnings: {poolData.worker_count_with_earnings ?? 0}
+            Public Workers with Earnings:{" "}
+            {poolData.worker_count_with_earnings ?? 0}
           </p>
           <p className="text-xs md:text-sm font-bold">
-            Private Workers: {(poolData.worker_count ?? 0) - (poolData.worker_count_with_earnings ?? 0)}
+            Private Workers:{" "}
+            {(poolData.worker_count ?? 0) -
+              (poolData.worker_count_with_earnings ?? 0)}
           </p>
           <p className="text-xs md:text-sm font-bold">
             Daily Rewards:{" "}
@@ -88,15 +119,16 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({
             {poolData.pool_miner_percent?.toLocaleString(undefined, {
               maximumFractionDigits: 8,
             }) ?? 0}
-            %{
-              poolData.workerReward ? (
-                <span className="text-xs md:text-sm font-bold">
-                  &nbsp;(Currently at {poolData.workerReward.offer.toLocaleString(undefined, {
-                    maximumFractionDigits: 8,
-                  })}%)
-                </span>
-              ) : null
-            }
+            %
+            {poolData.workerReward ? (
+              <span className="text-xs md:text-sm font-bold">
+                &nbsp;(Currently at{" "}
+                {poolData.workerReward.offer.toLocaleString(undefined, {
+                  maximumFractionDigits: 8,
+                })}
+                %)
+              </span>
+            ) : null}
           </p>
           <p className="text-xs md:text-sm font-bold">
             Avg Score:{" "}
@@ -105,22 +137,24 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({
             }) ?? 0}
           </p>
 
-          <p className="text-xs md:text-sm font-bold">
-            Average Earnings per Staking Power:&nbsp;
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <p className="text-xs md:text-sm font-bold">
+                  Average Earnings per Staking Power:&nbsp;
                   {poolData.earnings_per_staking_power?.toLocaleString(
                     undefined,
-                    { maximumFractionDigits: 8 }
+                    {
+                      maximumFractionDigits: 8,
+                    }
                   ) ?? 0}
-                </TooltipTrigger>
-                <TooltipContent>
-                  (daily reward - total miner earned) / total staking power
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </p>
+                </p>
+              </TooltipTrigger>
+              <TooltipContent>
+                (daily reward - total miner earned) / total staking power
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </CardContent>
     </Card>

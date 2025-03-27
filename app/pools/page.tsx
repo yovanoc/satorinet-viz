@@ -49,6 +49,10 @@ async function PoolDataSection({ date, pool: { address, vault_address, name } }:
       contributor_count_with_staking_power: latestHistoricalData?.contributor_count_with_staking_power,
       pool_address: address,
       total_staking_power: latestHistoricalData?.total_staking_power ?? 0,
+      total_delegated_stake: latestWorkerStats?.total_delegated_stake,
+      total_balance: latestWorkerStats?.total_balance,
+      pool_balance: latestHistoricalData?.pool_balance,
+      pools_own_staking_power: latestHistoricalData?.pools_own_staking_power,
       earnings_per_staking_power: latestHistoricalData?.earnings_per_staking_power,
       pool_miner_percent: latestWorkerStats?.pool_miner_percent,
     }

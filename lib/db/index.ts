@@ -49,14 +49,31 @@ export async function getPoolHistoricalData(
         sql<number>`SUM(${dailyPredictorAddress.miner_earned})`.as(
           "total_miner_earned"
         ),
+      total_delegated_stake:
+        sql<number>`SUM(${dailyPredictorAddress.delegated_stake})`.as(
+          "total_delegated_stake"
+        ),
+      total_balance:
+        sql<number>`SUM(${dailyPredictorAddress.balance})`.as(
+          "total_balance"
+        ),
+      pool_balance: sql<number>`
+        SUM(
+          CASE
+            WHEN ${dailyPredictorAddress.reward_address} = ${dailyPredictorAddress.worker_address}
+            OR ${dailyPredictorAddress.reward_address} = ${dailyPredictorAddress.worker_vault_address}
+            THEN ${dailyPredictorAddress.balance}
+            ELSE 0
+          END
+        )`.as("pool_balance"),
     })
     .from(dailyPredictorAddress)
     .where(and(
-      ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_address),
-      or(
-        isNull(dailyPredictorAddress.worker_vault_address),
-        ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_vault_address),
-      ),
+      // ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_address),
+      // or(
+      //   isNull(dailyPredictorAddress.worker_vault_address),
+      //   ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_vault_address),
+      // ),
       or(
         eq(dailyPredictorAddress.reward_address, poolAddress),
         eq(dailyPredictorAddress.reward_address, poolVaultAddress)
@@ -71,10 +88,13 @@ export async function getPoolHistoricalData(
       date: dailyContributorAddress.date,
       total_staking_power: sql<number>`SUM(${dailyContributorAddress.staking_power_contribution})`,
       contributor_count: sql<number>`COUNT(DISTINCT ${dailyContributorAddress.contributor})`,
+      pools_own_staking_power: sql<number>`AVG(${dailyContributorAddress.pools_own_staking_power})`,
+      pool_balance: sql<number>`${predictorAgg.pool_balance}`,
       contributor_count_with_staking_power: sql<number>`COUNT(DISTINCT ${dailyContributorAddress.contributor}) FILTER (WHERE ${dailyContributorAddress.staking_power_contribution} > 0)`,
       earnings_per_staking_power: sql<number>`COALESCE(
             (${predictorAgg.total_reward} - ${predictorAgg.total_miner_earned}) /
-            NULLIF(SUM(${dailyContributorAddress.staking_power_contribution}), 0),
+            -- NULLIF(SUM(${dailyContributorAddress.staking_power_contribution}), 0),
+            NULLIF(${predictorAgg.total_delegated_stake}, 0),
           0)`,
     })
     .from(dailyContributorAddress)
@@ -92,7 +112,9 @@ export async function getPoolHistoricalData(
     .groupBy(
       dailyContributorAddress.date,
       predictorAgg.total_reward,
-      predictorAgg.total_miner_earned
+      predictorAgg.total_miner_earned,
+      predictorAgg.total_delegated_stake,
+      predictorAgg.pool_balance,
     )
     .orderBy(dailyContributorAddress.date);
 
@@ -119,17 +141,19 @@ export async function getPoolWorkerStats(
       worker_count_with_earnings: sql<number>`count(distinct ${dailyPredictorAddress.worker_address}) filter (where ${dailyPredictorAddress.miner_earned} > 0)`,
       total_reward: sql<number>`sum(${dailyPredictorAddress.reward})`,
       total_miner_earned: sql<number>`sum(${dailyPredictorAddress.miner_earned})`,
+      total_delegated_stake: sql<number>`sum(${dailyPredictorAddress.delegated_stake})`,
+      total_balance: sql<number>`sum(${dailyPredictorAddress.balance})`,
       avg_score: sql<number>`avg(${dailyPredictorAddress.score}) filter (where ${dailyPredictorAddress.score} > 0)`,
       pool_miner_percent: sql<number>`avg(${dailyPredictorAddress.pool_miner_percent}) filter (where ${dailyPredictorAddress.miner_earned} > 0)`,
     })
     .from(dailyPredictorAddress)
     .where(
       and(
-        ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_address),
-        or(
-          isNull(dailyPredictorAddress.worker_vault_address),
-          ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_vault_address),
-        ),
+        // ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_address),
+        // or(
+        //   isNull(dailyPredictorAddress.worker_vault_address),
+        //   ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_vault_address),
+        // ),
         or(
           eq(dailyPredictorAddress.reward_address, poolAddress),
           eq(dailyPredictorAddress.reward_address, poolVaultAddress)
