@@ -1,7 +1,7 @@
 import type { FC } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
-import { getDailyMiningEarnings } from "@/lib/db";
+import { getDailyMiningEarnings, getWorkerRewardAverage } from "@/lib/db";
 import { formatCurrency, formatSatori, formatUsd } from "@/lib/format";
 
 interface DailyStatsCardProps {
@@ -9,9 +9,10 @@ interface DailyStatsCardProps {
 }
 
 export const DailyStatsCard: FC<DailyStatsCardProps> = async ({ date }) => {
-  const [price, earningsData] = await Promise.all([
+  const [price, earningsData, averageReward] = await Promise.all([
     getSatoriPriceForDate(date),
     getDailyMiningEarnings(date),
+    getWorkerRewardAverage(date),
   ]);
 
   if (!earningsData) {
@@ -80,6 +81,18 @@ export const DailyStatsCard: FC<DailyStatsCardProps> = async ({ date }) => {
             </span>
           </p>
         </div>
+
+        {averageReward && (
+          <div className="space-y-1">
+            <p className="font-semibold text-xs md:text-sm">
+              Average Reward Per Worker:{" "}
+              <span className="text-emerald-900">
+                {formatSatori(averageReward.reward_avg)}
+              </span>{" "}
+              SATORI
+            </p>
+          </div>
+        )}
 
         {/* Average Earned */}
         <div className="space-y-1">

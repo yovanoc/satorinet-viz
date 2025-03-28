@@ -29,6 +29,21 @@ export async function getTopPools(date: Date) {
     .execute();
 }
 
+export async function getWorkerRewardAverage(date: Date) {
+  "use cache";
+  cacheLife("default");
+
+  const res = await db
+    .select({
+      reward_avg: sql<number>`avg(${dailyPredictorAddress.reward})`,
+    })
+    .from(dailyPredictorAddress)
+    .where(sql`${dailyPredictorAddress.date} = ${date}`)
+    .execute();
+
+  return res[0] || null;
+}
+
 export async function getPoolHistoricalData(
   poolAddress: string,
   poolVaultAddress: string,
