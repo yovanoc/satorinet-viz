@@ -88,7 +88,7 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
                   : `${avgFee.toFixed(2)}%`;
 
                 return {
-                  value: `${pool.name} (${feeDisplay}) (Mean: ${meanValues[pool.address]?.value.toLocaleString(undefined, { maximumFractionDigits: 4 })})`,
+                  value: `${pool.name} (${feeDisplay}) (Mean: ${meanValues[pool.address]?.value.toLocaleString(undefined, { maximumFractionDigits: 8 })})`,
                   type: "line",
                   color: pool.color
                 };
@@ -127,7 +127,7 @@ export function PoolsStakingComparisonChart({ data, pools }: PoolsStakingCompari
                   }}
                   name={`${pool.name} (${hasMultipleFees ?
                     `${(min * 100).toFixed(2)}% - ${(max * 100).toFixed(2)}%` :
-                    `${avgFee.toFixed(4)}%`
+                    `${avgFee.toFixed(2)}%`
                     })`}
                   stroke={pool.color}
                   strokeWidth={3}
