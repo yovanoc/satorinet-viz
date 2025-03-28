@@ -15,6 +15,7 @@ import DailyContributorAddressCard from "@/components/daily-contributor-address-
 import PoolHistoricalData from "@/components/pool-historical-data"
 import TopPools from "@/components/top-pools"
 import { RealtimeInfoCard } from "@/components/realtime-info"
+import PoolWorkerComparison from "@/components/pool-vs-worker-comparison"
 
 const tryGetWorkerReward = async (address: string): Promise<WorkerReward | null> => {
   try {
@@ -27,13 +28,12 @@ const tryGetWorkerReward = async (address: string): Promise<WorkerReward | null>
   }
 }
 
-
-async function PoolDataSection({ date, pool: { address, vault_address, name } }: { date: Date, pool: Pool }) {
+async function PoolDataSection({ date, pool }: { date: Date, pool: Pool }) {
   try {
     const [historicalData, workerStats, workerReward] = await Promise.all([
-      vault_address ? getPoolHistoricalData(address, vault_address, date) : null,
-      vault_address ? getPoolWorkerStats(address, vault_address, date) : null,
-      tryGetWorkerReward(address)
+      pool.vault_address ? getPoolHistoricalData(pool.address, pool.vault_address, date) : null,
+      pool.vault_address ? getPoolWorkerStats(pool.address, pool.vault_address, date) : null,
+      tryGetWorkerReward(pool.address)
     ])
 
     const latestWorkerStats = workerStats ? workerStats[workerStats.length - 1] : null;
@@ -47,7 +47,7 @@ async function PoolDataSection({ date, pool: { address, vault_address, name } }:
       avg_score: latestWorkerStats?.avg_score,
       contributor_count: latestHistoricalData?.contributor_count,
       contributor_count_with_staking_power: latestHistoricalData?.contributor_count_with_staking_power,
-      pool_address: address,
+      pool_address: pool.address,
       total_staking_power: latestHistoricalData?.total_staking_power ?? 0,
       total_delegated_stake: latestWorkerStats?.total_delegated_stake,
       total_balance: latestWorkerStats?.total_balance,
@@ -59,8 +59,15 @@ async function PoolDataSection({ date, pool: { address, vault_address, name } }:
 
     return (
       <div className="grid grid-cols-12 gap-4">
-        <DailyContributorAddressCard poolData={enrichedPoolData} date={date} poolName={name} />
-        <PoolHistoricalData historicalData={historicalData ?? []} workerStats={workerStats ?? []} date={date} poolName={name} />
+        <div className="col-span-12 md:col-span-6">
+          <DailyContributorAddressCard poolData={enrichedPoolData} date={date} poolName={pool.name} />
+        </div>
+        <div className="col-span-12 md:col-span-6">
+          <PoolHistoricalData historicalData={historicalData ?? []} workerStats={workerStats ?? []} date={date} poolName={pool.name} />
+        </div>
+        <div className="col-span-12">
+          <PoolWorkerComparison pool={pool} date={date} />
+        </div>
       </div>
     )
   } catch (e) {

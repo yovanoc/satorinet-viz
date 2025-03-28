@@ -57,6 +57,7 @@ export async function getPoolHistoricalData(
   const predictorAgg = db
     .select({
       date: dailyPredictorAddress.date,
+      max_delegated_stake: sql<number>`MAX(${dailyPredictorAddress.delegated_stake})`.as('max_delegated_stake'),
       total_reward: sql<number>`SUM(${dailyPredictorAddress.reward})`.as(
         "total_reward"
       ),
@@ -102,6 +103,7 @@ export async function getPoolHistoricalData(
     .select({
       date: dailyContributorAddress.date,
       total_staking_power: sql<number>`SUM(${dailyContributorAddress.staking_power_contribution})`,
+      max_delegated_stake: sql<number>`MAX(${predictorAgg.max_delegated_stake})`,
       contributor_count: sql<number>`COUNT(DISTINCT ${dailyContributorAddress.contributor})`,
       pools_own_staking_power: sql<number>`AVG(${dailyContributorAddress.pools_own_staking_power})`,
       pool_balance: sql<number>`${predictorAgg.pool_balance}`,
@@ -245,4 +247,80 @@ export async function getPoolsHistoricalEarnings(
     })
     )
   );
+}
+
+export type PoolVSWorkerData = {
+  date: Date;
+  rewardAvg: number;
+  poolRewardPerFullStake: number;
+  pool_earnings: number;
+  self_earnings: number;
+  newRewards: number;
+  newPoolEarnings: number;
+  poolAmount: number;
+  selfAmount: number;
+  difference: number;
+  stake: number;
+};
+
+export async function getPoolVsWorkerComparison(
+  poolAddress: string,
+  poolVaultAddress: string,
+  date: Date,
+  days: number = 30,
+  startingAmount: number = 0,
+  staking_fees_percent: number[] = []
+): Promise<PoolVSWorkerData[]> {
+  "use cache";
+  cacheLife("default");
+
+  const poolData = await getPoolHistoricalData(poolAddress, poolVaultAddress, date, days);
+
+  let selfAmount = startingAmount; // Track self-managed compounded value
+  let selfEarnings = 0; // Track total self-managed earnings
+  let poolAmount = startingAmount; // Track pool compounded value
+  let poolEarnings = 0; // Track only earnings in pool
+
+  const result: PoolVSWorkerData[] = [];
+
+  const avgFee = staking_fees_percent.length
+    ? staking_fees_percent.reduce((a, b) => a + b, 0) / staking_fees_percent.length
+    : 0;
+
+  for (const entry of poolData) {
+    const dailyDate = new Date(entry.date);
+    const workerRewardData = await getWorkerRewardAverage(dailyDate);
+    if (!workerRewardData) {
+      throw new Error(`Failed to fetch worker reward data for date ${dailyDate}.`);
+    }
+    const stake = entry.max_delegated_stake;
+    const rewardAvg = workerRewardData.reward_avg;
+
+    const grossPoolEarnings = entry.earnings_per_staking_power * poolAmount;
+    const newPoolEarnings = grossPoolEarnings * (1 - avgFee);
+    poolAmount += newPoolEarnings;
+    poolEarnings += newPoolEarnings;
+
+    const newRewards = Math.floor(selfAmount / stake) * rewardAvg;
+    selfAmount += newRewards;
+    selfEarnings += newRewards;
+
+    const difference = poolEarnings - selfEarnings;
+
+    result.push({
+      date: dailyDate,
+      stake,
+      rewardAvg,
+      poolRewardPerFullStake: (entry.earnings_per_staking_power * stake) * (1 - avgFee),
+      pool_earnings: poolEarnings,
+      self_earnings: selfEarnings,
+      newRewards,
+      newPoolEarnings,
+      poolAmount,
+      selfAmount,
+      difference,
+    });
+  }
+
+  return result;
 }
