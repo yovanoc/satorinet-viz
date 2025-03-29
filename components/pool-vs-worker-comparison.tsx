@@ -43,7 +43,7 @@ export default function PoolWorkerComparison({ pool, date }: Props) {
   return (
     <Card className="p-4">
       <CardHeader>
-        <CardTitle>{pool.name} vs Worker Comparison</CardTitle>
+        <CardTitle>{pool.name} vs Self Worker(s) Comparison</CardTitle>
       </CardHeader>
       <div className="space-y-4">
         <PoolWorkerInputs

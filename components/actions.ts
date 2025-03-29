@@ -18,6 +18,7 @@ export async function getPoolVsWorkerComparisonData(
     pool.vault_address,
     date,
     days,
-    startingAmount
+    startingAmount,
+    pool.staking_fees_percent
   );
 }

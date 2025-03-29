@@ -261,6 +261,7 @@ export type PoolVSWorkerData = {
   selfAmount: number;
   difference: number;
   stake: number;
+  avgFee: number;
 };
 
 export async function getPoolVsWorkerComparison(
@@ -309,6 +310,7 @@ export async function getPoolVsWorkerComparison(
 
     result.push({
       date: dailyDate,
+      avgFee,
       stake,
       rewardAvg,
       poolRewardPerFullStake: (entry.earnings_per_staking_power * stake) * (1 - avgFee),

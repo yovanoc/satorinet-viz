@@ -12,8 +12,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const POOL_COLOR = "#4CAF50";
-const SELF_COLOR = "#2196F3";
+const POOL_COLOR = "#388E3C";
+const SELF_COLOR = "#1976D2";
 
 interface PoolComparisonChartProps {
   data: PoolVSWorkerData[];
@@ -30,14 +30,14 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   const entry = payload[0]!.payload;
 
   // Calculate the difference and determine which is better
-  const diff = entry.pool_earnings - entry.self_earnings;
-  const betterInPool = diff > 0 ? "Pool" : "Self";
-  const diffText = `Better ${betterInPool} by ${formatSatori(
-    Math.abs(diff)
-  )} from start until this day`;
+  const betterInPool = entry.difference > 0 ? "Pool" : "Self";
+  const percentMore = Math.abs(entry.difference) / (entry.difference > 0 ? entry.self_earnings : entry.pool_earnings);
+  const diffText = `Better in ${betterInPool} by ${formatSatori(
+    Math.abs(entry.difference)
+  )} (${(percentMore * 100).toFixed(2)}%) from start until this day`;
 
   // Set color based on which is better
-  const betterColor = diff > 0 ? POOL_COLOR : SELF_COLOR;
+  const betterColor = entry.difference > 0 ? POOL_COLOR : SELF_COLOR;
 
   return (
     <div className="bg-white p-4 rounded-xl shadow-lg text-sm space-y-2">
@@ -71,7 +71,7 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
         </div>
         <div>
           <p className="text-xs text-gray-500">
-            Pool earnings per full stake this day
+            Pool earnings per full stake this day ({(entry.avgFee * 100).toFixed(2)}% fee)
           </p>
           <p className="font-semibold">
             {formatSatori(entry.poolRewardPerFullStake)}

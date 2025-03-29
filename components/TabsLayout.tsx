@@ -48,10 +48,6 @@ export default function TabsLayout({ children }: { children: React.ReactNode }) 
             Pools
           </Link>
         </TabsTrigger>
-
-        <TabsTrigger value="compare" disabled>
-          Compare (Soon™)
-        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="dashboard">
@@ -59,9 +55,6 @@ export default function TabsLayout({ children }: { children: React.ReactNode }) 
       </TabsContent>
       <TabsContent value="pools">
         {pathname.startsWith("/pools") && children}
-      </TabsContent>
-      <TabsContent value="compare">
-        {pathname.startsWith("/compare") && children}
       </TabsContent>
     </Tabs>
   )

@@ -10,7 +10,7 @@ interface PoolSelectorProps {
 const PoolSelector: FC<PoolSelectorProps> = ({ pools, selectedPool, onPoolChange }) => {
   return (
     <Select defaultValue={selectedPool} onValueChange={onPoolChange}>
-      <SelectTrigger className="w-full text-base md:text-xl font-bold">
+      <SelectTrigger className="w-full text-base md:text-xl font-bold cursor-pointer">
         <SelectValue placeholder="Select a pool" />
       </SelectTrigger>
       <SelectContent>
