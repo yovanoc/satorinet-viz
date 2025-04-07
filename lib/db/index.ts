@@ -4,6 +4,9 @@ import * as schema from "./schema";
 import { desc, sql, eq, and, gte, gt, lte, or } from "drizzle-orm";
 import { dailyContributorAddress, dailyPredictorAddress } from "./schema";
 import { unstable_cacheLife as cacheLife } from "next/cache";
+import type { Pool } from "../known_pools";
+import { getSatoriPriceForDate } from "../livecoinwatch";
+import { applyFee, getAvgFee } from "../pool-utils";
 
 export const db = drizzle(env.DATABASE_URL, {
   schema,
@@ -57,7 +60,10 @@ export async function getPoolHistoricalData(
   const predictorAgg = db
     .select({
       date: dailyPredictorAddress.date,
-      max_delegated_stake: sql<number>`MAX(${dailyPredictorAddress.delegated_stake})`.as('max_delegated_stake'),
+      max_delegated_stake:
+        sql<number>`MAX(${dailyPredictorAddress.delegated_stake})`.as(
+          "max_delegated_stake"
+        ),
       total_reward: sql<number>`SUM(${dailyPredictorAddress.reward})`.as(
         "total_reward"
       ),
@@ -69,10 +75,9 @@ export async function getPoolHistoricalData(
         sql<number>`SUM(${dailyPredictorAddress.delegated_stake})`.as(
           "total_delegated_stake"
         ),
-      total_balance:
-        sql<number>`SUM(${dailyPredictorAddress.balance})`.as(
-          "total_balance"
-        ),
+      total_balance: sql<number>`SUM(${dailyPredictorAddress.balance})`.as(
+        "total_balance"
+      ),
       pool_balance: sql<number>`
         SUM(
           CASE
@@ -84,17 +89,19 @@ export async function getPoolHistoricalData(
         )`.as("pool_balance"),
     })
     .from(dailyPredictorAddress)
-    .where(and(
-      // ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_address),
-      // or(
-      //   isNull(dailyPredictorAddress.worker_vault_address),
-      //   ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_vault_address),
-      // ),
-      or(
-        eq(dailyPredictorAddress.reward_address, poolAddress),
-        eq(dailyPredictorAddress.reward_address, poolVaultAddress)
-      ),
-    ))
+    .where(
+      and(
+        // ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_address),
+        // or(
+        //   isNull(dailyPredictorAddress.worker_vault_address),
+        //   ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_vault_address),
+        // ),
+        or(
+          eq(dailyPredictorAddress.reward_address, poolAddress),
+          eq(dailyPredictorAddress.reward_address, poolVaultAddress)
+        )
+      )
+    )
     .groupBy(dailyPredictorAddress.date)
     .as("predictor_agg");
 
@@ -111,7 +118,8 @@ export async function getPoolHistoricalData(
       earnings_per_staking_power: sql<number>`COALESCE(
             (${predictorAgg.total_reward} - ${predictorAgg.total_miner_earned}) /
             -- NULLIF(SUM(${dailyContributorAddress.staking_power_contribution}), 0),
-            NULLIF(${predictorAgg.total_delegated_stake}, 0),
+            NULLIF(SUM(${dailyContributorAddress.staking_power_contribution}) + AVG(COALESCE(${dailyContributorAddress.pools_own_staking_power}, 0)), 0),
+            -- NULLIF(${predictorAgg.total_delegated_stake}, 0),
           0)`,
     })
     .from(dailyContributorAddress)
@@ -131,7 +139,7 @@ export async function getPoolHistoricalData(
       predictorAgg.total_reward,
       predictorAgg.total_miner_earned,
       predictorAgg.total_delegated_stake,
-      predictorAgg.pool_balance,
+      predictorAgg.pool_balance
     )
     .orderBy(dailyContributorAddress.date);
 
@@ -230,7 +238,7 @@ export async function getDailyMiningEarnings(date: Date) {
 }
 
 export async function getPoolsHistoricalEarnings(
-  pools: { address: string; vault_address: string }[], // Array of pool address and vault address pairs
+  pools: Pool[], // Array of pool address and vault address pairs
   date: Date,
   days = 30
 ) {
@@ -240,89 +248,220 @@ export async function getPoolsHistoricalEarnings(
   // TODO use a proper query
 
   return Promise.all(
-    pools.map(async (pool) =>
-    ({
-      pool_address: pool.address,
-      data: await getPoolHistoricalData(pool.address, pool.vault_address, date, days)
-    })
-    )
+    pools.map(async (pool) => ({
+      pool,
+      data: pool.vault_address
+        ? await getPoolHistoricalData(
+            pool.address,
+            pool.vault_address,
+            date,
+            days
+          )
+        : null,
+    }))
   );
 }
 
-export type PoolVSWorkerData = {
+type PoolEarningsData = {
+  total_earnings: number;
+  full_stake_earnings: number;
+  daily_earnings: number;
+  current_amount: number;
+  avg_fee: number;
+};
+
+type SelfWorkerRewardsData = {
+  reward_avg: number;
+  daily_rewards: number;
+  total_rewards: number;
+  current_amount: number;
+};
+
+export type PoolsVSWorkerData = {
   date: Date;
-  rewardAvg: number;
-  poolRewardPerFullStake: number;
-  pool_earnings: number;
-  self_earnings: number;
-  newRewards: number;
-  newPoolEarnings: number;
-  poolAmount: number;
-  selfAmount: number;
-  difference: number;
   stake: number;
-  avgFee: number;
+  price: number;
+  worker: SelfWorkerRewardsData;
+  pools: Record<string, PoolEarningsData>;
 };
 
 export async function getPoolVsWorkerComparison(
-  poolAddress: string,
-  poolVaultAddress: string,
+  pools: Pool[],
   date: Date,
   days: number = 30,
-  startingAmount: number = 0,
-  staking_fees_percent: number[] = []
-): Promise<PoolVSWorkerData[]> {
+  startingAmount: number = 0
+): Promise<PoolsVSWorkerData[]> {
   "use cache";
   cacheLife("default");
 
-  const poolData = await getPoolHistoricalData(poolAddress, poolVaultAddress, date, days);
+  if (pools.some((pool) => !pool.vault_address)) {
+    console.error("Pool vault address is not defined.");
+    return [];
+  }
+
+  const poolsData = await Promise.all(
+    pools.map(async (pool) => ({
+      pool,
+      data: await getPoolHistoricalData(
+        pool.address,
+        pool.vault_address!,
+        date,
+        days
+      ),
+    }))
+  );
+
+  if (!poolsData.length) {
+    console.error("No data found for the given date and days.");
+    return [];
+  }
+
+  // check if they have the same length
+  const poolData = poolsData[0]!;
+  if (poolData.data.length === 0) {
+    console.error("No data found for the given date and days.");
+    return [];
+  }
+
+  const dates = new Array<Date>();
+
+  // Check if all pools have the same length, and same dates at the same places, that dates are one day apart each time, then populate the dates array
+  for (let i = 0; i < poolData.data.length; i++) {
+    const entry = poolData.data[i]!;
+    const currentDate = new Date(entry.date);
+    if (i === 0) {
+      dates.push(currentDate);
+    } else {
+      const lastDate = dates[dates.length - 1]!;
+      if (currentDate.getTime() !== lastDate.getTime() + 86400000) {
+        console.error("Dates are not one day apart.");
+        return [];
+      }
+
+      // check every pool has the same date
+      for (const poolData of poolsData) {
+        const poolEntry = poolData.data[i]!;
+        if (poolEntry.date !== entry.date) {
+          console.error("Dates are not the same for all pools.");
+          return [];
+        }
+      }
+
+      dates.push(currentDate);
+    }
+  }
 
   let selfAmount = startingAmount; // Track self-managed compounded value
   let selfEarnings = 0; // Track total self-managed earnings
-  let poolAmount = startingAmount; // Track pool compounded value
-  let poolEarnings = 0; // Track only earnings in pool
 
-  const result: PoolVSWorkerData[] = [];
+  const poolsTracking = pools.reduce(
+    (acc, pool) => {
+      acc[pool.address] = {
+        current_amount: startingAmount, // Track pool compounded value
+        total_earnings: 0, // Track only earnings in pool
+      };
+      return acc;
+    },
+    {} as Record<
+      string,
+      {
+        current_amount: number;
+        total_earnings: number;
+      }
+    >
+  );
 
-  const avgFee = staking_fees_percent.length
-    ? staking_fees_percent.reduce((a, b) => a + b, 0) / staking_fees_percent.length
-    : 0;
+  const result: PoolsVSWorkerData[] = [];
 
-  for (const entry of poolData) {
-    const dailyDate = new Date(entry.date);
-    const workerRewardData = await getWorkerRewardAverage(dailyDate);
+  for (const dailyDate of dates) {
+    const [workerRewardData, price] = await Promise.all([
+      getWorkerRewardAverage(dailyDate),
+      getSatoriPriceForDate(dailyDate),
+    ]);
     if (!workerRewardData) {
-      throw new Error(`Failed to fetch worker reward data for date ${dailyDate}.`);
+      throw new Error(
+        `Failed to fetch worker reward data for date ${dailyDate}.`
+      );
     }
-    const stake = entry.max_delegated_stake;
+
+    const firstPoolEntry = poolsData[0]!.data.find(
+      (entry) => new Date(entry.date).getTime() === dailyDate.getTime()
+    );
+
+    if (!firstPoolEntry) {
+      console.error(
+        `No data found for pool ${pools[0]!.address} on date ${dailyDate}`
+      );
+      continue;
+    }
+
+    const stake = firstPoolEntry.max_delegated_stake;
     const rewardAvg = workerRewardData.reward_avg;
-
-    const grossPoolEarnings = entry.earnings_per_staking_power * poolAmount;
-    const newPoolEarnings = grossPoolEarnings * (1 - avgFee);
-    poolAmount += newPoolEarnings;
-    poolEarnings += newPoolEarnings;
-
     const newRewards = Math.floor(selfAmount / stake) * rewardAvg;
     selfAmount += newRewards;
     selfEarnings += newRewards;
 
-    const difference = poolEarnings - selfEarnings;
-
-    result.push({
+    const data: PoolsVSWorkerData = {
       date: dailyDate,
-      avgFee,
+      price,
       stake,
-      rewardAvg,
-      poolRewardPerFullStake: (entry.earnings_per_staking_power * stake) * (1 - avgFee),
-      pool_earnings: poolEarnings,
-      self_earnings: selfEarnings,
-      newRewards,
-      newPoolEarnings,
-      poolAmount,
-      selfAmount,
-      difference,
-    });
+      pools: {},
+      worker: {
+        reward_avg: rewardAvg,
+        daily_rewards: newRewards,
+        total_rewards: selfEarnings,
+        current_amount: selfAmount,
+      },
+    };
+
+    for (const pool of pools) {
+      const entry = poolsData
+        .find((p) => p.pool.address === pool.address)!
+        .data.find(
+          (entry) => new Date(entry.date).getTime() === dailyDate.getTime()
+        );
+      if (!entry) {
+        console.error(
+          `No data found for pool ${pool.address} on date ${dailyDate}`
+        );
+        continue;
+      }
+
+      if (entry.max_delegated_stake !== stake) {
+        console.error(
+          `Stake mismatch for pool ${pool.address} on date ${dailyDate}`
+        );
+        continue;
+      }
+
+      const avgFee = getAvgFee(pool, dailyDate);
+
+      const poolTracking = poolsTracking[pool.address];
+      if (!poolTracking) {
+        console.error(`No tracking data found for pool ${pool.address}`);
+        continue;
+      }
+
+      const grossPoolEarnings =
+        entry.earnings_per_staking_power * poolTracking.current_amount;
+      const newPoolEarnings = applyFee(grossPoolEarnings, avgFee);
+      poolTracking.current_amount += newPoolEarnings;
+      poolTracking.total_earnings += newPoolEarnings;
+
+      data.pools[pool.address] = {
+        total_earnings: poolTracking.total_earnings,
+        full_stake_earnings:
+        applyFee(entry.earnings_per_staking_power * stake, avgFee),
+        daily_earnings: newPoolEarnings,
+        current_amount: poolTracking.current_amount,
+        avg_fee: avgFee,
+      };
+    }
+
+    result.push(data);
   }
+
+  // console.dir(result, { depth: 10 });
 
   return result;
 }

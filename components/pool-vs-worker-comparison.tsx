@@ -6,7 +6,7 @@ import PoolWorkerInputs from "./pool-vs-worker-inputs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Loading from "@/app/loading";
 import { Suspense } from "react";
-import type { PoolVSWorkerData } from "@/lib/db";
+import type { PoolsVSWorkerData } from "@/lib/db";
 import { getPoolVsWorkerComparisonData } from "./actions";
 import { PoolComparisonChart } from "./pool-vs-worker";
 
@@ -18,7 +18,7 @@ type Props = {
 export default function PoolWorkerComparison({ pool, date }: Props) {
   const [days, setDays] = useState(30);
   const [startingAmount, setStartingAmount] = useState(15);
-  const [data, setData] = useState<PoolVSWorkerData[]>([]);
+  const [data, setData] = useState<PoolsVSWorkerData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

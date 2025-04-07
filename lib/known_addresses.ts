@@ -1,7 +1,7 @@
 export const KNOWN_ADDRESSES = [
   {
     name: "DISTRIBUTION",
-    address: 'EgBAf2hFw7jPc69yKyXjWF9GEYi2JWQkJ4',
+    address: 'Ec4v5F3EwGyy9Hf6uMGBwhMwtvieoLT1Ew',
   },
   {
     name: 'BURN',

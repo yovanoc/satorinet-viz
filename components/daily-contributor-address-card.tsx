@@ -151,7 +151,7 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({
                 </p>
               </TooltipTrigger>
               <TooltipContent>
-                (daily reward - total miner earned) / total staking power
+                (Daily Rewards - Total Public Workers Earned) / (Staking Power Received + Pool&apos;s Own Staking Power)
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

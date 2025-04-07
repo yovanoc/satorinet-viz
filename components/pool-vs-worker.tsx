@@ -1,7 +1,7 @@
 "use client";
 
-import type { PoolVSWorkerData } from "@/lib/db";
-import { formatSatori } from "@/lib/format";
+import type { PoolsVSWorkerData } from "@/lib/db";
+import { formatCurrency, formatSatori } from "@/lib/format";
 import {
   LineChart,
   Line,
@@ -16,38 +16,44 @@ const POOL_COLOR = "#388E3C";
 const SELF_COLOR = "#1976D2";
 
 interface PoolComparisonChartProps {
-  data: PoolVSWorkerData[];
+  data: PoolsVSWorkerData[];
 }
 
 interface CustomTooltipProps {
   active?: boolean;
-  payload?: { payload: PoolVSWorkerData }[];
+  payload?: { payload: PoolsVSWorkerData }[];
 }
 
 const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   if (!active || !payload || payload.length === 0) return null;
 
-  const entry = payload[0]!.payload;
+  const { date, stake, pools, worker, price } = payload[0]!.payload;
+
+  const key = Object.keys(pools);
+  if (key.length === 0) return null;
+  // Get the first pool
+  const pool = pools[key[0]!]!;
+  const difference = pool.total_earnings - worker.total_rewards;
 
   // Calculate the difference and determine which is better
-  const betterInPool = entry.difference > 0 ? "Pool" : "Self";
-  const percentMore = Math.abs(entry.difference) / (entry.difference > 0 ? entry.self_earnings : entry.pool_earnings);
+  const betterInPool = difference > 0 ? "Pool" : "Self";
+  const percentMore = Math.abs(difference) / (difference > 0 ? worker.total_rewards : pool.total_earnings);
   const diffText = `Better in ${betterInPool} by ${formatSatori(
-    Math.abs(entry.difference)
+    Math.abs(difference)
   )} (${(percentMore * 100).toFixed(2)}%) from start until this day`;
 
   // Set color based on which is better
-  const betterColor = entry.difference > 0 ? POOL_COLOR : SELF_COLOR;
+  const betterColor = difference > 0 ? POOL_COLOR : SELF_COLOR;
 
   return (
     <div className="bg-white p-4 rounded-xl shadow-lg text-sm space-y-2">
       <div className="font-bold text-md text-center text-gray-800">
-        {entry.date.toLocaleDateString()}
+        {date.toLocaleDateString()} - ${formatCurrency(price)}
       </div>
 
       <div>
         <p className="text-xs text-gray-500">Stake Required this day</p>
-        <p className="font-semibold">{entry.stake}</p>
+        <p className="font-semibold">{stake}</p>
       </div>
 
       <div className="text-xs font-semibold text-gray-700">
@@ -57,41 +63,41 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
       <div className="grid grid-cols-2 gap-2">
         <div>
           <p className="text-xs text-gray-500">Self Earnings from start</p>
-          <p className="font-semibold">{formatSatori(entry.self_earnings)}</p>
+          <p className="font-semibold">{formatSatori(worker.total_rewards)}</p>
         </div>
         <div>
           <p className="text-xs text-gray-500">Pool Earnings from start</p>
-          <p className="font-semibold">{formatSatori(entry.pool_earnings)}</p>
+          <p className="font-semibold">{formatSatori(pool.total_earnings)}</p>
         </div>
         <div>
           <p className="text-xs text-gray-500">
             Avg Rewards per Neuron this day
           </p>
-          <p className="font-semibold">{formatSatori(entry.rewardAvg)}</p>
+          <p className="font-semibold">{formatSatori(worker.reward_avg)}</p>
         </div>
         <div>
           <p className="text-xs text-gray-500">
-            Pool earnings per full stake this day ({(entry.avgFee * 100).toFixed(2)}% fee)
+            Pool earnings per full stake this day ({(pool.avg_fee * 100).toFixed(2)}% fee)
           </p>
           <p className="font-semibold">
-            {formatSatori(entry.poolRewardPerFullStake)}
+            {formatSatori(pool.full_stake_earnings)}
           </p>
         </div>
         <div>
           <p className="text-xs text-gray-500">Self rewards this day</p>
-          <p className="font-semibold">{formatSatori(entry.newRewards)}</p>
+          <p className="font-semibold">{formatSatori(worker.daily_rewards)}</p>
         </div>
         <div>
           <p className="text-xs text-gray-500">Pool earnings this day</p>
-          <p className="font-semibold">{formatSatori(entry.newPoolEarnings)}</p>
+          <p className="font-semibold">{formatSatori(pool.daily_earnings)}</p>
         </div>
         <div>
           <p className="text-xs text-gray-500">Current Self Amount</p>
-          <p className="font-semibold">{formatSatori(entry.selfAmount)}</p>
+          <p className="font-semibold">{formatSatori(worker.current_amount)}</p>
         </div>
         <div>
           <p className="text-xs text-gray-500">Current Pool Amount</p>
-          <p className="font-semibold">{formatSatori(entry.poolAmount)}</p>
+          <p className="font-semibold">{formatSatori(pool.current_amount)}</p>
         </div>
       </div>
     </div>
@@ -101,10 +107,18 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
 export function PoolComparisonChart({
   data,
 }: PoolComparisonChartProps) {
+  const formattedData = data.map((entry) => {
+    const firstPool = Object.values(entry.pools)[0]!;
+    return ({
+      ...entry,
+      pool: firstPool,
+    })
+  });
+
   return (
     <ResponsiveContainer width="100%" height={400}>
       <LineChart
-        data={data}
+        data={formattedData}
         margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
       >
         <XAxis
@@ -121,7 +135,7 @@ export function PoolComparisonChart({
         {/* Line for Pool Earnings */}
         <Line
           type="monotone"
-          dataKey="pool_earnings"
+          dataKey="pool.total_earnings"
           name="Pool Earnings"
           stroke={POOL_COLOR}
           strokeWidth={3}
@@ -131,7 +145,7 @@ export function PoolComparisonChart({
         {/* Line for Self Earnings */}
         <Line
           type="monotone"
-          dataKey="self_earnings"
+          dataKey="worker.total_rewards"
           name="Self Earnings"
           stroke={SELF_COLOR}
           strokeWidth={3}
