@@ -1,20 +1,16 @@
 "use server";
 
 import { getPoolVsWorkerComparison } from "@/lib/db";
-import { Pool } from "@/lib/known_pools";
+import type { Pool } from "@/lib/known_pools";
 
 export async function getPoolVsWorkerComparisonData(
-  pool: Pool,
+  pools: Pool[],
   date: Date,
   days: number,
   startingAmount: number
 ) {
-  if (!pool.vault_address) {
-    return [];
-  }
-
   return getPoolVsWorkerComparison(
-    [pool],
+    pools,
     date,
     days,
     startingAmount

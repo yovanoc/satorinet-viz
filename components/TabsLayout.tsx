@@ -16,7 +16,9 @@ export default function TabsLayout({ children }: { children: React.ReactNode }) 
           ? "dashboard"
           : pathname.startsWith("/pools")
             ? "pools"
-            : "dashboard"
+            : pathname.startsWith("/compare")
+              ? "compare"
+              : "dashboard"
       }
       className="w-full"
     >
@@ -48,6 +50,20 @@ export default function TabsLayout({ children }: { children: React.ReactNode }) 
             Pools
           </Link>
         </TabsTrigger>
+
+        <TabsTrigger asChild value="compare">
+          <Link
+            href="/compare"
+            className={clsx(
+              "relative px-4 py-2 rounded-md text-sm font-medium transition",
+              isActive("/compare")
+                ? "text-primary font-semibold before:absolute before:bottom-0 before:left-0 before:w-full before:h-[3px] before:bg-primary"
+                : "text-muted hover:text-primary hover:bg-primary/10"
+            )}
+          >
+            Compare
+          </Link>
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="dashboard">
@@ -55,6 +71,9 @@ export default function TabsLayout({ children }: { children: React.ReactNode }) 
       </TabsContent>
       <TabsContent value="pools">
         {pathname.startsWith("/pools") && children}
+      </TabsContent>
+      <TabsContent value="compare">
+        {pathname.startsWith("/compare") && children}
       </TabsContent>
     </Tabs>
   )

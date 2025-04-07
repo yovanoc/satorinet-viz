@@ -263,6 +263,7 @@ export async function getPoolsHistoricalEarnings(
 }
 
 type PoolEarningsData = {
+  pool: Pool;
   total_earnings: number;
   full_stake_earnings: number;
   daily_earnings: number;
@@ -449,6 +450,7 @@ export async function getPoolVsWorkerComparison(
       poolTracking.total_earnings += newPoolEarnings;
 
       data.pools[pool.address] = {
+        pool,
         total_earnings: poolTracking.total_earnings,
         full_stake_earnings:
         applyFee(entry.earnings_per_staking_power * stake, avgFee),

@@ -82,8 +82,16 @@ export function PoolsStakingComparisonChart({
           </div>
         </CardTitle>
         <CardDescription>
-          How many SATORI tokens you would have earned if you staked 1 SATORI in
-          each pool these days.
+          How many <span className="font-medium">SATORI</span> tokens you would
+          have earned by staking <span className="font-medium">1 SATORI</span>{" "}
+          in each pool over these days.
+          <div className="mt-2 text-sm text-gray-500">
+            <div className="font-semibold text-gray-700">Formula used:</div>
+            <div className="mt-1 font-mono">
+              (Daily Rewards - Total Public Workers Earned) / (Staking Power
+              Received + Pool&apos;s Own Staking Power)
+            </div>
+          </div>
         </CardDescription>
       </CardHeader>
       <CardContent>

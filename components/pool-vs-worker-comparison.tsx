@@ -24,7 +24,7 @@ export default function PoolWorkerComparison({ pool, date }: Props) {
   useEffect(() => {
     const fetchInitialData = async () => {
       setIsLoading(true);
-      const initialData = await getPoolVsWorkerComparisonData(pool, date, days, startingAmount);
+      const initialData = await getPoolVsWorkerComparisonData([pool], date, days, startingAmount);
       setData(initialData);
       setIsLoading(false);
     };

@@ -1,10 +1,16 @@
+'use server';
+
 import ky from 'ky';
 import { env } from './env';
+import { unstable_cacheLife as cacheLife } from "next/cache";
 
 interface LiveCoinWatchResult {
     history: { date: number; rate: number }[];
 }
 export async function getSatoriPriceForDate(date: Date): Promise<number> {
+    "use cache";
+    cacheLife("weeks");
+
     const delay = 450 * 1000; // 450 seconds in milliseconds
     const end = date.getTime() + delay;
     const start = date.getTime() - delay;
