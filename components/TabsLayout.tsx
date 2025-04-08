@@ -1,8 +1,8 @@
 "use client"
+
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import clsx from "clsx"
 
 export default function TabsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -22,45 +22,21 @@ export default function TabsLayout({ children }: { children: React.ReactNode }) 
       }
       className="w-full"
     >
-      <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7 xl:grid-cols-9 2xl:grid-cols-12 border-b border-muted">
+      <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7 xl:grid-cols-9 2xl:grid-cols-12">
         <TabsTrigger asChild value="dashboard">
-          <Link
-            href="/dashboard"
-            className={clsx(
-              "relative px-4 py-2 rounded-md text-sm font-medium transition",
-              isActive("/dashboard")
-                ? "text-primary font-semibold before:absolute before:bottom-0 before:left-0 before:w-full before:h-[3px] before:bg-primary"
-                : "text-muted hover:text-primary hover:bg-primary/10"
-            )}
-          >
+          <Link href="/dashboard">
             Dashboard
           </Link>
         </TabsTrigger>
 
         <TabsTrigger asChild value="pools">
-          <Link
-            href="/pools"
-            className={clsx(
-              "relative px-4 py-2 rounded-md text-sm font-medium transition",
-              isActive("/pools")
-                ? "text-primary font-semibold before:absolute before:bottom-0 before:left-0 before:w-full before:h-[3px] before:bg-primary"
-                : "text-muted hover:text-primary hover:bg-primary/10"
-            )}
-          >
+          <Link href="/pools">
             Pools
           </Link>
         </TabsTrigger>
 
         <TabsTrigger asChild value="compare">
-          <Link
-            href="/compare"
-            className={clsx(
-              "relative px-4 py-2 rounded-md text-sm font-medium transition",
-              isActive("/compare")
-                ? "text-primary font-semibold before:absolute before:bottom-0 before:left-0 before:w-full before:h-[3px] before:bg-primary"
-                : "text-muted hover:text-primary hover:bg-primary/10"
-            )}
-          >
+          <Link href="/compare">
             Compare
           </Link>
         </TabsTrigger>
