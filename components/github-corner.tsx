@@ -9,7 +9,7 @@ export default function GitHubCorner() {
       rel="noopener noreferrer"
       className="fixed top-4 right-4 z-50"
     >
-      <Button variant="neutral" size="icon" className="rounded-full p-4 shadow-lg">
+      <Button variant="outline" size="icon" className="rounded-full p-4 shadow-lg">
         <div dangerouslySetInnerHTML={{ __html: siGithub.svg }} />
       </Button>
     </a>

@@ -28,17 +28,17 @@ export default function MultiPoolWorkerComparison({ date }: { date: Date }) {
     );
   };
 
-  const fetchData = async () => {
-    if (selectedPools.length === 0) return;
-    setIsLoading(true);
-    const newData = await getPoolVsWorkerComparisonData(selectedPools, date, days, startingAmount);
-    setData(newData);
-    setIsLoading(false);
-  };
-
   useEffect(() => {
+    const fetchData = async () => {
+      if (selectedPools.length === 0) return;
+      setIsLoading(true);
+      const newData = await getPoolVsWorkerComparisonData(selectedPools, date, days, startingAmount);
+      setData(newData);
+      setIsLoading(false);
+    };
+
     fetchData();
-  }, [selectedPools, date, days, startingAmount, fetchData]);
+  }, [selectedPools, date, days, startingAmount]);
 
   return (
     <Card className="p-4">

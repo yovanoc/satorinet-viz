@@ -7,8 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 export default function TabsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
-  const isActive = (path: string) => pathname === path || pathname.startsWith(`${path}/`)
-
   return (
     <Tabs
       defaultValue={

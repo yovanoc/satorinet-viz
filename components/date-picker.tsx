@@ -25,7 +25,7 @@ export const CalendarForm: FC<CalendarFormProps> = ({ selectedDate, onDateChange
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          variant="noShadow"
+          variant="outline"
           className={cn(
             "pl-3 text-left font-normal",
             !date && "text-muted-foreground"
