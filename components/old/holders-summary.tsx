@@ -5,6 +5,20 @@ import { classifyAssetHolders, getAllSatoriHolders, tiers as tiersInfo } from "@
 
 export const HoldersSummary = async () => {
   const holders = await getAllSatoriHolders();
+
+  if (!holders) {
+    return (
+      <Card className="col-span-12 md:col-span-10 lg:col-span-8 2xl:col-span-6 h-full">
+        <CardHeader>
+          <CardTitle>Holders Summary</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p>Error fetching holders data.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const summary = classifyAssetHolders(holders);
   const { totalSatori, tiers } = summary;
 
@@ -14,7 +28,7 @@ export const HoldersSummary = async () => {
   }).sort((a, b) => b.balance - a.balance);
 
   return (
-    <Card className="col-span-12 md:col-span-10 lg:col-span-8 2xl:col-span-6">
+    <Card className="col-span-12 md:col-span-10 lg:col-span-8 2xl:col-span-6 h-full">
       <CardHeader>
         <CardTitle>Holders Summary</CardTitle>
       </CardHeader>

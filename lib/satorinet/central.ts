@@ -6,7 +6,7 @@ const BASE_URL = 'https://stage.satorinet.io';
 // export type PoolSize = {};
 // export async function getPoolSize(address: string) {
 //   'use cache';
-//   cacheLife('minutes');
+//   cacheLife("weeks");;
 //
 //   return ky.get(`${BASE_URL}/pool/size/get/${address}`).json<PoolSize>();
 // }
@@ -16,7 +16,7 @@ export type WorkerReward = {
 };
 export async function getWorkerReward(address: string) {
   'use cache';
-  cacheLife('minutes');
+  cacheLife("hours");
 
   const res = await ky.get(`${BASE_URL}/pool/worker/reward/get/${address}`).json<[WorkerReward]>();
   return res[0];
@@ -24,7 +24,7 @@ export async function getWorkerReward(address: string) {
 
 export async function getMiningMode(address: string): Promise<boolean> {
   'use cache';
-  cacheLife('minutes');
+  cacheLife("hours");
 
   const res = await ky.get(`${BASE_URL}/worker/mining/mode/get/${address}`).text()
   return res === "True";
@@ -32,9 +32,21 @@ export async function getMiningMode(address: string): Promise<boolean> {
 
 export async function getAvailablePublicWorkersCount(): Promise<number> {
   'use cache';
-  cacheLife('minutes');
+  cacheLife("hours");
 
   const res = await ky.get(`${BASE_URL}/api/v0/get/worker/public/available/count`).text()
   const num = parseInt(res);
   return Number.isNaN(num) ? -1 : num;
+}
+
+export type DailyCounts = {
+  neuronCount: string;
+  oracleCount: string;
+  predictionCount: string;
+};
+export async function getDailyCounts(): Promise<DailyCounts> {
+  'use cache';
+  cacheLife("days");;
+
+  return await ky.get(`${BASE_URL}/daily/counts`).json()
 }

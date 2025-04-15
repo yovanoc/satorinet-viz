@@ -1,7 +1,7 @@
 import type { FC } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
-import { getDailyMiningEarnings, getWorkerRewardAverage } from "@/lib/db";
+import { getDailyMiningEarnings, getWorkerCountWithEarnings, getWorkerRewardAverage } from "@/lib/db";
 import { formatCurrency, formatSatori, formatUsd } from "@/lib/format";
 
 interface DailyStatsCardProps {
@@ -9,16 +9,17 @@ interface DailyStatsCardProps {
 }
 
 export const DailyStatsCard: FC<DailyStatsCardProps> = async ({ date }) => {
-  const [price, earningsData, averageReward] = await Promise.all([
+  const [price, earningsData, averageReward, workerCountWithEarnings] = await Promise.all([
     getSatoriPriceForDate(date),
     getDailyMiningEarnings(date),
     getWorkerRewardAverage(date),
+    getWorkerCountWithEarnings(date),
   ]);
 
   if (!earningsData) {
     return (
       <Card className="w-full">
-        <CardHeader className="p-2 md:p-4">
+        <CardHeader>
           <CardTitle className="text-xl md:text-2xl font-bold uppercase">
             <span>Daily Mining Stats</span>
             <p className="text-xs md:text-sm font-bold float-right">
@@ -50,7 +51,7 @@ export const DailyStatsCard: FC<DailyStatsCardProps> = async ({ date }) => {
 
   return (
     <Card className="w-full">
-      <CardHeader className="p-2 md:p-4">
+      <CardHeader>
         <CardTitle className="text-xl md:text-2xl font-bold uppercase">
           <span>Daily Mining Stats</span>
           <p className="text-xs md:text-sm font-bold float-right">
@@ -104,6 +105,16 @@ export const DailyStatsCard: FC<DailyStatsCardProps> = async ({ date }) => {
             SATORI{" "}
             <span className="text-emerald-900">
               ({formatUsd(avgEarnedUSD, 8)})
+            </span>
+          </p>
+        </div>
+
+        {/* Workers with Earnings */}
+        <div className="space-y-1">
+          <p className="font-semibold text-xs md:text-sm">
+            Workers with Earnings:{" "}
+            <span className="text-emerald-900">
+              {workerCountWithEarnings}
             </span>
           </p>
         </div>

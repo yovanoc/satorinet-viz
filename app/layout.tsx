@@ -1,15 +1,14 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import GitHubCorner from "@/components/github-corner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+import type { Metadata } from "next";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Oxanium } from "next/font/google";
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const oxanium = Oxanium({
+  variable: "--font-sans",
   subsets: ["latin"],
 });
 
@@ -24,22 +23,36 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <div className="min-h-screen min-w-screen bg-bg text-text p-2 md:p-8">
-          <GitHubCorner />
-          <header className="w-full mb-2 md:mb-8 flex items-center justify-center">
-            <h1 className="text-2xl font-bold uppercase">Satori DataViz</h1>
-          </header>
-          <main>{children}</main>
-          {/* <footer className="mt-8 text-xl font-bold">
-            <p>Data updated daily</p>
-          </footer> */}
-        </div>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${oxanium.variable} antialiased`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <main>
+            <SidebarProvider
+              style={
+                {
+                  "--sidebar-width": "calc(var(--spacing) * 72)",
+                  "--header-height": "calc(var(--spacing) * 12)",
+                } as React.CSSProperties
+              }
+            >
+              <AppSidebar variant="inset" />
+              <SidebarInset>
+                <SiteHeader />
+                <div className="flex flex-1 flex-col">
+                  <div className="@container/main flex flex-1 flex-col gap-2">
+                    {children}
+                  </div>
+                </div>
+              </SidebarInset>
+            </SidebarProvider>
+          </main>
+        </ThemeProvider>
       </body>
     </html>
-
   );
 }

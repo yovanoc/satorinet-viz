@@ -10,8 +10,8 @@ export const RealtimeInfoCard: FC = async () => {
   );
 
   return (
-    <Card className="w-full max-h-[200px]">
-      <CardHeader className="p-2 md:p-4">
+    <Card className="w-full h-auto max-h-[200px] md:max-h-[250px]">
+      <CardHeader>
         <CardTitle className="text-xl md:text-2xl font-bold uppercase">
           <span>Realtime info</span>
         </CardTitle>

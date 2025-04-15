@@ -5,7 +5,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "./ui/tooltip";
+} from "../ui/tooltip";
 import type { WorkerReward } from "@/lib/satorinet/central";
 
 export interface PoolData {
@@ -40,7 +40,7 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({
 }) => {
   return (
     <Card className="col-span-12 md:col-span-6">
-      <CardHeader className="p-2 md:p-4">
+      <CardHeader>
         <CardTitle className="text-xl md:text-2xl font-bold uppercase">
           <span>{poolName} Stats</span>
           <p className="text-xs md:text-sm font-bold float-right">
@@ -48,7 +48,7 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({
           </p>
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-2 md:p-4">
+      <CardContent>
         <div className="space-y-1 md:space-y-2">
           <p className="text-xs md:text-sm font-bold">
             Address: {poolData.pool_address}

@@ -1,20 +1,35 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { env } from "../env";
 import * as schema from "./schema";
-import { desc, sql, eq, and, gte, gt, lte, or } from "drizzle-orm";
+import { desc, sql, eq, and, gte, gt, lte, or, asc } from "drizzle-orm";
 import { dailyContributorAddress, dailyPredictorAddress } from "./schema";
 import { unstable_cacheLife as cacheLife } from "next/cache";
 import type { Pool } from "../known_pools";
 import { getSatoriPriceForDate } from "../livecoinwatch";
-import { applyFee, getAvgFee } from "../pool-utils";
+import { applyFees } from "../pool-utils";
 
 export const db = drizzle(env.DATABASE_URL, {
   schema,
 });
 
+export async function getMaxDelegatedStake(date: Date) {
+  "use cache";
+  cacheLife("max");
+
+  const res = await db
+    .select({
+      max_delegated_stake: sql<number>`max(${dailyPredictorAddress.delegated_stake})`,
+    })
+    .from(dailyPredictorAddress)
+    .where(sql`${dailyPredictorAddress.date} = ${date}`)
+    .execute();
+
+  return res[0]?.max_delegated_stake ?? null;
+}
+
 export async function getTopPools(date: Date) {
   "use cache";
-  cacheLife("default");
+  cacheLife("max");
 
   return db
     .select({
@@ -28,17 +43,18 @@ export async function getTopPools(date: Date) {
     .orderBy(
       desc(sql`sum(${dailyContributorAddress.staking_power_contribution})`)
     )
-    .limit(20)
+    .limit(15)
     .execute();
 }
 
 export async function getWorkerRewardAverage(date: Date) {
   "use cache";
-  cacheLife("default");
+  cacheLife("max");
 
   const res = await db
     .select({
       reward_avg: sql<number>`avg(${dailyPredictorAddress.reward})`,
+      sum_rewards: sql<number>`sum(${dailyPredictorAddress.reward})`,
     })
     .from(dailyPredictorAddress)
     .where(sql`${dailyPredictorAddress.date} = ${date}`)
@@ -54,7 +70,7 @@ export async function getPoolHistoricalData(
   days = 30
 ) {
   "use cache";
-  cacheLife("default");
+  cacheLife("max");
 
   // Subquery: Pre-aggregate daily_predictor_address with explicit aliases
   const predictorAgg = db
@@ -150,6 +166,26 @@ export async function getPoolHistoricalData(
   return query.execute();
 }
 
+export async function getWorkerCountWithEarnings(date: Date): Promise<number> {
+  "use cache";
+  cacheLife("max");
+
+  const result = await db
+    .select({
+      worker_count: sql<number>`count(distinct ${dailyPredictorAddress.worker_address})`,
+    })
+    .from(dailyPredictorAddress)
+    .where(
+      and(
+        eq(dailyPredictorAddress.date, sql`${date}`),
+        gt(dailyPredictorAddress.miner_earned, 0)
+      )
+    )
+    .execute();
+
+  return result[0]?.worker_count ?? 0;
+}
+
 export async function getPoolWorkerStats(
   poolAddress: string,
   poolVaultAddress: string,
@@ -157,7 +193,7 @@ export async function getPoolWorkerStats(
   days = 30
 ) {
   "use cache";
-  cacheLife("default");
+  cacheLife("max");
 
   return db
     .select({
@@ -197,7 +233,7 @@ export async function getPoolWorkerStats(
 
 export async function getDailyWorkerCounts() {
   "use cache";
-  cacheLife("default");
+  cacheLife("days");
 
   return db
     .select({
@@ -207,16 +243,16 @@ export async function getDailyWorkerCounts() {
     })
     .from(dailyPredictorAddress)
     .where(
-      sql`${dailyPredictorAddress.date} >= current_date - interval '1 day' * 25`
+      sql`${dailyPredictorAddress.date} >= current_date - interval '1 day' * 90`
     )
     .groupBy(dailyPredictorAddress.date)
-    .orderBy(desc(dailyPredictorAddress.date))
+    .orderBy(asc(dailyPredictorAddress.date))
     .execute();
 }
 
 export async function getDailyMiningEarnings(date: Date) {
   "use cache";
-  cacheLife("default");
+  cacheLife("max");
 
   const result = await db
     .select({
@@ -243,7 +279,7 @@ export async function getPoolsHistoricalEarnings(
   days = 30
 ) {
   "use cache";
-  cacheLife("default");
+  cacheLife("max");
 
   // TODO use a proper query
 
@@ -268,7 +304,8 @@ type PoolEarningsData = {
   full_stake_earnings: number;
   daily_earnings: number;
   current_amount: number;
-  avg_fee: number;
+  feePercent: number;
+  feeAmountPerSatori: number;
 };
 
 type SelfWorkerRewardsData = {
@@ -293,7 +330,7 @@ export async function getPoolVsWorkerComparison(
   startingAmount: number = 0
 ): Promise<PoolsVSWorkerData[]> {
   "use cache";
-  cacheLife("default");
+  cacheLife("max");
 
   if (pools.some((pool) => !pool.vault_address)) {
     console.error("Pool vault address is not defined.");
@@ -341,9 +378,11 @@ export async function getPoolVsWorkerComparison(
 
       // check every pool has the same date
       for (const poolData of poolsData) {
-        const poolEntry = poolData.data[i]!;
-        if (poolEntry.date !== entry.date) {
-          console.error("Dates are not the same for all pools.");
+        const poolEntry = poolData.data[i];
+        if (poolEntry && poolEntry.date !== entry.date) {
+          console.error(
+            `Dates are not the same for all pools. Pool: ${poolData.pool.name} - Date: ${poolEntry.date} - Expected: ${entry.date}`
+          );
           return [];
         }
       }
@@ -416,6 +455,13 @@ export async function getPoolVsWorkerComparison(
     };
 
     for (const pool of pools) {
+      if (pool.closed && pool.closed <= dailyDate) {
+        // console.warn(
+        //   `Pool ${pool.name} is closed on date ${dailyDate}. Skipping...`
+        // );
+        continue;
+      }
+
       const entry = poolsData
         .find((p) => p.pool.address === pool.address)!
         .data.find(
@@ -435,29 +481,70 @@ export async function getPoolVsWorkerComparison(
         continue;
       }
 
-      const avgFee = getAvgFee(pool, dailyDate);
-
       const poolTracking = poolsTracking[pool.address];
       if (!poolTracking) {
         console.error(`No tracking data found for pool ${pool.address}`);
         continue;
       }
 
-      const grossPoolEarnings =
-        entry.earnings_per_staking_power * poolTracking.current_amount;
-      const newPoolEarnings = applyFee(grossPoolEarnings, avgFee);
-      poolTracking.current_amount += newPoolEarnings;
-      poolTracking.total_earnings += newPoolEarnings;
-
-      data.pools[pool.address] = {
+      const res = applyFees({
         pool,
-        total_earnings: poolTracking.total_earnings,
-        full_stake_earnings:
-        applyFee(entry.earnings_per_staking_power * stake, avgFee),
-        daily_earnings: newPoolEarnings,
-        current_amount: poolTracking.current_amount,
-        avg_fee: avgFee,
-      };
+        date: dailyDate,
+        fullStakeAmount: stake,
+        earnings_per_staking_power: entry.earnings_per_staking_power,
+        current_staked_amount: poolTracking.current_amount,
+        satoriPrice: price,
+      });
+
+      if (!res) {
+        console.error(`No fee data found for pool ${pool.address}`);
+        continue;
+      }
+
+      if (res.type === "single") {
+        const { net, netPerFullStake, feeAmountPerSatori, feePercent } =
+          res.result;
+
+        const newPoolEarnings = net;
+        poolTracking.current_amount += newPoolEarnings;
+        poolTracking.total_earnings += newPoolEarnings;
+
+        data.pools[pool.address] = {
+          pool,
+          total_earnings: poolTracking.total_earnings,
+          full_stake_earnings: netPerFullStake,
+          daily_earnings: newPoolEarnings,
+          current_amount: poolTracking.current_amount,
+          feePercent,
+          feeAmountPerSatori,
+        };
+      } else {
+        const { net, netPerFullStake, feeAmountPerSatori, feePercent } =
+          res.results.reduce(
+            (acc, r) => {
+              acc.net += r.net;
+              acc.netPerFullStake += r.netPerFullStake;
+              acc.feeAmountPerSatori += r.feeAmountPerSatori;
+              acc.feePercent += r.feePercent;
+              return acc;
+            },
+            { net: 0, netPerFullStake: 0, feeAmountPerSatori: 0, feePercent: 0 }
+          );
+
+        const newPoolEarnings = net / res.results.length;
+        poolTracking.current_amount += newPoolEarnings;
+        poolTracking.total_earnings += newPoolEarnings;
+
+        data.pools[pool.address] = {
+          pool,
+          total_earnings: poolTracking.total_earnings,
+          full_stake_earnings: netPerFullStake / res.results.length,
+          daily_earnings: newPoolEarnings,
+          current_amount: poolTracking.current_amount,
+          feePercent: feePercent / res.results.length,
+          feeAmountPerSatori: feeAmountPerSatori / res.results.length,
+        };
+      }
     }
 
     result.push(data);

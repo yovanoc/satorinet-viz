@@ -6,10 +6,14 @@ export const getAllSatoriHolders = async () => {
   cacheLife('hours');
 
   const client = new ElectrumxClient();
-  await client.connectToServer();
-
-  const holders = await client.getAssetHolders(null, 'SATORI');
-  return holders;
+  try {
+    await client.connectToServer();
+    const holders = await client.getAssetHolders(null, 'SATORI');
+    return holders;
+  } catch (e) {
+    console.error('Error connecting to ElectrumX server:', e);
+    return null;
+  }
 }
 
 export const tiers = [
@@ -59,8 +63,9 @@ export const classifyAssetHolders = (assetHolders: AssetHolder[]) => {
       summary.tiers[tier.name] = { total: 0, percentCount: 0, percentAmount: 0, count: 0, wallets: [] };
   });
 
+  const scale = Math.pow(10, 8);
   assetHolders.forEach(({ address, balance }) => {
-      summary.totalSatori += balance;
+      summary.totalSatori += Math.round(balance * scale);
       const tier = tiers.find(tier => balance >= tier.min && balance < tier.max);
       if (tier) {
           const tierData = summary.tiers[tier.name];
@@ -69,6 +74,8 @@ export const classifyAssetHolders = (assetHolders: AssetHolder[]) => {
           tierData.wallets.push({ address, balance });
       }
   });
+
+  summary.totalSatori /= scale;
 
   for (const tierName of Object.keys(summary.tiers) as TierName[]) {
       const tierData = summary.tiers[tierName];

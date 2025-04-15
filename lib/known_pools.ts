@@ -1,16 +1,55 @@
-export const KNOWN_POOLS = [
+export type StakingFee =
+  | {
+      type: "percent";
+      percent: number | number[];
+    }
+  | {
+      type: "cost";
+      amount: number;
+      amount_type: "satori" | "usd";
+      per: number | "full_stake";
+    };
+
+export type StakingFees = {
+  fees: StakingFee;
+  until: Date | null;
+};
+
+export type Pool = {
+  name: string;
+  color: string;
+  closed?: Date;
+  address: string;
+  vault_address?: string;
+  staking_fees?: StakingFees[];
+};
+
+export const KNOWN_POOLS: Pool[] = [
   {
     name: "Satorinet",
     color: "#0072ff",
     address: "EcJRjWynLxVZcGSY5nXXXMmrQvddeLQRVY",
     vault_address: "EKKtydH4pbq86aJmiNuEVR4kP17exCcV25",
-    staking_fees_percent: [
+    staking_fees: [
       {
-        percent: [0.1, 0.15],
+        fees: {
+          type: "percent",
+          percent: [0.1, 0.15],
+        },
         until: new Date("2025-02-16T00:00:00Z"),
       },
       {
-        percent: [0.08, 0.14],
+        fees: {
+          type: "percent",
+          percent: [0.08, 0.14],
+        },
+        until: new Date("2025-04-15T00:00:00Z"),
+      },
+      {
+        fees: {
+          type: "percent",
+          percent: [0.18, 0.24],
+        },
         until: null,
       },
     ],
@@ -18,11 +57,15 @@ export const KNOWN_POOLS = [
   {
     name: "Pool Mudita",
     color: "#ff4f00",
+    closed: new Date("2025-04-13T00:00:00Z"),
     address: "ELs9eiFDCYAKBREL7g8d3WjQxrYDE7x5eY",
     vault_address: "EHAAy7YivL1Lba6azhMmfbLKRzdcBVAv5x",
-    staking_fees_percent: [
+    staking_fees: [
       {
-        percent: 0.15,
+        fees: {
+          type: "percent",
+          percent: 0.15,
+        },
         until: null,
       },
     ],
@@ -37,13 +80,28 @@ export const KNOWN_POOLS = [
     color: "#e738ef",
     address: "EJSHjPzLpRmubnRm9ARNDRtrqNum7EU3mK",
     vault_address: "Ef6VmYt6ywXxpMikjKWQCnETpSBbF4z7yw",
-    staking_fees_percent: [
+    staking_fees: [
       {
-        percent: 0.2,
+        fees: {
+          type: "percent",
+          percent: 0.2,
+        },
         until: new Date("2025-04-06T00:00:00Z"),
       },
       {
-        percent: 0.4,
+        fees: {
+          type: "percent",
+          percent: 0.4,
+        },
+        until: new Date("2025-04-13T00:00:00Z"),
+      },
+      {
+        fees: {
+          type: "cost",
+          amount: 0.1,
+          amount_type: "usd",
+          per: "full_stake",
+        },
         until: null,
       },
     ],
@@ -58,9 +116,12 @@ export const KNOWN_POOLS = [
     color: "#29e317",
     address: "EdC6EVXD54mhiVYBFF1Dw5P3xGNjBFiarq",
     vault_address: "EVednaMKprwVQzwAE1KFRYLx3vTbwUbXNk",
-    staking_fees_percent: [
+    staking_fees: [
       {
-        percent: 0.15,
+        fees: {
+          type: "percent",
+          percent: 0.15,
+        },
         until: null,
       },
     ],
@@ -76,5 +137,3 @@ export const KNOWN_POOLS = [
   //   vault_address: "EVednaMKprwVQzwAE1KFRYLx3vTbwUbXNk",
   // }
 ];
-
-export type Pool = (typeof KNOWN_POOLS)[number];

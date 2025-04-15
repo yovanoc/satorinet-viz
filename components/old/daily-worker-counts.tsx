@@ -1,20 +1,27 @@
-import type { FC } from "react"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import type { FC } from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface DailyCount {
-  date: string
-  worker_address_count: number
-  diff_from_previous_day: number | null
+  date: string;
+  worker_address_count: number;
+  diff_from_previous_day: number | null;
 }
 
 interface DailyWorkerCountsProps {
-  dailyCounts: DailyCount[]
+  dailyCounts: DailyCount[];
 }
 
 const DailyWorkerCounts: FC<DailyWorkerCountsProps> = ({ dailyCounts }) => {
   return (
-    <Card className="col-span-12 md:col-span-10 lg:col-span-8 2xl:col-span-6">
+    <Card className="col-span-12 md:col-span-10 lg:col-span-8 2xl:col-span-6 h-full">
       <CardHeader>
         <CardTitle>Daily Worker Address Counts</CardTitle>
       </CardHeader>
@@ -31,9 +38,13 @@ const DailyWorkerCounts: FC<DailyWorkerCountsProps> = ({ dailyCounts }) => {
             {dailyCounts.map((count) => (
               <TableRow key={count.date}>
                 <TableCell>{count.date}</TableCell>
-                <TableCell>{count.worker_address_count.toLocaleString()}</TableCell>
                 <TableCell>
-                  {count.diff_from_previous_day !== null ? count.diff_from_previous_day.toLocaleString() : "N/A"}
+                  {count.worker_address_count.toLocaleString()}
+                </TableCell>
+                <TableCell>
+                  {count.diff_from_previous_day !== null
+                    ? count.diff_from_previous_day.toLocaleString()
+                    : "N/A"}
                 </TableCell>
               </TableRow>
             ))}
@@ -41,8 +52,7 @@ const DailyWorkerCounts: FC<DailyWorkerCountsProps> = ({ dailyCounts }) => {
         </Table>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default DailyWorkerCounts
-
+export default DailyWorkerCounts;

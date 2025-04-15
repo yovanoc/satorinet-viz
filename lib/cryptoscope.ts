@@ -58,7 +58,8 @@ export type GetAssetInfoResponse = {
 };
 export async function getAssetInfo(name: string, withTopHolders: boolean = false) {
   'use cache';
-  cacheLife('minutes');
+  cacheLife('weeks');
+
   const url = new URL(`${BASE_URL}/getassetinfo`);
   url.searchParams.append('name', name);
   if (withTopHolders) {
@@ -125,7 +126,8 @@ export type GetAddressResponse = {
 };
 export async function getAddress(address: string) {
   'use cache';
-  cacheLife('minutes');
+  cacheLife('weeks');
+
   const url = new URL(`${BASE_URL}/getaddress`);
   url.searchParams.append('address', address);
 
