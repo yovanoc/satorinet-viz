@@ -41,14 +41,14 @@ async function PoolDataSection({ date, pool }: { date: Date; pool: Pool }) {
 
     const dateWorkerStats = workerStats
       ? workerStats.find(
-        (workerStat) => new Date(workerStat.date).getTime() === date.getTime()
-      )
+          (workerStat) => new Date(workerStat.date).getTime() === date.getTime()
+        )
       : null;
     const dateHistoricalData = historicalData
       ? historicalData.find(
-        (historicalData) =>
-          new Date(historicalData.date).getTime() === date.getTime()
-      )
+          (historicalData) =>
+            new Date(historicalData.date).getTime() === date.getTime()
+        )
       : null;
     const enrichedPoolData: PoolData = {
       workerReward,
@@ -127,10 +127,17 @@ export default async function PoolsSingle({
 
   return (
     <div className="flex flex-col flex-1 gap-4 py-4 md:gap-6 md:py-6">
-      <div className="relative flex items-center px-4 lg:px-6 h-16">
-        <span className="absolute left-1/2 transform -translate-x-1/2 text-3xl font-bold">
+      <div className="flex items-center justify-between px-4 lg:px-6 h-16 relative">
+        {/* Mobile: left-aligned date */}
+        <span className="text-xl font-bold lg:hidden">
           {selectedDate.toLocaleDateString()}
         </span>
+
+        {/* Desktop: centered date */}
+        <span className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 text-2xl font-bold">
+          {selectedDate.toLocaleDateString()}
+        </span>
+
         <div className="ml-auto">
           <DatePickerWrapper selectedDate={selectedDate} />
         </div>

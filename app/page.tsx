@@ -84,21 +84,16 @@ export default function Page() {
       <Suspense
         fallback={
           <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-6">
-            <Skeleton className="h-[125px] w-full rounded-xl" />
-            <Skeleton className="h-[125px] w-full rounded-xl" />
-            <Skeleton className="h-[125px] w-full rounded-xl" />
-            <Skeleton className="h-[125px] w-full rounded-xl" />
-            <Skeleton className="h-[125px] w-full rounded-xl" />
-            <Skeleton className="h-[125px] w-full rounded-xl" />
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} className="h-[125px] w-full rounded-xl" />
+            ))}
           </div>
         }
       >
         <SectionCards />
       </Suspense>
       <div className="px-4 lg:px-6">
-        <Suspense
-          fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}
-        >
+        <Suspense fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}>
           <DailyWorkerCountsCard />
         </Suspense>
       </div>

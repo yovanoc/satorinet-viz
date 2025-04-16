@@ -34,8 +34,14 @@ export default async function PoolsPage({
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-      <div className="relative flex items-center px-4 lg:px-6 h-16">
-        <span className="absolute left-1/2 transform -translate-x-1/2 text-3xl font-bold">
+      <div className="flex items-center justify-between px-4 lg:px-6 h-16 relative">
+        {/* Mobile: left-aligned date */}
+        <span className="text-xl font-bold lg:hidden">
+          {selectedDate.toLocaleDateString()}
+        </span>
+
+        {/* Desktop: centered date */}
+        <span className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 text-2xl font-bold">
           {selectedDate.toLocaleDateString()}
         </span>
         <div className="ml-auto">

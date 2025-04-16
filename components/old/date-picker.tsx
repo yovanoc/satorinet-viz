@@ -44,6 +44,7 @@ export const CalendarForm: FC<CalendarFormProps> = ({ selectedDate, onDateChange
           mode="single"
           selected={date}
           onSelect={(newDate) => {
+            // ! newDate is already 00:00:00 UTC
             setDate(newDate)
             onDateChange(newDate)
           }}

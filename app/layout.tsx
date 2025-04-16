@@ -22,6 +22,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const lastUpdated = new Date().toLocaleString();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${oxanium.variable} antialiased`}>
@@ -50,6 +52,10 @@ export default function RootLayout({
                 </div>
               </SidebarInset>
             </SidebarProvider>
+
+            <div className="fixed bottom-2 right-4 z-50 text-xs text-muted-foreground pointer-events-none select-none">
+              Last updated: {lastUpdated}
+            </div>
           </main>
         </ThemeProvider>
       </body>
