@@ -71,6 +71,11 @@ export const KNOWN_POOLS: Pool[] = [
     ],
   },
   {
+    name: "Managers/Reserves Pool",
+    color: "#dbaf00",
+    address: "EaWsaSx1FtrcykXVovzQUNy1yCcrTb7xSH",
+  },
+  {
     name: "Dev Pool",
     color: "#ddd",
     address: "EZ7SCvVdDTR1e6B2532C85KDteYZ56KCiC",

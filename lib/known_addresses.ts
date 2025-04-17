@@ -16,7 +16,7 @@ export const KNOWN_ADDRESSES = [
     address: 'EMR2q6gEBtjj9YU6y9LShc697Wuy3Tx24t',
   },
   {
-    name: 'DEV',
+    name: 'RESERVES',
     address: 'EQ9oxUyiCeAWVWeYQrjpV7AKhf7wp3Q8J3',
   },
   {
