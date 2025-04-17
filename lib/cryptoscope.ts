@@ -66,7 +66,7 @@ export async function getAssetInfo(name: string, withTopHolders: boolean = false
     url.searchParams.append('withtopholders', '1');
   }
 
-  const res = await ky.get(url).json<GetAssetInfoResponse>();
+  const res = await ky.get(url, { retry: 3 }).json<GetAssetInfoResponse>();
   return res;
 }
 
@@ -131,6 +131,6 @@ export async function getAddress(address: string) {
   const url = new URL(`${BASE_URL}/getaddress`);
   url.searchParams.append('address', address);
 
-  const res = await ky.get(url).json<GetAddressResponse>();
+  const res = await ky.get(url, { retry: 3 }).json<GetAddressResponse>();
   return res;
 }
