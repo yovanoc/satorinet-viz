@@ -22,7 +22,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const lastUpdated = new Date().toLocaleString();
+  const lastUpdated = new Date().toUTCString();
 
   return (
     <html lang="en" suppressHydrationWarning>

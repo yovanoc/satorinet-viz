@@ -11,14 +11,16 @@ import Link from "next/link";
 import { getDailyMiningEarnings } from "@/lib/db/queries/predictors/mining-earnings";
 import { getWorkerRewardAverage } from "@/lib/db/queries/predictors/worker-reward-avg";
 import { getWorkerCountWithEarnings } from "@/lib/db/queries/predictors/worker-count-earnings";
+import { getMaxDelegatedStake } from "@/lib/db/queries/predictors/max-delegated-stake";
 
 export async function SectionCardsPools({ date }: { date: Date }) {
-  const [price, earningsData, averageReward, workerCountWithEarnings] =
+  const [price, earningsData, averageReward, workerCountWithEarnings, stakeRequired] =
     await Promise.all([
       getSatoriPriceForDate(date),
       getDailyMiningEarnings(date),
       getWorkerRewardAverage(date),
       getWorkerCountWithEarnings(date),
+      getMaxDelegatedStake(date),
     ]);
 
   if (!earningsData) {
@@ -62,7 +64,7 @@ export async function SectionCardsPools({ date }: { date: Date }) {
             </CardHeader>
             <CardFooter className="flex-col items-start gap-1.5 text-sm">
               <div className="text-muted-foreground">
-                Average rewards per neuron
+                Average rewards per neuron for a full {stakeRequired} SATORI.
               </div>
             </CardFooter>
           </Card>
