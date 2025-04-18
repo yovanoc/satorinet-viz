@@ -6,13 +6,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
-import {
-  getDailyMiningEarnings,
-  getWorkerCountWithEarnings,
-  getWorkerRewardAverage,
-} from "@/lib/db";
 import { formatSatori, formatUsd } from "@/lib/format";
 import Link from "next/link";
+import { getDailyMiningEarnings } from "@/lib/db/queries/predictors/mining-earnings";
+import { getWorkerRewardAverage } from "@/lib/db/queries/predictors/worker-reward-avg";
+import { getWorkerCountWithEarnings } from "@/lib/db/queries/predictors/worker-count-earnings";
 
 export async function SectionCardsPools({ date }: { date: Date }) {
   const [price, earningsData, averageReward, workerCountWithEarnings] =

@@ -1,4 +1,3 @@
-import { getMaxDelegatedStake, getPoolsHistoricalEarnings } from "@/lib/db";
 import type { Pool } from "@/lib/known_pools";
 import {
   PoolsStakingComparisonChart,
@@ -7,6 +6,8 @@ import {
 import { unstable_cacheLife as cacheLife } from "next/cache";
 import { getPoolFeesForDate } from "@/lib/pool-utils";
 import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
+import { getPoolsHistoricalEarnings } from "@/lib/db/queries/pools/historical-earnings";
+import { getMaxDelegatedStake } from "@/lib/db/queries/predictors/max-delegated-stake";
 
 interface PoolsStakingComparisonProps {
   pools: Array<Pool>;

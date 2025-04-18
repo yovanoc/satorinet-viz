@@ -7,10 +7,6 @@ import {
 import { SectionCards } from "@/components/section-cards";
 
 import { Suspense } from "react";
-import {
-  getDailyWorkerCounts,
-  getManifests,
-} from "@/lib/db";
 import { tiers as tiersInfo } from "@/lib/satorinet/holders";
 import { KNOWN_ADDRESSES } from "@/lib/known_addresses";
 import { formatSatori } from "@/lib/format";
@@ -18,6 +14,8 @@ import { getSatoriHolders } from "@/lib/get-satori-holders";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getManifest } from "@/lib/manifest";
 import { StackedAreaManifest } from "@/components/stacked-area-manifest";
+import { getDailyWorkerCounts } from "@/lib/db/queries/predictors/worker-count";
+import { getManifests } from "@/lib/db/queries/manifest";
 
 async function DailyWorkerCountsCard() {
   const date = new Date();
@@ -28,9 +26,6 @@ async function DailyWorkerCountsCard() {
 async function DailyManifestCard() {
   const date = new Date();
   const all = await getManifests(date, 90);
-  console.dir({
-    len: all.length,
-  });
   const data = all.map(item => ({
     date: new Date(item.date),
     ...getManifest(item),

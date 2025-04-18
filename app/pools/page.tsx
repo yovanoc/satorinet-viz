@@ -1,13 +1,13 @@
-import { PoolsStakingComparison } from "@/components/old/pools-staking-comparison";
+import { PoolsStakingComparison } from "@/components/pools/pools-staking-comparison";
 import { KNOWN_POOLS } from "@/lib/known_pools";
 import { Card } from "@/components/ui/card";
-import DatePickerWrapper from "@/components/old/date-picker-wrapper";
+import DatePickerWrapper from "@/components/date-picker-wrapper";
 import { Suspense } from "react";
-import { getTopPools } from "@/lib/db";
 import TopPools from "@/components/top-pools";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SectionCardsPools } from "@/components/section-cards-pools";
 import { getPoolAndDate } from "@/lib/get-pool-and-date-params";
+import { getTopPools } from "@/lib/db/queries/contributors";
 
 async function TopPoolsCard({ date }: { date: Date }) {
   const topPools = await getTopPools(date);

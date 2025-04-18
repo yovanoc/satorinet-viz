@@ -1,18 +1,18 @@
-import type { PoolData } from "@/components/old/daily-contributor-address-card";
-import DailyContributorAddressCard from "@/components/old/daily-contributor-address-card";
-import DatePickerWrapper from "@/components/old/date-picker-wrapper";
-import PoolHistoricalData from "@/components/old/pool-historical-data";
-import PoolSelectorWrapper from "@/components/old/pool-selector-wrapper";
-import PoolWorkerComparison from "@/components/old/pool-vs-worker-comparison";
+import type { PoolData } from "@/components/pools/daily-contributor-address-card";
+import DailyContributorAddressCard from "@/components/pools/daily-contributor-address-card";
+import DatePickerWrapper from "@/components/date-picker-wrapper";
+import PoolHistoricalData from "@/components/pools/pool-historical-data";
+import PoolSelectorWrapper from "@/components/pools/pool-selector-wrapper";
+import PoolWorkerComparison from "@/components/pools/pool-vs-worker-comparison";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getPoolHistoricalData, getPoolWorkerStats } from "@/lib/db";
+import { getPoolHistoricalData } from "@/lib/db/queries/pools/historical-data";
+import { getPoolWorkerStats } from "@/lib/db/queries/predictors/worker-stats";
 import { getPoolAndDate } from "@/lib/get-pool-and-date-params";
 import { KNOWN_POOLS, type Pool } from "@/lib/known_pools";
 import { getWorkerReward, type WorkerReward } from "@/lib/satorinet/central";
 import { Suspense } from "react";
 
-// TODO show if pool is closed, since when
 // TODO show the different % fees staged ?
 
 const tryGetWorkerReward = async (
@@ -69,6 +69,7 @@ async function PoolDataSection({ date, pool }: { date: Date; pool: Pool }) {
       earnings_per_staking_power:
         dateHistoricalData?.earnings_per_staking_power,
       pool_miner_percent: dateWorkerStats?.pool_miner_percent,
+      closed: pool.closed,
     };
 
     return (

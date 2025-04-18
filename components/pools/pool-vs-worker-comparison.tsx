@@ -6,8 +6,8 @@ import PoolWorkerInputs from "./pool-vs-worker-inputs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Loading from "@/app/loading";
 import { Suspense } from "react";
-import { getPoolVsWorkerComparisonData } from "./actions";
 import { PoolComparisonChart } from "./pool-vs-worker";
+import { getPoolVsWorkerComparisonData } from "@/app/pools/actions";
 
 type Props = {
   pool: Pool;

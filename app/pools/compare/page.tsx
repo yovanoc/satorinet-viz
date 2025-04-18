@@ -1,4 +1,4 @@
-import MultiPoolWorkerComparison from "@/components/old/multi-pool-worker-comparison";
+import MultiPoolWorkerComparison from "@/components/pools/multi-pool-worker-comparison";
 
 export const revalidate = 3_600; // 1 hour
 

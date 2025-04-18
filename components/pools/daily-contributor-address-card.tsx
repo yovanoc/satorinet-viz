@@ -10,6 +10,7 @@ import type { WorkerReward } from "@/lib/satorinet/central";
 import Link from "next/link";
 
 export interface PoolData {
+  closed?: Date;
   workerReward: WorkerReward | null;
   pool_address: string;
   total_staking_power: number;
@@ -39,6 +40,29 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({
   poolName,
   date,
 }) => {
+
+  if (poolData.closed && date >= poolData.closed) {
+    return (
+      <Card className="col-span-12 md:col-span-6">
+        <CardHeader>
+          <CardTitle className="text-xl md:text-2xl font-bold uppercase">
+            <span>{poolName} Stats</span>
+            <p className="text-xs md:text-sm font-bold float-right">
+              {date.toLocaleDateString()}
+            </p>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-1 md:space-y-2">
+            <p className="text-xs md:text-sm font-bold text-red-500">
+              Pool is closed since {poolData.closed.toLocaleDateString()}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="col-span-12 md:col-span-6">
       <CardHeader>

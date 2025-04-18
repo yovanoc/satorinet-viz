@@ -1,6 +1,6 @@
 "use server";
 
-import { getPoolVsWorkerComparison } from "@/lib/db";
+import { getPoolVsWorkerComparison } from "@/lib/db/queries/pools/worker-comparison";
 import type { Pool } from "@/lib/known_pools";
 
 export async function getPoolVsWorkerComparisonData(

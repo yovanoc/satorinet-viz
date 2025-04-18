@@ -1,6 +1,5 @@
 "use client";
 
-import type { PoolsVSWorkerData } from "@/lib/db";
 import { formatCurrency, formatSatori } from "@/lib/format";
 import {
   LineChart,
@@ -11,6 +10,7 @@ import {
   Legend,
 } from "recharts";
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
+import type { PoolsVSWorkerData } from "@/lib/db/queries/pools/worker-comparison";
 
 const SELF_COLOR = "#388E3C";
 
