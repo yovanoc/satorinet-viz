@@ -7,6 +7,7 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip";
 import type { WorkerReward } from "@/lib/satorinet/central";
+import Link from "next/link";
 
 export interface PoolData {
   workerReward: WorkerReward | null;
@@ -51,7 +52,10 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({
       <CardContent>
         <div className="space-y-1 md:space-y-2">
           <p className="text-xs md:text-sm font-bold">
-            Address: {poolData.pool_address}
+            Address:{" "}
+            <Link href={`/address/${poolData.pool_address}`}>
+              {poolData.pool_address}
+            </Link>
           </p>
           <p className="text-xs md:text-sm font-bold">
             Staking Power Received:{" "}
@@ -151,7 +155,8 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({
                 </p>
               </TooltipTrigger>
               <TooltipContent>
-                (Daily Rewards - Total Public Workers Earned) / (Staking Power Received + Pool&apos;s Own Staking Power)
+                (Daily Rewards - Total Public Workers Earned) / (Staking Power
+                Received + Pool&apos;s Own Staking Power)
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

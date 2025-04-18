@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatSatori } from "@/lib/format";
-import { AddressLink } from "./address-link";
+import Link from "next/link";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const schema = z.object({
@@ -98,7 +98,9 @@ const topHoldersColumns: ColumnDef<SingleHolderData>[] = [
     header: "Address",
     cell: ({ row }) => (
       <div className="w-96">
-        <AddressLink address={row.original.address} />
+        <Link href={`/address/${row.original.address}`}>
+          {row.original.address}
+        </Link>
       </div>
     ),
   },
@@ -122,7 +124,9 @@ const knownAddressesColumns: ColumnDef<SingleHolderData>[] = [
     header: "Address",
     cell: ({ row }) => (
       <div className="w-96">
-        <AddressLink address={row.original.address} />
+        <Link href={`/address/${row.original.address}`}>
+          {row.original.address}
+        </Link>
       </div>
     ),
   },
@@ -179,6 +183,8 @@ export function DataTable({
   topHolders: SingleHolderData[];
   knownAddresses: SingleHolderData[];
 }) {
+  const [tab, setTab] = React.useState("holders-summary");
+
   const breakdownTable = useReactTable({
     data: breakdown,
     columns: breakdownColumns,
@@ -217,14 +223,15 @@ export function DataTable({
 
   return (
     <Tabs
-      defaultValue="holders-summary"
+      value={tab}
+      onValueChange={setTab}
       className="w-full flex-col justify-start gap-6"
     >
       <div className="flex items-center justify-between px-4 lg:px-6">
         <Label htmlFor="view-selector" className="sr-only">
           View
         </Label>
-        <Select defaultValue="holders-summary">
+        <Select value={tab} onValueChange={setTab}>
           <SelectTrigger
             className="flex w-fit @4xl/main:hidden"
             size="sm"

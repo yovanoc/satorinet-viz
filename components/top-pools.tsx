@@ -21,8 +21,8 @@ import {
   type ColumnDef,
   type Row,
 } from "@tanstack/react-table";
-import { AddressLink } from "./address-link";
 import { formatSatori } from "@/lib/format";
+import Link from "next/link";
 
 interface Pool {
   pool_address: string;
@@ -48,7 +48,9 @@ const dataColumns: ColumnDef<Pool>[] = [
             ({row.original.pool_name})
           </span>
         )}
-        <AddressLink address={row.original.pool_address} />
+        <Link href={`/address/${row.original.pool_address}`}>
+          {row.original.pool_address}
+        </Link>
       </div>
     ),
   },
@@ -67,7 +69,7 @@ const dataColumns: ColumnDef<Pool>[] = [
     cell: ({ row }) => (
       <div className="items-center">{row.original.contributor_count}</div>
     ),
-  }
+  },
 ];
 
 function MyRow({ row }: { row: Row<Pool> }) {

@@ -7,16 +7,36 @@ import {
 import { SectionCards } from "@/components/section-cards";
 
 import { Suspense } from "react";
-import { getDailyWorkerCounts } from "@/lib/db";
+import {
+  getDailyWorkerCounts,
+  getManifests,
+} from "@/lib/db";
 import { tiers as tiersInfo } from "@/lib/satorinet/holders";
 import { KNOWN_ADDRESSES } from "@/lib/known_addresses";
 import { formatSatori } from "@/lib/format";
 import { getSatoriHolders } from "@/lib/get-satori-holders";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getManifest } from "@/lib/manifest";
+import { StackedAreaManifest } from "@/components/stacked-area-manifest";
 
 async function DailyWorkerCountsCard() {
-  const dailyCounts = await getDailyWorkerCounts();
+  const date = new Date();
+  const dailyCounts = await getDailyWorkerCounts(date, 90);
   return <ChartAreaInteractive dailyCounts={dailyCounts} />;
+}
+
+async function DailyManifestCard() {
+  const date = new Date();
+  const all = await getManifests(date, 90);
+  console.dir({
+    len: all.length,
+  });
+  const data = all.map(item => ({
+    date: new Date(item.date),
+    ...getManifest(item),
+  }))
+
+  return <StackedAreaManifest manifests={data} />;
 }
 
 async function CustomDataTable() {
@@ -93,9 +113,18 @@ export default function Page() {
         <SectionCards />
       </Suspense>
       <div className="px-4 lg:px-6">
-        <Suspense fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}>
-          <DailyWorkerCountsCard />
-        </Suspense>
+        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
+          <Suspense
+            fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}
+          >
+            <DailyWorkerCountsCard />
+          </Suspense>
+          <Suspense
+            fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}
+          >
+            <DailyManifestCard />
+          </Suspense>
+        </div>
       </div>
       <Suspense
         fallback={

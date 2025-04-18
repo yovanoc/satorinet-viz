@@ -2,7 +2,11 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { env } from "../env";
 import * as schema from "./schema";
 import { desc, sql, eq, and, gte, gt, lte, or, asc } from "drizzle-orm";
-import { dailyContributorAddress, dailyPredictorAddress } from "./schema";
+import {
+  dailyContributorAddress,
+  dailyPredictorAddress,
+  dailyManifestAddress,
+} from "./schema";
 import { unstable_cacheLife as cacheLife } from "next/cache";
 import type { Pool } from "../known_pools";
 import { getSatoriPriceForDate } from "../livecoinwatch";
@@ -11,6 +15,69 @@ import { applyFees } from "../pool-utils";
 export const db = drizzle(env.DATABASE_URL, {
   schema,
 });
+
+export async function getInvitersForDate(date: Date) {
+  "use cache";
+  cacheLife("max");
+
+  const res = await db.query.dailyInviterAddress
+    .findMany({
+      where: (inviter) => eq(inviter.date, sql`${date}`),
+    })
+    .execute();
+  return res;
+}
+
+export async function getManifestForDate(date: Date) {
+  "use cache";
+  cacheLife("max");
+
+  const res = await db
+    .select({
+      date: dailyManifestAddress.date,
+      predictors_weighted: sql<number>`sum(${dailyManifestAddress.predictors_weighted})`,
+      oracles_weighted: sql<number>`sum(${dailyManifestAddress.oracles_weighted})`,
+      inviters_weighted: sql<number>`sum(${dailyManifestAddress.inviters_weighted})`,
+      creators_weighted: sql<number>`sum(${dailyManifestAddress.creators_weighted})`,
+      managers_weighted: sql<number>`sum(${dailyManifestAddress.managers_weighted})`,
+    })
+    .from(dailyManifestAddress)
+    .where(sql`${dailyManifestAddress.date} = ${date}`)
+    .groupBy(dailyManifestAddress.date)
+    .orderBy(asc(dailyManifestAddress.date))
+    .execute();
+  return res[0] || null;
+}
+
+export async function getManifests(date: Date, days = 30) {
+  "use cache";
+  cacheLife("max");
+
+  const res = await db
+    .select({
+      date: dailyManifestAddress.date,
+      predictors_weighted: sql<number>`sum(${dailyManifestAddress.predictors_weighted})`,
+      oracles_weighted: sql<number>`sum(${dailyManifestAddress.oracles_weighted})`,
+      inviters_weighted: sql<number>`sum(${dailyManifestAddress.inviters_weighted})`,
+      creators_weighted: sql<number>`sum(${dailyManifestAddress.creators_weighted})`,
+      managers_weighted: sql<number>`sum(${dailyManifestAddress.managers_weighted})`,
+    })
+    .from(dailyManifestAddress)
+    .where(
+      and(
+        gte(
+          dailyManifestAddress.date,
+          sql`${date}::timestamp - ${days} * interval '1 day'`
+        ),
+        lte(dailyManifestAddress.date, sql`${date}`)
+      )
+    )
+    .groupBy(dailyManifestAddress.date)
+    .orderBy(asc(dailyManifestAddress.date))
+    .execute();
+
+  return res;
+}
 
 export async function getMaxDelegatedStake(date: Date) {
   "use cache";
@@ -231,7 +298,7 @@ export async function getPoolWorkerStats(
     .execute();
 }
 
-export async function getDailyWorkerCounts() {
+export async function getDailyWorkerCounts(date: Date, days = 30) {
   "use cache";
   cacheLife("days");
 
@@ -243,7 +310,7 @@ export async function getDailyWorkerCounts() {
     })
     .from(dailyPredictorAddress)
     .where(
-      sql`${dailyPredictorAddress.date} >= current_date - interval '1 day' * 90`
+      sql`${dailyPredictorAddress.date} >= ${date}::timestamp - interval '1 day' * ${days}`
     )
     .groupBy(dailyPredictorAddress.date)
     .orderBy(asc(dailyPredictorAddress.date))
