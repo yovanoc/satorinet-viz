@@ -3,6 +3,8 @@ import { unstable_cacheLife as cacheLife } from 'next/cache'
 
 const BASE_URL = 'https://stage.satorinet.io';
 
+// TODO https://stage.satorinet.io/api/v0/content/created/get
+
 // export type PoolSize = {};
 // export async function getPoolSize(address: string) {
 //   'use cache';
@@ -49,4 +51,25 @@ export async function getDailyCounts(): Promise<DailyCounts> {
   cacheLife("days");;
 
   return await ky.get(`${BASE_URL}/daily/counts`, { retry: 3 }).json()
+}
+
+export type DailyPredictorStats = {
+  ["Average Score of Delegated-staked Neurons"]: number;
+  ["Average Score of Self-staked Neurons"]: number;
+  ["Competing Neurons"]: number;
+  ["Current Neuron Version"]: string;
+  ["Current Staking Requirement"]: number;
+  ["Date"]: string;
+  ["Delegated-staked Neurons"]: number;
+  ["Self-staked Neurons"]: number;
+};
+export async function getDailyPredictorStats(date?: Date): Promise<DailyPredictorStats> {
+  'use cache';
+  cacheLife("hours");
+
+  if (date) {
+    return await ky.get(`${BASE_URL}/reports/daily/stats/predictors/${date.toISOString().split("T")[0]}`, { retry: 3 }).json()
+  }
+
+  return await ky.get(`${BASE_URL}/reports/daily/stats/predictors/latest`, { retry: 3 }).json()
 }
