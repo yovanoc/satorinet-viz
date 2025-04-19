@@ -5,10 +5,15 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Oxanium } from "next/font/google";
+import { Montserrat, Fira_Code } from "next/font/google";
 
-const oxanium = Oxanium({
+const sans = Montserrat({
   variable: "--font-sans",
+  subsets: ["latin"],
+});
+
+const mono = Fira_Code({
+  variable: "--font-mono",
   subsets: ["latin"],
 });
 
@@ -26,7 +31,7 @@ export default function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${oxanium.variable} antialiased`}>
+      <body className={`${sans.variable} ${mono.variable} antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
