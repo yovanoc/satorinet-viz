@@ -1,4 +1,5 @@
 import { KNOWN_POOLS } from "@/lib/known_pools";
+import { isValidAddress } from "./evr";
 
 export async function getPoolAndDate({
   pool,
@@ -7,7 +8,7 @@ export async function getPoolAndDate({
   pool?: string;
   date?: string;
 }) {
-  const selectedPool = pool
+  const selectedPool = pool && isValidAddress(pool)
     ? KNOWN_POOLS.find((p) => p.address === pool) ?? KNOWN_POOLS[0]
     : KNOWN_POOLS[0];
 

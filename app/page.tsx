@@ -26,7 +26,7 @@ async function DailyWorkerCountsCard() {
 async function DailyManifestCard() {
   const date = new Date();
   const all = await getManifests(date, 90);
-  const data = all.map(item => ({
+  const data: React.ComponentProps<typeof StackedAreaManifest>['manifests'] = all.map(item => ({
     date: new Date(item.date),
     ...getManifest(item),
   }))

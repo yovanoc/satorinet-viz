@@ -159,7 +159,8 @@ export function StackedAreaManifest({
               content={
                 <ChartTooltipContent
                   labelFormatter={(_, payload) => {
-                    return payload[0]?.payload.date.toLocaleDateString("en-US", {
+                    const p = payload[0];
+                    return p?.payload.date.toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
                     });
