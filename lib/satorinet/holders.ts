@@ -9,6 +9,7 @@ export const getAllSatoriHolders = async () => {
   try {
     await client.connectToServer();
     const holders = await client.getAssetHolders(null, 'SATORI');
+    client.disconnect();
     return holders;
   } catch (e) {
     console.error('Error connecting to ElectrumX server:', e);

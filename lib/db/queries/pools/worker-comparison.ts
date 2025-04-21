@@ -181,12 +181,13 @@ export async function getPoolVsWorkerComparison(
         continue;
       }
 
-      if (entry.max_delegated_stake !== stake) {
-        console.error(
-          `Stake mismatch for pool ${pool.address} on date ${dailyDate}`
-        );
-        continue;
-      }
+      // ! it could be that in this pool everyone has a balance and not the full stake was delegated
+      // if (entry.max_delegated_stake !== stake) {
+      //   console.error(
+      //     `Stake mismatch for pool ${pool.name} on date ${dailyDate.toLocaleString()} - Expected: ${stake}, Found: ${entry.max_delegated_stake}`
+      //   );
+      //   continue;
+      // }
 
       const poolTracking = poolsTracking[pool.address];
       if (!poolTracking) {

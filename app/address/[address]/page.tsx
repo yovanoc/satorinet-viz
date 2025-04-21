@@ -6,6 +6,9 @@ import { isValidAddress } from "@/lib/evr";
 import { formatSatori } from "@/lib/format";
 import { getSatoriHolders } from "@/lib/get-satori-holders";
 import { Suspense } from "react";
+import { unstable_cacheLife as cacheLife } from 'next/cache'
+import { ElectrumxClient, type TxHistory } from "@/lib/satorinet/electrumx";
+import { CopyAddressButton } from "@/components/copy-address-button";
 
 // TODO show balance on evrmore and base
 // TODO show voting manifest history
@@ -16,6 +19,29 @@ import { Suspense } from "react";
 // TODO show entries on predictors reports
 // TODO show wallet/vault pair ?
 
+type AddressElectrumxData = {
+  tx_history: TxHistory[];
+};
+
+const getAddressDataOnElectrumx = async (address: string): Promise<AddressElectrumxData | null> => {
+  'use cache';
+  cacheLife('hours');
+
+  const client = new ElectrumxClient();
+  try {
+    await client.connectToServer();
+    const tx_history = await client.getTransactionHistory(address);
+    // const tx = await client.getTransaction(tx_history[0]!.tx_hash);
+    client.disconnect();
+    return {
+      tx_history,
+    };
+  } catch (e) {
+    console.error('Error connecting to ElectrumX server:', e);
+    return null;
+  }
+}
+
 export default async function AddressPage({
   params,
 }: {
@@ -24,17 +50,28 @@ export default async function AddressPage({
   const address = (await params).address;
 
   return (
-    <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-      <div className="flex items-center justify-center h-full">
-        <div className="text-primary text-2xl">Address: {address}</div>
+    <div className="flex flex-col gap-6 py-6 px-4 md:gap-8 md:py-8 md:px-8">
+      <div className="flex flex-col items-center gap-2">
+        <div className="text-primary text-sm md:text-lg break-words text-center max-w-full">
+          Address: {address}
+        </div>
+        <CopyAddressButton address={address} />
       </div>
-      <div>
-        <Suspense fallback={<Skeleton className="h-8 w-32" />}>
-          <EvrAddressBalance address={address} />
-        </Suspense>
-        <Suspense fallback={<Skeleton className="h-8 w-32" />}>
-          <ManifestVoteHistory address={address} />
-        </Suspense>
+
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4">
+          <h2 className="text-lg font-semibold text-primary">EVR Balance</h2>
+          <Suspense fallback={<Skeleton className="h-8 w-full text-center mb-4" />}>
+            <EvrAddressBalance address={address} />
+          </Suspense>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <h2 className="text-lg font-semibold text-primary">Manifest Vote History</h2>
+          <Suspense fallback={<Skeleton className="h-64 w-full mt-6" />}>
+            <ManifestVoteHistory address={address} />
+          </Suspense>
+        </div>
       </div>
     </div>
   );
@@ -51,7 +88,8 @@ async function EvrAddressBalance({ address }: { address: string }) {
     );
   }
 
-  const res = await getSatoriHolders();
+  const [res, data] = await Promise.all([getSatoriHolders(), getAddressDataOnElectrumx(address)]);
+  console.log('data', data);
 
   if (!res) {
     return (

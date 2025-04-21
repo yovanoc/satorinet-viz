@@ -1,6 +1,7 @@
 import { connect, Socket } from "net";
-import { EventEmitter } from "events";
+import Emittery from 'emittery';
 import { setTimeout } from "timers/promises";
+import { getScriptHash } from "../evr";
 
 const EVRMORE_ELECTRUMX_SERVERS_WITHOUT_SSL = [
   "128.199.1.149:50001",
@@ -12,12 +13,53 @@ const EVRMORE_ELECTRUMX_SERVERS_WITHOUT_SSL = [
   "aethyn.org:50001",
 ];
 
+export type TxHistory = {
+  tx_hash: string;
+  height: number;
+}
+
+export type TxIn = {
+  txid: string;
+  vout: number;
+  // TODO scriptsig
+  sequence: number;
+}
+
+export type TxOut = {
+  value: number;
+  n: number;
+  // TODO scriptpubkey
+  valueSat: number;
+};
+
+export type Tx = {
+  txid: string;
+  hash: string;
+  version: number;
+  size: number;
+  vsize: number;
+  locktime: number;
+  vin: TxIn[];
+  vout: TxOut[];
+  hex: string;
+  blockhash: string;
+  height: number;
+  confirmations: number;
+  time: number;
+  blocktime: number;
+};
+
 export type AssetHolder = {
   address: string;
   balance: number;
 };
 
-export class ElectrumxClient extends EventEmitter {
+export class ElectrumxClient extends Emittery<{
+  connected: undefined;
+  disconnected: undefined;
+  error: Error;
+  message: string;
+}> {
   private client: Socket | null = null;
   private buffer: string = "";
   private isConnected: boolean = false;
@@ -42,8 +84,7 @@ export class ElectrumxClient extends EventEmitter {
       console.error(error);
       if (attempt < maxRetries) {
         console.warn(
-          `Connection attempt ${
-            attempt + 1
+          `Connection attempt ${attempt + 1
           } to ${randomServer} failed. Retrying with a new server...`
         );
         return this.connectToServer(attempt + 1);
@@ -60,6 +101,7 @@ export class ElectrumxClient extends EventEmitter {
 
     this.client.on("close", () => {
       this.isConnected = false;
+      this.client = null;
       this.emit("disconnected");
     });
 
@@ -75,77 +117,90 @@ export class ElectrumxClient extends EventEmitter {
         this.buffer = remainder;
 
         const trimmedMessage = message.trimEnd();
-        if (trimmedMessage) this.emit("message", trimmedMessage);
+        if (trimmedMessage) {
+          // console.debug("Received message:", trimmedMessage);
+          this.emit("message", trimmedMessage);
+        }
       }
     });
   }
 
-  async getAssetHolders(
-    targetAddress: string | null,
-    targetAsset: string
-  ): Promise<AssetHolder[]> {
+  disconnect() {
+    if (this.client) {
+      this.client.destroy();
+      this.client = null;
+      this.isConnected = false;
+    }
+  }
+
+  private async handleRPC<T>(method: string, params: unknown[], callId: number | null = null): Promise<T> {
     return new Promise((resolve, reject) => {
+      const id = callId ?? Math.round(Date.now() / 1000);
+
       if (this.isConnected) {
-        this.sendRPC("blockchain.asset.list_addresses_by_asset", [
-          targetAsset,
-          false,
-          1000,
-          0,
-        ]);
+        this.sendRPC(method, params, id);
       } else {
-        this.once("connected", () => {
-          this.sendRPC("blockchain.asset.list_addresses_by_asset", [
-            targetAsset,
-            false,
-            1000,
-            0,
-          ]);
+        this.once("connected").then(() => {
+          this.sendRPC(method, params, id);
         });
       }
 
-      const addresses: Record<string, number> = {};
-      let lastAddresses: Record<string, number> | null = null;
-      let i = 0;
+      this.on("message", (message) => {
+        const parsedMessage = JSON.parse(message);
+        if (parsedMessage.id !== id) return; // Ensure the response matches the callId
 
-      this.on("message", async (message) => {
-        const response = JSON.parse(message).result;
+        const response = parsedMessage.result;
         if (!response) return reject(new Error("Invalid response from server"));
-
-        lastAddresses = { ...addresses };
-        Object.assign(addresses, response);
-
-        if (targetAddress && addresses[targetAddress]) {
-          resolve([
-            { address: targetAddress, balance: addresses[targetAddress] },
-          ]);
-          return;
-        }
-
-        if (
-          Object.keys(response).length < 1000 ||
-          JSON.stringify(addresses) === JSON.stringify(lastAddresses)
-        ) {
-          resolve(
-            Object.entries(addresses).map(([address, balance]) => ({
-              address,
-              balance,
-            }))
-          );
-          return;
-        }
-
-        i += 1000;
-        await setTimeout(1000);
-        this.sendRPC("blockchain.asset.list_addresses_by_asset", [
-          targetAsset,
-          false,
-          1000,
-          i,
-        ]);
+        resolve(response);
       });
 
-      this.once("error", reject);
+      this.once("error").then(reject);
     });
+  }
+
+  async getTransactionHistory(targetAddress: string): Promise<TxHistory[]> {
+    const scriptHash = getScriptHash(targetAddress);
+    return this.handleRPC<TxHistory[]>("blockchain.scripthash.get_history", [scriptHash]);
+  }
+
+  async getTransaction(tx_hash: string): Promise<Tx> {
+    return this.handleRPC<Tx>("blockchain.transaction.get", [tx_hash, true]);
+  }
+
+  async getAssetHolders(targetAddress: string | null, targetAsset: string): Promise<AssetHolder[]> {
+    const addresses: Record<string, number> = {};
+    let lastAddresses: Record<string, number> | null = null;
+    let i = 0;
+
+    const fetchAddresses = async (): Promise<AssetHolder[]> => {
+      const response = await this.handleRPC<Record<string, number>>(
+        "blockchain.asset.list_addresses_by_asset",
+        [targetAsset, false, 1000, i]
+      );
+
+      lastAddresses = { ...addresses };
+      Object.assign(addresses, response);
+
+      if (targetAddress && addresses[targetAddress]) {
+        return [{ address: targetAddress, balance: addresses[targetAddress] }];
+      }
+
+      if (
+        Object.keys(response).length < 1000 ||
+        JSON.stringify(addresses) === JSON.stringify(lastAddresses)
+      ) {
+        return Object.entries(addresses).map(([address, balance]) => ({
+          address,
+          balance,
+        }));
+      }
+
+      i += 1000;
+      await setTimeout(1000);
+      return fetchAddresses();
+    };
+
+    return fetchAddresses();
   }
 
   private sendRPC(
@@ -153,6 +208,14 @@ export class ElectrumxClient extends EventEmitter {
     params: unknown[],
     callId: number | null = null
   ) {
+    if (!this.client) {
+      throw new Error("Client is not connected");
+    }
+
+    if (!this.isConnected) {
+      throw new Error("Client is not connected");
+    }
+
     const payload =
       JSON.stringify({
         jsonrpc: "2.0",
@@ -161,7 +224,7 @@ export class ElectrumxClient extends EventEmitter {
         params,
       }) + "\n";
 
-    this.client?.write(payload);
+    this.client.write(payload);
   }
 
   private splitMessage(buffer: string): [string, string] | null {
