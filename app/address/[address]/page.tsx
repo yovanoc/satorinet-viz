@@ -4,10 +4,9 @@ import { getTodayMidnightUTC } from "@/lib/date";
 import { getManifestsForAddress } from "@/lib/db/queries/manifest";
 import { isValidAddress } from "@/lib/evr";
 import { formatSatori } from "@/lib/format";
-import { getSatoriHolders } from "@/lib/get-satori-holders";
 import { Suspense } from "react";
 import { unstable_cacheLife as cacheLife } from 'next/cache'
-import { ElectrumxClient, type TxHistory } from "@/lib/satorinet/electrumx";
+import { ElectrumxClient, type Tx, type TxHistory } from "@/lib/satorinet/electrumx";
 import { CopyAddressButton } from "@/components/copy-address-button";
 
 // TODO show balance on evrmore and base
@@ -21,6 +20,9 @@ import { CopyAddressButton } from "@/components/copy-address-button";
 
 type AddressElectrumxData = {
   tx_history: TxHistory[];
+  txs: Tx[];
+  utxos: TxHistory[];
+  balance: number;
 };
 
 const getAddressDataOnElectrumx = async (address: string): Promise<AddressElectrumxData | null> => {
@@ -30,11 +32,24 @@ const getAddressDataOnElectrumx = async (address: string): Promise<AddressElectr
   const client = new ElectrumxClient();
   try {
     await client.connectToServer();
-    const tx_history = await client.getTransactionHistory(address);
-    // const tx = await client.getTransaction(tx_history[0]!.tx_hash);
+    const [
+      balance,
+      tx_history,
+      utxos
+    ] = await Promise.all([
+      client.getAddressBalance(address, 'SATORI'),
+      client.getTransactionHistory(address),
+      client.getAddressUtxos(address, 'SATORI')
+    ]);
+
+    const txs: Tx[] = [];
+
     client.disconnect();
     return {
+      txs,
+      utxos,
       tx_history,
+      balance,
     };
   } catch (e) {
     console.error('Error connecting to ElectrumX server:', e);
@@ -88,8 +103,7 @@ async function EvrAddressBalance({ address }: { address: string }) {
     );
   }
 
-  const [res, data] = await Promise.all([getSatoriHolders(), getAddressDataOnElectrumx(address)]);
-  console.log('data', data);
+  const res = await getAddressDataOnElectrumx(address);
 
   if (!res) {
     return (
@@ -100,12 +114,10 @@ async function EvrAddressBalance({ address }: { address: string }) {
       </div>
     );
   }
-  const { holders } = res;
-  const holder = holders.find((holder) => holder.address === address);
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-      <div className="flex items-center justify-center h-full">
+      <div className="flex h-full">
         <div className="text-primary text-2xl">
           <a
             href={`https://evr.cryptoscope.io/address/?address=${address}`}
@@ -116,8 +128,14 @@ async function EvrAddressBalance({ address }: { address: string }) {
           </a>
         </div>
       </div>
-      <div className="flex items-center justify-center h-full font-semibold text-xl">
-        EVR Balance: {formatSatori(holder?.balance ?? 0)} SATORI
+      <div className="flex h-full font-semibold text-xl">
+        EVR Balance: {formatSatori(res.balance ?? 0)} SATORI
+      </div>
+      <div className="flex h-full">
+        EVR UTXOs: {res.utxos.length} UTXOs
+      </div>
+      <div className="flex h-full">
+        EVR Transactions: {res.tx_history.length} Transactions
       </div>
     </div>
   );

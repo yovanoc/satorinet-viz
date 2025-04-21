@@ -135,7 +135,7 @@ export class ElectrumxClient extends Emittery<{
 
   private async handleRPC<T>(method: string, params: unknown[], callId: number | null = null): Promise<T> {
     return new Promise((resolve, reject) => {
-      const id = callId ?? Math.round(Date.now() / 1000);
+      const id = callId ?? Date.now() + Math.floor(Math.random() * 1000);
 
       if (this.isConnected) {
         this.sendRPC(method, params, id);
@@ -146,8 +146,17 @@ export class ElectrumxClient extends Emittery<{
       }
 
       this.on("message", (message) => {
-        const parsedMessage = JSON.parse(message);
+        const parsedMessage: {
+          id: number;
+          result?: T;
+          error?: { code: number; message: string };
+        } = JSON.parse(message);
         if (parsedMessage.id !== id) return; // Ensure the response matches the callId
+
+        if (parsedMessage.error) {
+          const error = parsedMessage.error;
+          return reject(new Error(`Error ${error.code}: ${error.message}`));
+        }
 
         const response = parsedMessage.result;
         if (!response) return reject(new Error("Invalid response from server"));
@@ -161,6 +170,23 @@ export class ElectrumxClient extends Emittery<{
   async getTransactionHistory(targetAddress: string): Promise<TxHistory[]> {
     const scriptHash = getScriptHash(targetAddress);
     return this.handleRPC<TxHistory[]>("blockchain.scripthash.get_history", [scriptHash]);
+  }
+
+  async getAddressBalance(targetAddress: string, asset?: string): Promise<number> {
+    const scriptHash = getScriptHash(targetAddress);
+    const balance = await this.handleRPC<{ confirmed: number; unconfirmed: number }>(
+      "blockchain.scripthash.get_balance",
+      asset ? [scriptHash, asset] : [scriptHash]
+    );
+    return (balance.confirmed + balance.unconfirmed) / 1e8;
+  }
+
+  async getAddressUtxos(targetAddress: string, asset?: string): Promise<TxHistory[]> {
+    const scriptHash = getScriptHash(targetAddress);
+    return this.handleRPC<TxHistory[]>(
+      "blockchain.scripthash.listunspent",
+      asset ? [scriptHash, asset] : [scriptHash]
+    );
   }
 
   async getTransaction(tx_hash: string): Promise<Tx> {
