@@ -1,15 +1,13 @@
 import { unstable_cacheLife as cacheLife } from 'next/cache'
-import { ElectrumxClient, type AssetHolder } from './electrumx';
+import { electrumxClient, type AssetHolder } from './electrumx';
 
 export const getAllSatoriHolders = async () => {
   'use cache';
   cacheLife('hours');
-
-  const client = new ElectrumxClient();
   try {
-    await client.connectToServer();
-    const holders = await client.getAssetHolders(null, 'SATORI');
-    client.disconnect();
+    await electrumxClient.connectToServer();
+    const holders = await electrumxClient.getAssetHolders(null, 'SATORI');
+    electrumxClient.disconnect();
     return holders;
   } catch (e) {
     console.error('Error connecting to ElectrumX server:', e);

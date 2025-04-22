@@ -18,7 +18,7 @@ export function CopyAddressButton({ address }: CopyAddressButtonProps) {
   };
 
   return (
-    <Button onClick={copyToClipboard} className="flex items-center gap-2">
+    <Button onClick={copyToClipboard} className="items-center gap-2">
       <Clipboard className="h-4 w-4" /> {copied ? "Copied!" : "Copy Address"}
     </Button>
   );

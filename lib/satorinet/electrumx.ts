@@ -18,43 +18,91 @@ export type TxHistory = {
   height: number;
 }
 
-export type TxIn = {
-  txid: string;
-  vout: number;
-  // TODO scriptsig
-  sequence: number;
+export interface TransactionScriptSig {
+  asm: string;
+  hex: string;
 }
 
-export type TxOut = {
+export interface TransactionInput {
+  txid: string;
+  vout: number;
+  scriptSig: TransactionScriptSig;
+  sequence: number;
+  value?: number;
+  valueSat?: number;
+  address?: string;
+}
+
+export interface TransactionScriptPubKeyHash {
+  asm: string;
+  hex: string;
+  reqSigs: number;
+  addresses: string[];
+}
+
+export interface TransactionAsset {
+  name: string;
+  amount: number;
+}
+
+export interface TransactionScriptPubKeyTransferAsset extends TransactionScriptPubKeyHash {
+  asset: TransactionAsset;
+}
+
+export interface TransactionScriptPubKeyNullData {
+  asm: string;
+  hex: string;
+}
+
+export type TransactionScriptPubKey =
+  | {
+      type: "pubkeyhash";
+    } & {
+      asm: string;
+      hex: string;
+      reqSigs: number;
+      addresses: string[];
+    }
+  | {
+      type: "transfer_asset";
+    } & TransactionScriptPubKeyTransferAsset
+  | {
+      type: "nulldata";
+    } & TransactionScriptPubKeyNullData;
+
+export interface TransactionOutput {
   value: number;
   n: number;
-  // TODO scriptpubkey
+  scriptPubKey: TransactionScriptPubKey;
+  spentTxId?: string;
+  spentIndex?: number;
+  spentHeight?: number;
   valueSat: number;
-};
+}
 
-export type Tx = {
+export interface Transaction {
+  hex: string;
   txid: string;
   hash: string;
-  version: number;
   size: number;
   vsize: number;
+  version: number;
   locktime: number;
-  vin: TxIn[];
-  vout: TxOut[];
-  hex: string;
-  blockhash: string;
-  height: number;
-  confirmations: number;
-  time: number;
-  blocktime: number;
-};
+  vin: TransactionInput[];
+  vout: TransactionOutput[];
+  blockhash?: string;
+  confirmations?: number;
+  time?: number;
+  blocktime?: number;
+  height?: number;
+}
 
 export type AssetHolder = {
   address: string;
   balance: number;
 };
 
-export class ElectrumxClient extends Emittery<{
+class ElectrumxClient extends Emittery<{
   connected: undefined;
   disconnected: undefined;
   error: Error;
@@ -135,7 +183,7 @@ export class ElectrumxClient extends Emittery<{
 
   private async handleRPC<T>(method: string, params: unknown[], callId: number | null = null): Promise<T> {
     return new Promise((resolve, reject) => {
-      const id = callId ?? Date.now() + Math.floor(Math.random() * 1000);
+      const id = callId ?? Date.now() + Math.floor(Math.random() * 1000000);
 
       if (this.isConnected) {
         this.sendRPC(method, params, id);
@@ -145,13 +193,13 @@ export class ElectrumxClient extends Emittery<{
         });
       }
 
-      this.on("message", (message) => {
+      const onMessage = (message: string) => {
         const parsedMessage: {
           id: number;
           result?: T;
           error?: { code: number; message: string };
         } = JSON.parse(message);
-        if (parsedMessage.id !== id) return; // Ensure the response matches the callId
+        if (parsedMessage.id !== id) return;
 
         if (parsedMessage.error) {
           const error = parsedMessage.error;
@@ -160,9 +208,11 @@ export class ElectrumxClient extends Emittery<{
 
         const response = parsedMessage.result;
         if (!response) return reject(new Error("Invalid response from server"));
+        this.off("message", onMessage);
         resolve(response);
-      });
+      };
 
+      this.on("message", onMessage);
       this.once("error").then(reject);
     });
   }
@@ -189,8 +239,8 @@ export class ElectrumxClient extends Emittery<{
     );
   }
 
-  async getTransaction(tx_hash: string): Promise<Tx> {
-    return this.handleRPC<Tx>("blockchain.transaction.get", [tx_hash, true]);
+  async getTransaction(tx_hash: string): Promise<Transaction> {
+    return this.handleRPC<Transaction>("blockchain.transaction.get", [tx_hash, true]);
   }
 
   async getAssetHolders(targetAddress: string | null, targetAsset: string): Promise<AssetHolder[]> {
@@ -269,3 +319,5 @@ export class ElectrumxClient extends Emittery<{
     ];
   }
 }
+
+export const electrumxClient = new ElectrumxClient();

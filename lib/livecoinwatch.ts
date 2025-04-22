@@ -3,10 +3,8 @@
 import ky from "ky";
 import { env } from "./env";
 import { unstable_cacheLife as cacheLife } from "next/cache";
-import { createClient } from "redis";
 import Bottleneck from "bottleneck";
-
-const redis = await createClient({ url: env.REDIS_URL }).connect();
+import { redis } from "./redis";
 
 export async function getSatoriPriceForDate(date: Date): Promise<number> {
   const cacheKey = `satori-price-${date.toISOString()}`;

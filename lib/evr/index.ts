@@ -19,3 +19,21 @@ export function getScriptHash(address: string): string {
   const reversed = Buffer.from(sha256.reverse());
   return reversed.toString('hex');
 }
+
+// export function decodeScriptSig(scriptSigHex: string): string {
+//   try {
+//     const buffer = Buffer.from(scriptSigHex, 'hex');
+//     const decompiled = bitcoin.script.decompile(buffer);
+//     if (decompiled && decompiled.length > 1) {
+//       const pubKey = decompiled[1];
+//       if (Buffer.isBuffer(pubKey)) {
+//         const { address } = bitcoin.payments.p2pkh({ pubkey: pubKey, network: EVR_NETWORK });
+//         return address || "Unknown";
+//       }
+//     }
+//     return "Unknown";
+//   } catch (error) {
+//     console.error("Error decoding scriptSig:", error);
+//     return "Unknown";
+//   }
+// }
