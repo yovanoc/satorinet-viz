@@ -17,6 +17,15 @@ export type FeeResult = {
   netPerFullStake: number;
 };
 
+export type AppliedFees = | {
+  type: "single";
+  result: FeeResult;
+}
+  | {
+    type: "multiple";
+    results: FeeResult[];
+  };
+
 export function applyFees({
   pool,
   date,
@@ -31,16 +40,7 @@ export function applyFees({
   current_staked_amount: number;
   satoriPrice: number;
   fullStakeAmount: number;
-}):
-  | {
-      type: "single";
-      result: FeeResult;
-    }
-  | {
-      type: "multiple";
-      results: FeeResult[];
-    }
-  | null {
+}): AppliedFees | null {
   const fees = getPoolFeesForDate(pool, date);
   if (!fees) {
     return null;

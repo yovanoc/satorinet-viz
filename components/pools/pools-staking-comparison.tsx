@@ -1,4 +1,4 @@
-import type { Pool } from "@/lib/known_pools";
+import { VALID_POOLS, type Pool } from "@/lib/known_pools";
 import {
   PoolsStakingComparisonChart,
   type Entry,
@@ -81,10 +81,7 @@ export async function PoolsStakingComparison({
     getMaxDelegatedStake(date),
   ]);
 
-  const validPools = pools.filter(
-    (pool) => typeof pool.vault_address === "string"
-  );
-  const data = await getPoolsHistoricalEarnings(validPools, date);
+  const data = await getPoolsHistoricalEarnings(VALID_POOLS, date);
   const transformedData = await transformData(data);
 
   return (

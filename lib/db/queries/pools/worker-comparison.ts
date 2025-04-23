@@ -2,17 +2,22 @@ import { unstable_cacheLife as cacheLife } from "next/cache";
 import type { Pool } from "@/lib/known_pools";
 import { getPoolHistoricalData } from "./historical-data";
 import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
-import { applyFees } from "@/lib/pool-utils";
+import { applyFees, FeeResult, type AppliedFees } from "@/lib/pool-utils";
 import { getWorkerRewardAverage } from "../predictors/worker-reward-avg";
 
-type PoolEarningsData = {
-  pool: Pool;
+type EarningsData = {
   total_earnings: number;
   full_stake_earnings: number;
   daily_earnings: number;
   current_amount: number;
   feePercent: number;
   feeAmountPerSatori: number;
+}
+
+type PoolEarningsData = {
+  pool: Pool;
+  min: EarningsData;
+  max?: EarningsData;
 };
 
 type SelfWorkerRewardsData = {
@@ -104,16 +109,24 @@ export async function getPoolVsWorkerComparison(
   const poolsTracking = pools.reduce(
     (acc, pool) => {
       acc[pool.address] = {
-        current_amount: startingAmount, // Track pool compounded value
-        total_earnings: 0, // Track only earnings in pool
+        min: {
+          current_amount: startingAmount, // Track pool compounded value
+          total_earnings: 0, // Track only earnings in pool
+        }
       };
       return acc;
     },
     {} as Record<
       string,
       {
-        current_amount: number;
-        total_earnings: number;
+        min: {
+          current_amount: number;
+          total_earnings: number;
+        },
+        max?: {
+          current_amount: number;
+          total_earnings: number;
+        };
       }
     >
   );
@@ -195,62 +208,114 @@ export async function getPoolVsWorkerComparison(
         continue;
       }
 
+      const appliedFees = new Array<AppliedFees>();
+
       const res = applyFees({
         pool,
         date: dailyDate,
         fullStakeAmount: stake,
         earnings_per_staking_power: entry.earnings_per_staking_power,
-        current_staked_amount: poolTracking.current_amount,
+        current_staked_amount: poolTracking.min.current_amount,
         satoriPrice: price,
       });
 
-      if (!res) {
+      if (res) {
+        appliedFees.push(res);
+      }
+
+      if (poolTracking.max) {
+        const res = applyFees({
+          pool,
+          date: dailyDate,
+          fullStakeAmount: stake,
+          earnings_per_staking_power: entry.earnings_per_staking_power,
+          current_staked_amount: poolTracking.max.current_amount,
+          satoriPrice: price,
+        });
+
+        if (res) {
+          appliedFees.push(res);
+        }
+      }
+
+      if (appliedFees.length === 0) {
         console.error(`No fee data found for pool ${pool.address}`);
         continue;
       }
 
-      if (res.type === "single") {
-        const { net, netPerFullStake, feeAmountPerSatori, feePercent } =
-          res.result;
+      const feeResults = new Array<FeeResult>();
 
-        const newPoolEarnings = net;
-        poolTracking.current_amount += newPoolEarnings;
-        poolTracking.total_earnings += newPoolEarnings;
+      for (const res of appliedFees) {
+        if (res.type === "single") {
+          feeResults.push(res.result);
+        } else {
+          feeResults.push(...res.results);
+        }
+      }
+
+      if (feeResults.length === 1) {
+        const res = feeResults[0]!;
+        const { net, netPerFullStake, feeAmountPerSatori, feePercent } = res;
+
+        poolTracking.min.current_amount += net;
+        poolTracking.min.total_earnings += net;
 
         data.pools[pool.address] = {
           pool,
-          total_earnings: poolTracking.total_earnings,
-          full_stake_earnings: netPerFullStake,
-          daily_earnings: newPoolEarnings,
-          current_amount: poolTracking.current_amount,
-          feePercent,
-          feeAmountPerSatori,
+          min: {
+            total_earnings: poolTracking.min.total_earnings,
+            full_stake_earnings: netPerFullStake,
+            daily_earnings: net,
+            current_amount: poolTracking.min.current_amount,
+            feePercent,
+            feeAmountPerSatori,
+          }
         };
-      } else {
-        const { net, netPerFullStake, feeAmountPerSatori, feePercent } =
-          res.results.reduce(
-            (acc, r) => {
-              acc.net += r.net;
-              acc.netPerFullStake += r.netPerFullStake;
-              acc.feeAmountPerSatori += r.feeAmountPerSatori;
-              acc.feePercent += r.feePercent;
-              return acc;
-            },
-            { net: 0, netPerFullStake: 0, feeAmountPerSatori: 0, feePercent: 0 }
-          );
 
-        const newPoolEarnings = net / res.results.length;
-        poolTracking.current_amount += newPoolEarnings;
-        poolTracking.total_earnings += newPoolEarnings;
+      } else {
+        const [min, max] = feeResults.reduce(
+          (acc, res) => {
+            if (res.net < acc[0].net) {
+              acc[0] = res;
+            }
+            if (res.net > acc[1].net) {
+              acc[1] = res;
+            }
+            return acc;
+          },
+          [feeResults[0]!, feeResults[0]!] as const
+        );
+
+        const { net: minNet, netPerFullStake: minNetPerFullStake, feeAmountPerSatori: minFeeAmountPerSatori, feePercent: minFeePercent } = min;
+        const { net: maxNet, netPerFullStake: maxNetPerFullStake, feeAmountPerSatori: maxFeeAmountPerSatori, feePercent: maxFeePercent } = max;
+        poolTracking.min.current_amount += minNet;
+        poolTracking.min.total_earnings += minNet;
+
+        const currentMax = poolTracking.max ?? poolTracking.min;
+
+        poolTracking.max = {
+          current_amount: currentMax.current_amount + maxNet,
+          total_earnings: currentMax.total_earnings + maxNet,
+        };
 
         data.pools[pool.address] = {
           pool,
-          total_earnings: poolTracking.total_earnings,
-          full_stake_earnings: netPerFullStake / res.results.length,
-          daily_earnings: newPoolEarnings,
-          current_amount: poolTracking.current_amount,
-          feePercent: feePercent / res.results.length,
-          feeAmountPerSatori: feeAmountPerSatori / res.results.length,
+          min: {
+            total_earnings: poolTracking.min.total_earnings,
+            full_stake_earnings: minNetPerFullStake,
+            daily_earnings: minNet,
+            current_amount: poolTracking.min.current_amount,
+            feePercent: minFeePercent,
+            feeAmountPerSatori: minFeeAmountPerSatori,
+          },
+          max: {
+            total_earnings: poolTracking.max.total_earnings,
+            full_stake_earnings: maxNetPerFullStake,
+            daily_earnings: maxNet,
+            current_amount: poolTracking.max.current_amount,
+            feePercent: maxFeePercent,
+            feeAmountPerSatori: maxFeeAmountPerSatori,
+          }
         };
       }
     }

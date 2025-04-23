@@ -19,6 +19,7 @@ export type Pool = {
   name: string;
   color: string;
   closed?: Date;
+  canCompare: boolean;
   address: string;
   vault_address?: string;
   staking_fees?: StakingFees[];
@@ -28,6 +29,7 @@ export const KNOWN_POOLS: Pool[] = [
   {
     name: "Satorinet",
     color: "#0072ff",
+    canCompare: true,
     address: "EcJRjWynLxVZcGSY5nXXXMmrQvddeLQRVY",
     vault_address: "EKKtydH4pbq86aJmiNuEVR4kP17exCcV25",
     staking_fees: [
@@ -57,6 +59,7 @@ export const KNOWN_POOLS: Pool[] = [
   {
     name: "Pool Mudita",
     color: "#ff4f00",
+    canCompare: false,
     closed: new Date("2025-04-13T00:00:00Z"),
     address: "ELs9eiFDCYAKBREL7g8d3WjQxrYDE7x5eY",
     vault_address: "EHAAy7YivL1Lba6azhMmfbLKRzdcBVAv5x",
@@ -73,17 +76,20 @@ export const KNOWN_POOLS: Pool[] = [
   {
     name: "Managers/Reserves Pool",
     color: "#dbaf00",
+    canCompare: false,
     address: "EU79P29a9PoDpQMkyBWkW8wGhMMVMHXwEs",
     vault_address: 'EdtCNZnBMyJTruSaY1saSrC8Wx1iGMHrww'
   },
   {
     name: "Dev Pool",
     color: "#ddd",
+    canCompare: false,
     address: "EZ7SCvVdDTR1e6B2532C85KDteYZ56KCiC",
   },
   {
     name: "Lightning",
     color: "#e738ef",
+    canCompare: true,
     address: "EJSHjPzLpRmubnRm9ARNDRtrqNum7EU3mK",
     vault_address: "Ef6VmYt6ywXxpMikjKWQCnETpSBbF4z7yw",
     staking_fees: [
@@ -115,11 +121,13 @@ export const KNOWN_POOLS: Pool[] = [
   {
     name: "Zen Pool",
     color: "#ddd",
+    canCompare: true,
     address: "EeV6em8GHU9VeDepzsqbRmvA2NotMrTiK9",
   },
   {
     name: "Cost Pool",
     color: "#29e317",
+    canCompare: true,
     address: "EdC6EVXD54mhiVYBFF1Dw5P3xGNjBFiarq",
     vault_address: "EVednaMKprwVQzwAE1KFRYLx3vTbwUbXNk",
     staking_fees: [
@@ -143,3 +151,7 @@ export const KNOWN_POOLS: Pool[] = [
   //   vault_address: "EVednaMKprwVQzwAE1KFRYLx3vTbwUbXNk",
   // }
 ];
+
+export const VALID_POOLS = KNOWN_POOLS.filter(
+  (pool) => pool.canCompare && pool.vault_address !== undefined
+);

@@ -1,14 +1,7 @@
 "use client";
 
 import { formatCurrency, formatSatori } from "@/lib/format";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-} from "recharts";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, Legend } from "recharts";
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
 import type { PoolsVSWorkerData } from "@/lib/db/queries/pools/worker-comparison";
 
@@ -59,59 +52,139 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
       <div className="flex flex-wrap gap-2">
         <div>
           <p className="text-xs opacity-80">Self Earnings from start</p>
-          <p className="font-semibold text-accent">{formatSatori(worker.total_rewards)}</p>
+          <p className="font-semibold text-accent">
+            {formatSatori(worker.total_rewards)}
+          </p>
         </div>
         <div>
           <p className="text-xs opacity-80">Self rewards this day</p>
-          <p className="font-semibold text-accent">{formatSatori(worker.daily_rewards)}</p>
+          <p className="font-semibold text-accent">
+            {formatSatori(worker.daily_rewards)}
+          </p>
         </div>
         <div>
           <p className="text-xs opacity-80">Avg Rewards per Neuron this day</p>
-          <p className="font-semibold text-accent">{formatSatori(worker.reward_avg)}</p>
+          <p className="font-semibold text-accent">
+            {formatSatori(worker.reward_avg)}
+          </p>
         </div>
         <div>
           <p className="text-xs opacity-80">Current Self Amount</p>
-          <p className="font-semibold text-accent">{formatSatori(worker.current_amount)}</p>
+          <p className="font-semibold text-accent">
+            {formatSatori(worker.current_amount)}
+          </p>
         </div>
       </div>
 
       {poolKeys.map((key) => {
         const pool = entry.pools[key]!;
-        const difference = pool.total_earnings - worker.total_rewards;
-        const betterInPool = difference > 0 ? pool.pool.name : "Self";
-        const percentMore =
-          Math.abs(difference) /
-          (difference > 0 ? worker.total_rewards : pool.total_earnings);
-        const diffText = `Better in ${betterInPool} by ${formatSatori(
-          Math.abs(difference)
-        )} (${(percentMore * 100).toFixed(2)}%) from start until this day`;
-
-        const betterColor = difference > 0 ? pool.pool.color : SELF_COLOR;
-
+        const hasMax = !!pool.max;
+        // For min
+        const minDifference = pool.min.total_earnings - worker.total_rewards;
+        const minBetterInPool = minDifference > 0 ? pool.pool.name : "Self";
+        const minPercentMore =
+          Math.abs(minDifference) /
+          (minDifference > 0 ? worker.total_rewards : pool.min.total_earnings);
+        const minDiffText = `${minBetterInPool} by ${formatSatori(
+          Math.abs(minDifference)
+        )} (${(minPercentMore * 100).toFixed(2)}%) from start until this day`;
+        // For max (if exists)
+        let maxDiffText = null;
+        if (hasMax && pool.max) {
+          const maxDifference = pool.max.total_earnings - worker.total_rewards;
+          const maxBetterInPool = maxDifference > 0 ? pool.pool.name : "Self";
+          const maxPercentMore =
+            Math.abs(maxDifference) /
+            (maxDifference > 0 ? worker.total_rewards : pool.max.total_earnings);
+          maxDiffText = `${maxBetterInPool} by ${formatSatori(
+            Math.abs(maxDifference)
+          )} (${(maxPercentMore * 100).toFixed(2)}%) from start until this day`;
+        }
+        const betterColor = minDifference > 0 ? pool.pool.color : SELF_COLOR;
+        const maxBetterColor = hasMax && pool.max && (pool.max.total_earnings - worker.total_rewards > 0)
+          ? pool.pool.color
+          : SELF_COLOR;
         return (
           <div key={key} className="mt-2 border-t pt-2">
-            <p className="font-bold text-sm mb-1" style={{ color: pool.pool.color }}>Pool: {pool.pool.name}</p>
-            <div className="flex flex-wrap gap-2">
+            <p
+              className="font-bold text-sm mb-1 flex items-center gap-2"
+              style={{ color: pool.pool.color }}
+            >
+              Pool: {pool.pool.name}
+              {hasMax && (
+                <span className="text-xs font-normal text-muted-foreground">(Min & Max)</span>
+              )}
+            </p>
+            <div className={hasMax ? "grid grid-cols-2 gap-4" : "flex flex-wrap gap-2"}>
               <div>
+                <p className="text-xs opacity-80 font-semibold mb-1">Min:</p>
                 <p className="text-xs opacity-80">Pool Earnings from start</p>
-                <p className="font-semibold text-accent">{formatSatori(pool.total_earnings)}</p>
-              </div>
-              <div>
+                <p className="font-semibold text-accent">
+                  {formatSatori(pool.min.total_earnings)}
+                </p>
                 <p className="text-xs opacity-80">Pool earnings this day</p>
-                <p className="font-semibold text-accent">{formatSatori(pool.daily_earnings)}</p>
-              </div>
-              <div>
-                <p className="text-xs opacity-80">Pool earnings per full stake this day ({(pool.feePercent * 100).toFixed(2)}% fee)</p>
-                <p className="font-semibold text-accent">{formatSatori(pool.full_stake_earnings)}</p>
-              </div>
-              <div>
+                <p className="font-semibold text-accent">
+                  {formatSatori(pool.min.daily_earnings)}
+                </p>
+                <p className="text-xs opacity-80">
+                  Pool earnings per full stake this day (
+                  {(pool.min.feePercent * 100).toFixed(2)}% fee)
+                </p>
+                <p className="font-semibold text-accent">
+                  {formatSatori(pool.min.full_stake_earnings)}
+                </p>
                 <p className="text-xs opacity-80">Current Pool Amount</p>
-                <p className="font-semibold text-accent">{formatSatori(pool.current_amount)}</p>
+                <p className="font-semibold text-accent">
+                  {formatSatori(pool.min.current_amount)}
+                </p>
+                {hasMax && (
+                  <div
+                    className="text-xs font-semibold mt-1"
+                    style={{ color: betterColor }}
+                  >
+                    {minDiffText}
+                  </div>
+                )}
               </div>
+              {hasMax && pool.max && (
+                <div>
+                  <p className="text-xs opacity-80 font-semibold mb-1">Max:</p>
+                  <p className="text-xs opacity-80">Pool Earnings from start</p>
+                  <p className="font-semibold text-accent">
+                    {formatSatori(pool.max.total_earnings)}
+                  </p>
+                  <p className="text-xs opacity-80">Pool earnings this day</p>
+                  <p className="font-semibold text-accent">
+                    {formatSatori(pool.max.daily_earnings)}
+                  </p>
+                  <p className="text-xs opacity-80">
+                    Pool earnings per full stake this day (
+                    {(pool.max.feePercent * 100).toFixed(2)}% fee)
+                  </p>
+                  <p className="font-semibold text-accent">
+                    {formatSatori(pool.max.full_stake_earnings)}
+                  </p>
+                  <p className="text-xs opacity-80">Current Pool Amount</p>
+                  <p className="font-semibold text-accent">
+                    {formatSatori(pool.max.current_amount)}
+                  </p>
+                  <div
+                    className="text-xs font-semibold mt-1"
+                    style={{ color: maxBetterColor }}
+                  >
+                    {maxDiffText}
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="text-xs font-semibold mt-1" style={{ color: betterColor }}>
-              {diffText}
-            </div>
+            {!hasMax && (
+              <div
+                className="text-xs font-semibold mt-1"
+                style={{ color: betterColor }}
+              >
+                {minDiffText}
+              </div>
+            )}
           </div>
         );
       })}
@@ -137,12 +210,18 @@ export function PoolComparisonChart({ data }: PoolComparisonChartProps) {
     }
   }
 
+  // Prepare data for AreaChart: for each pool, add min and max if available
   const formattedData = data.map((entry) => {
-    const poolEarnings: Record<string, number> = {};
+    const poolEarnings: Record<string, number | [number, number]> = {};
     for (const key of Object.keys(entry.pools)) {
-      poolEarnings[`pool_${key}`] = entry.pools[key]!.total_earnings;
+      const pool = entry.pools[key]!;
+      if (pool.max) {
+        poolEarnings[`pool_${key}_min`] = pool.min.total_earnings;
+        poolEarnings[`pool_${key}_max`] = pool.max.total_earnings;
+      } else {
+        poolEarnings[`pool_${key}_min`] = pool.min.total_earnings;
+      }
     }
-
     return {
       ...entry,
       ...poolEarnings,
@@ -150,11 +229,8 @@ export function PoolComparisonChart({ data }: PoolComparisonChartProps) {
   });
 
   return (
-    <ChartContainer
-      config={chartConfig}
-      className="aspect-auto h-full w-full"
-    >
-      <LineChart
+    <ChartContainer config={chartConfig} className="aspect-auto h-full w-full">
+      <AreaChart
         data={formattedData}
         margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
       >
@@ -165,33 +241,93 @@ export function PoolComparisonChart({ data }: PoolComparisonChartProps) {
           textAnchor="end"
           padding={{ left: 20, right: 20 }}
         />
-        <YAxis />
+        <YAxis
+          domain={([dataMin, dataMax]: [number, number]) => {
+            const range = dataMax - dataMin;
+            if (!isFinite(range) || range === 0) return [dataMin - 1, dataMax + 1];
+            return [dataMin - range * 0.05, dataMax + range * 0.05];
+          }}
+          tick={{ fontSize: 12, fill: '#888' }}
+          width={70}
+          tickFormatter={(value) => value?.toLocaleString?.(undefined, { maximumFractionDigits: 2 }) ?? value}
+          allowDecimals={true}
+          axisLine={true}
+          tickLine={true}
+        />
         <Tooltip content={<CustomTooltip />} />
         <Legend verticalAlign="top" height={36} iconType="circle" />
 
-        {poolKeys.map((key) => (
-          <Line
-            key={key}
-            type="monotone"
-            dataKey={`pool_${key}`}
-            name={`Pool: ${pools.find((pool) => pool.address === key)?.name}`}
-            stroke={poolColors[key]}
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 5 }}
-          />
-        ))}
-
-        <Line
+        {/* Render Self Earnings line AFTER areas to ensure it is drawn on top */}
+        {poolKeys.map((key) => {
+          const hasMax = data.some((entry) => entry.pools[key]?.max);
+          const color = poolColors[key];
+          if (hasMax) {
+            return (
+              <Area
+                key={key}
+                type="monotone"
+                dataKey={(entry: {
+                  [key: string]: number | [number, number];
+                }) => {
+                  const min = entry[`pool_${key}_min`];
+                  const max = entry[`pool_${key}_max`];
+                  if (min && max) return [min, max];
+                  return null;
+                }}
+                isRange
+                name={`Pool: ${pools.find((pool) => pool.address === key)?.name} (Range)`}
+                stroke={color}
+                fill={color}
+                fillOpacity={0.3}
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 5 }}
+                isAnimationActive={false}
+              />
+            );
+          }
+          // For pools without max, render a degenerate area (min==min) so no area from bottom
+          return (
+            <Area
+              key={key}
+              type="monotone"
+              dataKey={(entry: {
+                [key: string]: number | [number, number];
+              }) => {
+                const min = entry[`pool_${key}_min`];
+                return min ? [min, min] : null;
+              }}
+              isRange
+              name={`Pool: ${pools.find((pool) => pool.address === key)?.name}`}
+              stroke={color}
+              fill={color}
+              fillOpacity={0.7}
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 5 }}
+              isAnimationActive={false}
+            />
+          );
+        })}
+        {/* Self worker as degenerate area (line) */}
+        <Area
           type="monotone"
-          dataKey="worker.total_rewards"
+          dataKey={(entry: {
+            worker: { total_rewards: number | null };
+          }) => {
+            const v = entry.worker?.total_rewards;
+            return v != null ? [v, v] : null;
+          }}
+          isRange
           name="Self Earnings"
           stroke={SELF_COLOR}
+          fill={SELF_COLOR}
+          fillOpacity={0.7}
           strokeWidth={3}
           dot={false}
           activeDot={{ r: 6, stroke: SELF_COLOR, strokeWidth: 2 }}
         />
-      </LineChart>
+      </AreaChart>
     </ChartContainer>
   );
 }

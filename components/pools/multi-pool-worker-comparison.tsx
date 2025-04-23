@@ -2,17 +2,13 @@
 
 import { startTransition, useActionState, useEffect, useState } from "react";
 import type { Pool } from "@/lib/known_pools";
-import { KNOWN_POOLS } from "@/lib/known_pools";
+import { VALID_POOLS } from "@/lib/known_pools";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import Loading from "@/app/loading";
 import { PoolComparisonChart } from "./pool-vs-worker";
 import PoolWorkerInputs from "./pool-vs-worker-inputs";
 import { getPoolVsWorkerComparisonData } from "@/app/pools/actions";
-
-const VALID_POOLS = KNOWN_POOLS.filter(
-  (pool) => pool.vault_address !== undefined
-);
 
 export default function MultiPoolWorkerComparison({ date }: { date: Date }) {
   const [selectedPools, setSelectedPools] = useState<Pool[]>(VALID_POOLS);
