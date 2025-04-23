@@ -1,5 +1,4 @@
 import { PoolsStakingComparison } from "@/components/pools/pools-staking-comparison";
-import { KNOWN_POOLS } from "@/lib/known_pools";
 import { Card } from "@/components/ui/card";
 import DatePickerWrapper from "@/components/date-picker-wrapper";
 import { Suspense } from "react";
@@ -74,7 +73,7 @@ export default async function PoolsPage({
         <Suspense
           fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}
         >
-          <PoolsStakingComparison pools={KNOWN_POOLS} date={selectedDate} />
+          <PoolsStakingComparison date={selectedDate} />
         </Suspense>
       </div>
     </div>

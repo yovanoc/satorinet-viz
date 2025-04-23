@@ -10,7 +10,6 @@ import { getPoolsHistoricalEarnings } from "@/lib/db/queries/pools/historical-ea
 import { getMaxDelegatedStake } from "@/lib/db/queries/predictors/max-delegated-stake";
 
 interface PoolsStakingComparisonProps {
-  pools: Array<Pool>;
   date: Date;
 }
 
@@ -70,7 +69,6 @@ async function transformData(
 }
 
 export async function PoolsStakingComparison({
-  pools,
   date,
 }: PoolsStakingComparisonProps) {
   "use cache";
@@ -87,7 +85,7 @@ export async function PoolsStakingComparison({
   return (
     <PoolsStakingComparisonChart
       data={transformedData}
-      pools={pools}
+      pools={VALID_POOLS}
       fullStakeAmount={fullStakeAmount ?? 0}
       satoriPrice={satoriPrice}
     />
