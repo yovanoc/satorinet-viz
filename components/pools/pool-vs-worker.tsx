@@ -116,7 +116,7 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
             </p>
             <div className={pool.max ? "grid grid-cols-2 gap-4" : "flex flex-wrap gap-2"}>
               <div>
-                <p className="text-xs opacity-80 font-semibold mb-1">Min:</p>
+                {pool.max && <p className="text-xs opacity-80 font-semibold mb-1">Min:</p>}
                 <p className="text-xs opacity-80">Pool Earnings from start</p>
                 <p className="font-semibold text-accent">
                   {formatSatori(pool.min.total_earnings)}
@@ -210,8 +210,10 @@ export function PoolComparisonChart({ data }: PoolComparisonChartProps) {
   }
 
   // Prepare data for AreaChart: for each pool, add min and max if available
-  const formattedData = data.map((entry) => {
-    const poolEarnings: Record<string, number | [number, number]> = {};
+  type R = Record<`pool_${string}_${'min' | 'max'}`, number>;
+  type Data = PoolsVSWorkerData & R;
+  const formattedData: Array<Data> = data.map((entry) => {
+    const poolEarnings: R = {};
     for (const key of Object.keys(entry.pools)) {
       const pool = entry.pools[key]!;
       if (pool.max) {
@@ -221,10 +223,12 @@ export function PoolComparisonChart({ data }: PoolComparisonChartProps) {
         poolEarnings[`pool_${key}_min`] = pool.min.total_earnings;
       }
     }
-    return {
+    const d: Data = {
       ...entry,
       ...poolEarnings,
     };
+
+    return d;
   });
 
   return (
@@ -258,64 +262,37 @@ export function PoolComparisonChart({ data }: PoolComparisonChartProps) {
 
         {/* Render Self Earnings line AFTER areas to ensure it is drawn on top */}
         {poolKeys.map((key) => {
-          const hasMax = data.some((entry) => entry.pools[key]?.max);
           const color = poolColors[key];
-          if (hasMax) {
-            return (
-              <Area
-                key={key}
-                type="monotone"
-                dataKey={(entry: {
-                  [key: string]: number | [number, number];
-                }) => {
-                  const min = entry[`pool_${key}_min`];
-                  const max = entry[`pool_${key}_max`];
-                  if (min && max) return [min, max];
-                  return null;
-                }}
-                isRange
-                name={`Pool: ${pools.find((pool) => pool.address === key)?.name} (Range)`}
-                stroke={color}
-                fill={color}
-                fillOpacity={0.3}
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 5 }}
-                isAnimationActive={false}
-              />
-            );
-          }
-          // For pools without max, render a degenerate area (min==min) so no area from bottom
           return (
             <Area
               key={key}
               type="monotone"
-              dataKey={(entry: {
-                [key: string]: number | [number, number];
-              }) => {
+              dataKey={(entry: Data) => {
                 const min = entry[`pool_${key}_min`];
-                return min ? [min, min] : null;
+                const max = entry[`pool_${key}_max`];
+                if (min && max) return [min, max];
+                if (min) return [min, min];
+                return null;
               }}
               isRange
               name={`Pool: ${pools.find((pool) => pool.address === key)?.name}`}
               stroke={color}
               fill={color}
-              fillOpacity={0.7}
+              fillOpacity={0.4}
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 5 }}
               isAnimationActive={false}
+              connectNulls={false}
             />
           );
         })}
         {/* Self worker as degenerate area (line) */}
         <Area
           type="monotone"
-          dataKey={(entry: {
-            worker: { total_rewards: number | null };
-          }) => {
-            const v = entry.worker?.total_rewards;
-            return v != null ? [v, v] : null;
+          dataKey={(entry: Data) => {
+            const v = entry.worker.total_rewards;
+            return [v, v];
           }}
           isRange
           name="Self Earnings"
