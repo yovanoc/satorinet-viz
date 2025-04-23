@@ -73,26 +73,27 @@ async function PoolDataSection({ date, pool }: { date: Date; pool: Pool }) {
     };
 
     return (
-      <div className="h-full flex flex-col">
-        <div className="flex-1 min-h-0 flex flex-col gap-4">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1">
-              <DailyContributorAddressCard
-                poolData={enrichedPoolData}
-                date={date}
-                poolName={pool.name}
-              />
-            </div>
-            <div className="flex-1">
-              <PoolHistoricalData
-                historicalData={historicalData ?? []}
-                workerStats={workerStats ?? []}
-                date={date}
-                poolName={pool.name}
-              />
-            </div>
+      <div className="h-full flex flex-col gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          {/* Contributor card: smaller, always first */}
+          <div className="xl:col-span-3 flex flex-col gap-6 order-1">
+            <DailyContributorAddressCard
+              poolData={enrichedPoolData}
+              date={date}
+              poolName={pool.name}
+            />
           </div>
-          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+          {/* Historical data: less width */}
+          <div className="xl:col-span-4 flex flex-col gap-6 order-2">
+            <PoolHistoricalData
+              historicalData={historicalData ?? []}
+              workerStats={workerStats ?? []}
+              date={date}
+              poolName={pool.name}
+            />
+          </div>
+          {/* Comparison chart: more room, most important */}
+          <div className="xl:col-span-5 flex flex-col gap-6 order-3">
             <PoolWorkerComparison pool={pool} date={date} />
           </div>
         </div>

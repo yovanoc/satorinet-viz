@@ -46,33 +46,31 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   if (poolKeys.length === 0) return null;
 
   return (
-    <div className="bg-secondary-foreground p-4 rounded-xl shadow-lg text-sm space-y-2 max-w-md">
-      <div className="font-bold text-md text-center text-secondary">
+    <div className="p-4 rounded-xl shadow-lg text-sm space-y-2 max-w-md bg-popover text-popover-foreground">
+      <div className="font-bold text-md text-center">
         {new Date(date).toLocaleDateString()} - ${formatCurrency(price)}
       </div>
 
       <div>
-        <p className="text-xs text-secondary">Stake Required this day</p>
+        <p className="text-xs opacity-80">Stake Required this day</p>
         <p className="font-semibold text-accent">{stake}</p>
       </div>
 
       <div className="flex flex-wrap gap-2">
         <div>
-          <p className="text-xs text-secondary">Self Earnings from start</p>
+          <p className="text-xs opacity-80">Self Earnings from start</p>
           <p className="font-semibold text-accent">{formatSatori(worker.total_rewards)}</p>
         </div>
         <div>
-          <p className="text-xs text-secondary">Self rewards this day</p>
+          <p className="text-xs opacity-80">Self rewards this day</p>
           <p className="font-semibold text-accent">{formatSatori(worker.daily_rewards)}</p>
         </div>
         <div>
-          <p className="text-xs text-secondary">
-            Avg Rewards per Neuron this day
-          </p>
+          <p className="text-xs opacity-80">Avg Rewards per Neuron this day</p>
           <p className="font-semibold text-accent">{formatSatori(worker.reward_avg)}</p>
         </div>
         <div>
-          <p className="text-xs text-secondary">Current Self Amount</p>
+          <p className="text-xs opacity-80">Current Self Amount</p>
           <p className="font-semibold text-accent">{formatSatori(worker.current_amount)}</p>
         </div>
       </div>
@@ -92,44 +90,26 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
 
         return (
           <div key={key} className="mt-2 border-t pt-2">
-            <p className="font-bold text-sm text-secondary mb-1">
-              Pool: {pool.pool.name}
-            </p>
+            <p className="font-bold text-sm mb-1" style={{ color: pool.pool.color }}>Pool: {pool.pool.name}</p>
             <div className="flex flex-wrap gap-2">
               <div>
-                <p className="text-xs text-secondary">
-                  Pool Earnings from start
-                </p>
-                <p className="font-semibold text-accent">
-                  {formatSatori(pool.total_earnings)}
-                </p>
+                <p className="text-xs opacity-80">Pool Earnings from start</p>
+                <p className="font-semibold text-accent">{formatSatori(pool.total_earnings)}</p>
               </div>
               <div>
-                <p className="text-xs text-secondary">Pool earnings this day</p>
-                <p className="font-semibold text-accent">
-                  {formatSatori(pool.daily_earnings)}
-                </p>
+                <p className="text-xs opacity-80">Pool earnings this day</p>
+                <p className="font-semibold text-accent">{formatSatori(pool.daily_earnings)}</p>
               </div>
               <div>
-                <p className="text-xs text-secondary">
-                  Pool earnings per full stake this day (
-                  {(pool.feePercent * 100).toFixed(2)}% fee)
-                </p>
-                <p className="font-semibold text-accent">
-                  {formatSatori(pool.full_stake_earnings)}
-                </p>
+                <p className="text-xs opacity-80">Pool earnings per full stake this day ({(pool.feePercent * 100).toFixed(2)}% fee)</p>
+                <p className="font-semibold text-accent">{formatSatori(pool.full_stake_earnings)}</p>
               </div>
               <div>
-                <p className="text-xs text-secondary">Current Pool Amount</p>
-                <p className="font-semibold text-accent">
-                  {formatSatori(pool.current_amount)}
-                </p>
+                <p className="text-xs opacity-80">Current Pool Amount</p>
+                <p className="font-semibold text-accent">{formatSatori(pool.current_amount)}</p>
               </div>
             </div>
-            <div
-              className="text-xs font-semibold text-secondary mt-1"
-              style={{ color: betterColor }}
-            >
+            <div className="text-xs font-semibold mt-1" style={{ color: betterColor }}>
               {diffText}
             </div>
           </div>

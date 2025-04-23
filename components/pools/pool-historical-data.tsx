@@ -98,7 +98,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
                 </SelectContent>
               </Select>
             </div>
-            <ChartContainer config={{}} className="min-h-[200px] w-full">
+            <ChartContainer config={{}} className="min-h-[350px] w-full">
               <LineChart
                 data={historicalData}
                 margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
