@@ -78,10 +78,9 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
 
       {poolKeys.map((key) => {
         const pool = entry.pools[key]!;
-        const hasMax = !!pool.max;
         // For min
         const minDifference = pool.min.total_earnings - worker.total_rewards;
-        const minBetterInPool = minDifference > 0 ? pool.pool.name : "Self";
+        const minBetterInPool = minDifference > 0 ? `Better in ${pool.pool.name}` : "Better with self workers";
         const minPercentMore =
           Math.abs(minDifference) /
           (minDifference > 0 ? worker.total_rewards : pool.min.total_earnings);
@@ -89,10 +88,10 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
           Math.abs(minDifference)
         )} (${(minPercentMore * 100).toFixed(2)}%) from start until this day`;
         // For max (if exists)
-        let maxDiffText = null;
-        if (hasMax && pool.max) {
+        let maxDiffText: string | null = null;
+        if (pool.max) {
           const maxDifference = pool.max.total_earnings - worker.total_rewards;
-          const maxBetterInPool = maxDifference > 0 ? pool.pool.name : "Self";
+          const maxBetterInPool = maxDifference > 0 ? `Better in ${pool.pool.name}` : "Better with self workers";
           const maxPercentMore =
             Math.abs(maxDifference) /
             (maxDifference > 0 ? worker.total_rewards : pool.max.total_earnings);
@@ -101,7 +100,7 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
           )} (${(maxPercentMore * 100).toFixed(2)}%) from start until this day`;
         }
         const betterColor = minDifference > 0 ? pool.pool.color : SELF_COLOR;
-        const maxBetterColor = hasMax && pool.max && (pool.max.total_earnings - worker.total_rewards > 0)
+        const maxBetterColor = pool.max && (pool.max.total_earnings - worker.total_rewards > 0)
           ? pool.pool.color
           : SELF_COLOR;
         return (
@@ -111,11 +110,11 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
               style={{ color: pool.pool.color }}
             >
               Pool: {pool.pool.name}
-              {hasMax && (
+              {pool.max && (
                 <span className="text-xs font-normal text-muted-foreground">(Min & Max)</span>
               )}
             </p>
-            <div className={hasMax ? "grid grid-cols-2 gap-4" : "flex flex-wrap gap-2"}>
+            <div className={pool.max ? "grid grid-cols-2 gap-4" : "flex flex-wrap gap-2"}>
               <div>
                 <p className="text-xs opacity-80 font-semibold mb-1">Min:</p>
                 <p className="text-xs opacity-80">Pool Earnings from start</p>
@@ -137,7 +136,7 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
                 <p className="font-semibold text-accent">
                   {formatSatori(pool.min.current_amount)}
                 </p>
-                {hasMax && (
+                {pool.max && (
                   <div
                     className="text-xs font-semibold mt-1"
                     style={{ color: betterColor }}
@@ -146,7 +145,7 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
                   </div>
                 )}
               </div>
-              {hasMax && pool.max && (
+              {pool.max && (
                 <div>
                   <p className="text-xs opacity-80 font-semibold mb-1">Max:</p>
                   <p className="text-xs opacity-80">Pool Earnings from start</p>
@@ -177,7 +176,7 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
                 </div>
               )}
             </div>
-            {!hasMax && (
+            {!pool.max && (
               <div
                 className="text-xs font-semibold mt-1"
                 style={{ color: betterColor }}
