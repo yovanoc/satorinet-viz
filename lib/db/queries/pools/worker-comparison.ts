@@ -288,15 +288,17 @@ export async function getPoolVsWorkerComparison(
 
         const { net: minNet, netPerFullStake: minNetPerFullStake, feeAmountPerSatori: minFeeAmountPerSatori, feePercent: minFeePercent } = min;
         const { net: maxNet, netPerFullStake: maxNetPerFullStake, feeAmountPerSatori: maxFeeAmountPerSatori, feePercent: maxFeePercent } = max;
-        poolTracking.min.current_amount += minNet;
-        poolTracking.min.total_earnings += minNet;
 
-        const currentMax = poolTracking.max ?? poolTracking.min;
+        const maxCurrentAmount = poolTracking.max?.current_amount ?? poolTracking.min.current_amount;
+        const maxTotalEarnings = poolTracking.max?.total_earnings ?? poolTracking.min.total_earnings;
 
         poolTracking.max = {
-          current_amount: currentMax.current_amount + maxNet,
-          total_earnings: currentMax.total_earnings + maxNet,
+          current_amount: maxCurrentAmount + maxNet,
+          total_earnings: maxTotalEarnings + maxNet,
         };
+
+        poolTracking.min.current_amount += minNet;
+        poolTracking.min.total_earnings += minNet;
 
         data.pools[pool.address] = {
           pool,

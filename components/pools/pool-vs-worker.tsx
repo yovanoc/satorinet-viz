@@ -127,7 +127,13 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
                 </p>
                 <p className="text-xs opacity-80">
                   Pool earnings per full stake this day (
-                  {(pool.min.feePercent * 100).toFixed(2)}% fee)
+                  <span
+                    className="font-bold text-sm"
+                    style={{ color: pool.pool.color }}
+                  >
+                    {(pool.min.feePercent * 100).toFixed(2)}%
+                  </span>
+                  {' '}fee)
                 </p>
                 <p className="font-semibold text-accent">
                   {formatSatori(pool.min.full_stake_earnings)}
@@ -158,7 +164,13 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
                   </p>
                   <p className="text-xs opacity-80">
                     Pool earnings per full stake this day (
-                    {(pool.max.feePercent * 100).toFixed(2)}% fee)
+                    <span
+                      className="font-bold text-sm"
+                      style={{ color: pool.pool.color }}
+                    >
+                      {(pool.max.feePercent * 100).toFixed(2)}%
+                    </span>
+                    {' '}fee)
                   </p>
                   <p className="font-semibold text-accent">
                     {formatSatori(pool.max.full_stake_earnings)}
