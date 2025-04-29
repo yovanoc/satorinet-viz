@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   IconInnerShadowTop,
   IconPool,
   IconGitCompare,
   IconDashboard,
-  IconUser
-} from "@tabler/icons-react"
+  IconUser,
+} from "@tabler/icons-react";
 
-import { NavMain } from "@/components/nav-main"
+import { NavMain } from "@/components/nav-main";
 import {
   Sidebar,
   SidebarContent,
@@ -17,9 +17,11 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import Link from "next/link"
-import { NavPools } from "./nav-documents"
+} from "@/components/ui/sidebar";
+import Link from "next/link";
+import { NavPools } from "./nav-documents";
+import { NavStreams } from "./nav-streams";
+import { IconWaveSine } from "@tabler/icons-react";
 
 const data = {
   navMain: [
@@ -27,7 +29,7 @@ const data = {
       title: "Dashboard",
       url: "/",
       icon: IconDashboard,
-    }
+    },
   ],
   pools: [
     {
@@ -46,7 +48,14 @@ const data = {
       icon: IconGitCompare,
     },
   ],
-}
+  streams: [
+    {
+      name: "Search Streams",
+      url: "/streams",
+      icon: IconWaveSine,
+    },
+  ],
+};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -68,8 +77,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
+        <NavStreams items={data.streams} />
         <NavPools items={data.pools} />
       </SidebarContent>
     </Sidebar>
-  )
+  );
 }

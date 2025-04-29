@@ -1,4 +1,4 @@
 # UI
 
-- we use shad/ui don't touch the components/ui folder.
+- we use shad/ui but don't add or modify the components/ui folder.
 - don't touch the globals.css
