@@ -171,7 +171,7 @@ const streamsArraySchema = z.array(streamSchema);
 
 export async function streamsSearch(): Promise<Stream[]> {
   "use cache";
-  cacheLife("seconds");
+  cacheLife("minutes");
 
   const res = await ky.post(`${BASE_URL}/streams/search`, { retry: 3 }).text();
 
