@@ -116,7 +116,7 @@ export function applyFees({
         }
       }
 
-      let feeForCurrentStakeInSatori =
+      const feeForCurrentStakeInSatori =
         (current_staked_amount / fullStakeAmount) * feeForFullStakeInSatori;
 
       let feePercent = feeForCurrentStakeInSatori / (earnings_per_staking_power * current_staked_amount);
