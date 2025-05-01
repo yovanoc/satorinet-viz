@@ -1,3 +1,19 @@
+import { KNOWN_POOLS } from "./known_pools";
+
+export function getAddressName(address: string): string | null{
+  const knownAddress = KNOWN_ADDRESSES.find((k) => k.address === address);
+  if (knownAddress) {
+    return knownAddress.name;
+  }
+
+  const pool = KNOWN_POOLS.find((p) => p.address === address || p.vault_address === address);
+  if (pool) {
+    return pool.name;
+  }
+
+  return null;
+}
+
 export const KNOWN_ADDRESSES = [
   {
     name: "DISTRIBUTION",

@@ -8,7 +8,7 @@ import { SectionCards } from "@/components/section-cards";
 
 import { Suspense } from "react";
 import { tiers as tiersInfo } from "@/lib/satorinet/holders";
-import { KNOWN_ADDRESSES } from "@/lib/known_addresses";
+import { getAddressName, KNOWN_ADDRESSES } from "@/lib/known_addresses";
 import { formatSatori } from "@/lib/format";
 import { getSatoriHolders } from "@/lib/get-satori-holders";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,10 +26,11 @@ async function DailyWorkerCountsCard() {
 async function DailyManifestCard() {
   const date = new Date();
   const all = await getManifests(date, 90);
-  const data: React.ComponentProps<typeof StackedAreaManifest>['manifests'] = all.map(item => ({
-    date: new Date(item.date),
-    ...getManifest(item),
-  }))
+  const data: React.ComponentProps<typeof StackedAreaManifest>["manifests"] =
+    all.map((item) => ({
+      date: new Date(item.date),
+      ...getManifest(item, new Date(item.date)),
+    }));
 
   return <StackedAreaManifest manifests={data} />;
 }
@@ -41,15 +42,13 @@ async function CustomDataTable() {
     return <div className="px-4 lg:px-6">No data available</div>;
   }
 
-  const {
-    holders,
-    summary: { tiers },
-  } = satoriHolders;
+  const { tiers, assetHolders } = satoriHolders;
 
   const knownAddresses = KNOWN_ADDRESSES.map(({ address, name }) => {
-    const balance =
-      holders.find((holder) => holder.address === address)?.balance ?? 0;
-    return { address, name, balance };
+    const holder = assetHolders.find((holder) => holder.address === address);
+    const balance = holder?.balance ?? 0;
+    const rank = balance > 0 && holder ? holder.rank : 'N/A' as const;
+    return { address, name, balance, rank };
   }).sort((a, b) => b.balance - a.balance);
 
   const breakdown: HoldersSummaryData[] = Object.entries(tiers).map(
@@ -78,10 +77,9 @@ async function CustomDataTable() {
       ?.wallets.sort((a, b) => b.balance - a.balance)
       .map((holder) => ({
         address: holder.address,
-        name:
-          KNOWN_ADDRESSES.find((k) => k.address === holder.address)?.name ??
-          "Unknown",
+        name: getAddressName(holder.address) ?? "Unknown",
         balance: holder.balance,
+        rank: holder.rank,
       })) ?? [];
 
   return (

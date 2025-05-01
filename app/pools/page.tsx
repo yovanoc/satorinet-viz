@@ -10,7 +10,12 @@ import { getTopPools } from "@/lib/db/queries/contributors";
 
 async function TopPoolsCard({ date }: { date: Date }) {
   const topPools = await getTopPools(date);
-  return <TopPools key={date.toISOString()} pools={topPools} date={date} />;
+  return (
+    <div className="mb-4">
+      <h2 className="text-2xl font-bold mb-4">Top {topPools.length} Pools</h2>
+      <TopPools key={date.toISOString()} pools={topPools} date={date} />
+    </div>
+  );
 }
 
 export default async function PoolsPage({
@@ -65,10 +70,7 @@ export default async function PoolsPage({
         <Suspense
           fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}
         >
-          <div className="mb-4">
-            <h2 className="text-2xl font-bold mb-4">Top 15 Pools</h2>
-            <TopPoolsCard date={selectedDate} />
-          </div>
+          <TopPoolsCard date={selectedDate} />
         </Suspense>
         <Suspense
           fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}

@@ -16,7 +16,7 @@ export type Manifest = {
 
 type Name = "predictors" | "oracles" | "inviters" | "creators" | "managers";
 
-export function getManifest(manifest: DailyManifestAddress): Manifest {
+export function getManifest(manifest: DailyManifestAddress, date: Date): Manifest {
   const total_weighted =
     manifest.predictors_weighted +
     manifest.oracles_weighted +
@@ -74,6 +74,12 @@ export function getManifest(manifest: DailyManifestAddress): Manifest {
         managers = value;
         break;
     }
+  }
+
+  if (date >= new Date("2025-04-29")) {
+    // give all inviters to predictors
+    predictors += inviters;
+    inviters = 0;
   }
 
   return {

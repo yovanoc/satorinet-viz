@@ -15,8 +15,5 @@ export async function getSatoriHolders() {
 
   const summary = classifyAssetHolders(holders);
 
-  return {
-    holders,
-    summary,
-  }
+  return summary;
 }

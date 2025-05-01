@@ -1,4 +1,4 @@
-import { sql, desc } from "drizzle-orm";
+import { sql, desc, and } from "drizzle-orm";
 import { unstable_cacheLife as cacheLife } from "next/cache";
 import { db } from "..";
 import { dailyContributorAddress } from "../schema";
@@ -14,11 +14,14 @@ export async function getTopPools(date: Date) {
       contributor_count: sql<number>`count(distinct ${dailyContributorAddress.contributor})`,
     })
     .from(dailyContributorAddress)
-    .where(sql`${dailyContributorAddress.date} = ${date}`)
+    .where(and(
+      sql`${dailyContributorAddress.date} = ${date}`,
+      sql`${dailyContributorAddress.staking_power_contribution} > 0`
+    ))
     .groupBy(dailyContributorAddress.pool_address)
     .orderBy(
       desc(sql`sum(${dailyContributorAddress.staking_power_contribution})`)
     )
-    .limit(15)
+    .limit(30)
     .execute();
 }

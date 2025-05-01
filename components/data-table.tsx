@@ -51,6 +51,7 @@ const holderSchema = z.object({
   address: z.string(),
   name: z.string(),
   balance: z.number(),
+  rank: z.union([z.number(), z.literal("N/A")]),
 });
 
 export type SingleHolderData = z.infer<typeof holderSchema>;
@@ -107,7 +108,12 @@ const topHoldersColumns: ColumnDef<SingleHolderData>[] = [
   {
     accessorKey: "name",
     header: "Name",
-    cell: ({ row }) => <div className="w-32">{row.original.name}</div>,
+    cell: ({ row }) => (
+      <div className="w-32">
+        {row.original.name}{" "}
+        {row.original.rank !== "N/A" ? `(Rank #${row.original.rank})` : null}
+      </div>
+    ),
   },
   {
     accessorKey: "balance",
@@ -133,7 +139,12 @@ const knownAddressesColumns: ColumnDef<SingleHolderData>[] = [
   {
     accessorKey: "name",
     header: "Name",
-    cell: ({ row }) => <div className="w-32">{row.original.name}</div>,
+    cell: ({ row }) => (
+      <div className="w-32">
+        {row.original.name}{" "}
+        {row.original.rank !== "N/A" ? `(Rank #${row.original.rank})` : null}
+      </div>
+    ),
   },
   {
     accessorKey: "balance",

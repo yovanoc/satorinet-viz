@@ -33,18 +33,29 @@ export type TierData = {
   count: number,
   percentAmount: number,
   percentCount: number,
-  wallets: { address: string, balance: number }[]
+  wallets: { address: string, balance: number, rank: number }[]
 };
 export type Tiers = Record<TierName, TierData>;
 
 export type HoldersSummary = {
   totalSatori: number;
   tiers: Tiers;
+  assetHolders: AssetHolderWithRank[];
+};
+
+export type AssetHolderWithRank = AssetHolder & {
+  rank: number;
 };
 
 export const classifyAssetHolders = (assetHolders: AssetHolder[]) => {
+  assetHolders.sort((a, b) => b.balance - a.balance);
+  const assetHoldersWithRank: AssetHolderWithRank[] = assetHolders.map((holder, idx) => ({
+      ...holder,
+      rank: idx + 1,
+  }));
   const summary: HoldersSummary = {
       totalSatori: 0,
+      assetHolders: assetHoldersWithRank,
       tiers: {
           '🦐 Shrimp': { total: 0, percentAmount: 0, percentCount: 0, count: 0, wallets: [] },
           '🦀 Crab': { total: 0, percentAmount: 0, percentCount: 0, count: 0, wallets: [] },
@@ -63,14 +74,14 @@ export const classifyAssetHolders = (assetHolders: AssetHolder[]) => {
   });
 
   const scale = Math.pow(10, 8);
-  assetHolders.forEach(({ address, balance }) => {
+  assetHoldersWithRank.forEach(({ address, balance, rank }) => {
       summary.totalSatori += Math.round(balance * scale);
       const tier = tiers.find(tier => balance >= tier.min && balance < tier.max);
       if (tier) {
           const tierData = summary.tiers[tier.name];
           tierData.total += balance;
           tierData.count += 1;
-          tierData.wallets.push({ address, balance });
+          tierData.wallets.push({ address, balance, rank });
       }
   });
 

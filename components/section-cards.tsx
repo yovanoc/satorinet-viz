@@ -1,23 +1,20 @@
 import {
   Card,
-  CardAction,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import {
-  getAvailablePublicWorkersCount,
   getDailyCounts,
 } from "@/lib/satorinet/central";
 import { getSatoriHolders } from "@/lib/get-satori-holders";
-import { Badge } from "./ui/badge";
-import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react";
+import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
 
 export async function SectionCards() {
-  const [availablePublicWorkersCount, dailyCounts, satoriHolders] =
+  const [price, dailyCounts, satoriHolders] =
     await Promise.all([
-      getAvailablePublicWorkersCount(),
+      getSatoriPriceForDate(new Date()),
       getDailyCounts(),
       getSatoriHolders(),
     ]);
@@ -26,7 +23,7 @@ export async function SectionCards() {
     return <div className="px-4 lg:px-6">No data available</div>;
   }
 
-  const holders = Object.values(satoriHolders.summary.tiers).reduce(
+  const holders = Object.values(satoriHolders.tiers).reduce(
     (acc, tier) => acc + tier.count,
     0
   );
@@ -35,28 +32,18 @@ export async function SectionCards() {
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-6">
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Available Public Workers</CardDescription>
+          <CardDescription>Price</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {availablePublicWorkersCount}
+            {price.toLocaleString(undefined, {
+              currency: "USD",
+              style: "currency",
+              maximumFractionDigits: 2,
+            })}
           </CardTitle>
-          <CardAction>
-            <Badge
-              variant={
-                availablePublicWorkersCount > 0 ? "outline" : "destructive"
-              }
-            >
-              {availablePublicWorkersCount > 0 ? "Available" : "Unavailable"}
-              {availablePublicWorkersCount > 0 ? (
-                <IconTrendingUp />
-              ) : (
-                <IconTrendingDown />
-              )}
-            </Badge>
-          </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="text-muted-foreground">
-            Public workers available ready to join pools opened for mining
+            Satori Price in USD — <a href="https://www.livecoinwatch.com/price/SATORI-SATORI">LiveCoinWatch</a>
           </div>
         </CardFooter>
       </Card>
@@ -64,7 +51,7 @@ export async function SectionCards() {
         <CardHeader>
           <CardDescription>Circulating Supply</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[400px]/card:text-3xl">
-            {satoriHolders.summary.totalSatori.toLocaleString(undefined, {
+            {satoriHolders.totalSatori.toLocaleString(undefined, {
               maximumFractionDigits: 8,
             })}
           </CardTitle>

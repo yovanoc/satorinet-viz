@@ -17,14 +17,15 @@ export type FeeResult = {
   netPerFullStake: number;
 };
 
-export type AppliedFees = | {
-  type: "single";
-  result: FeeResult;
-}
+export type AppliedFees =
   | {
-    type: "multiple";
-    results: FeeResult[];
-  };
+      type: "single";
+      result: FeeResult;
+    }
+  | {
+      type: "multiple";
+      results: FeeResult[];
+    };
 
 export function applyFees({
   pool,
@@ -52,11 +53,17 @@ export function applyFees({
         return {
           type: "multiple",
           results: fees.fees.percent.map((feePercent) => {
+            if (fees.maxPercent) {
+              feePercent = Math.min(feePercent, fees.maxPercent);
+            }
             return {
               feePercent,
               feeAmountPerSatori:
                 (earnings_per_staking_power * feePercent) / satoriPrice,
-              net: applyFeePercent(earnings_per_staking_power * current_staked_amount, feePercent),
+              net: applyFeePercent(
+                earnings_per_staking_power * current_staked_amount,
+                feePercent
+              ),
               netPerFullStake: applyFeePercent(
                 earnings_per_staking_power * fullStakeAmount,
                 feePercent
@@ -65,7 +72,10 @@ export function applyFees({
           }),
         };
       }
-      const feePercent = fees.fees.percent;
+      let feePercent = fees.fees.percent;
+      if (fees.maxPercent) {
+        feePercent = Math.min(feePercent, fees.maxPercent);
+      }
 
       return {
         type: "single",
@@ -73,7 +83,10 @@ export function applyFees({
           feePercent,
           feeAmountPerSatori:
             (earnings_per_staking_power * feePercent) / satoriPrice,
-          net: applyFeePercent(earnings_per_staking_power * current_staked_amount, feePercent),
+          net: applyFeePercent(
+            earnings_per_staking_power * current_staked_amount,
+            feePercent
+          ),
           netPerFullStake: applyFeePercent(
             earnings_per_staking_power * fullStakeAmount,
             feePercent
@@ -82,9 +95,6 @@ export function applyFees({
       };
     }
     case "cost": {
-      const earningsForFullStake = earnings_per_staking_power * fullStakeAmount;
-      const earningsForCurrentStake = earnings_per_staking_power * current_staked_amount;
-
       let feeForFullStakeInSatori: number;
 
       if (fees.fees.amount_type === "satori") {
@@ -92,7 +102,8 @@ export function applyFees({
           feeForFullStakeInSatori = fees.fees.amount;
         } else {
           // per N satori
-          feeForFullStakeInSatori = (fees.fees.amount / fees.fees.per) * fullStakeAmount;
+          feeForFullStakeInSatori =
+            (fees.fees.amount / fees.fees.per) * fullStakeAmount;
         }
       } else {
         // fees in USD
@@ -100,23 +111,33 @@ export function applyFees({
           feeForFullStakeInSatori = fees.fees.amount / satoriPrice;
         } else {
           feeForFullStakeInSatori =
-            (fees.fees.amount / fees.fees.per) * fullStakeAmount / satoriPrice;
+            ((fees.fees.amount / fees.fees.per) * fullStakeAmount) /
+            satoriPrice;
         }
       }
 
-      const feeForCurrentStakeInSatori =
+      let feeForCurrentStakeInSatori =
         (current_staked_amount / fullStakeAmount) * feeForFullStakeInSatori;
 
-      const feePercent = feeForCurrentStakeInSatori / earningsForCurrentStake;
-      const feeAmountPerSatori = feePercent * earnings_per_staking_power;
+      let feePercent = feeForCurrentStakeInSatori / (earnings_per_staking_power * current_staked_amount);
+      if (fees.maxPercent !== undefined) {
+        feePercent = Math.min(feePercent, fees.maxPercent);
+      }
 
       return {
         type: "single",
         result: {
           feePercent,
-          feeAmountPerSatori,
-          net: earningsForCurrentStake - feeForCurrentStakeInSatori,
-          netPerFullStake: earningsForFullStake - feeForFullStakeInSatori,
+          feeAmountPerSatori:
+            (earnings_per_staking_power * feePercent) / satoriPrice,
+          net: applyFeePercent(
+            earnings_per_staking_power * current_staked_amount,
+            feePercent
+          ),
+          netPerFullStake: applyFeePercent(
+            earnings_per_staking_power * fullStakeAmount,
+            feePercent
+          ),
         },
       };
     }
