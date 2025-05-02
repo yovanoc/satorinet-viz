@@ -19,7 +19,7 @@ export async function BaseAddress({ address }: { address: string }) {
         </div>
       </div>
       <div className="flex h-full font-semibold text-xl">
-        Base Chain Balance: {formatSatori(balance ?? 0)} ETH
+        Balance: {formatSatori(balance ?? 0)} SATORI
       </div>
     </div>
   );

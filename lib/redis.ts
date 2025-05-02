@@ -1,4 +1,4 @@
-import { createClient } from "redis";
+import { Redis } from "ioredis";
 import { env } from "./env";
 
-export const redis = await createClient({ url: env.REDIS_URL }).connect();
+export const redis = new Redis(env.REDIS_URL);

@@ -50,7 +50,7 @@ export async function EvrAddress({ address }: { address: string }) {
         </a>
       </div>
       <div className="flex h-full font-semibold text-xl">
-        EVR Balance: {formatSatori(res.balance)} SATORI
+        Balance: {formatSatori(res.balance)} SATORI
       </div>
       <div className="flex flex-col gap-2">
         {res.filteredData.map((tx) => (

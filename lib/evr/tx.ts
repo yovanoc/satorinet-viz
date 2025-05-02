@@ -6,7 +6,7 @@ import {
   type TxHistory,
 } from "@/lib/satorinet/electrumx";
 import Bottleneck from "bottleneck";
-import { getSatoriHolders } from "../get-satori-holders";
+import { getSatoriHolder } from "../satorinet/holders_cache";
 
 const limiter = new Bottleneck({
   reservoir: 20,
@@ -117,7 +117,6 @@ export async function getItemFromTransaction(
 }
 
 export type AddressElectrumxData = {
-  tx_history: TxHistory[];
   txs: Record<string, Transaction>;
   utxos: TxHistory[];
   balance: number;
@@ -134,66 +133,62 @@ export async function getAddressDataOnElectrumx(
 
   try {
     await electrumxClient.connectToServer();
-    // TODO maybe optimize this at some point like put in redis info needed to display this page
-    // ! Error 1: history too large while blockchain.scripthash.get_history
-    const [balance, tx_history, utxos, holders] = await Promise.all([
-      electrumxClient.getAddressBalance(address, "SATORI"),
-      electrumxClient.getTransactionHistory(address),
+
+
+    const [utxos, holder] = await Promise.all([
       electrumxClient.getAddressUtxos(address, "SATORI"),
-      getSatoriHolders(),
+      getSatoriHolder(address),
     ]);
 
-    const count = 15;
+    let txHistory: TxHistory[] = [];
+    try {
+      txHistory = await electrumxClient.getTransactionHistory(address);
+    } catch (err) {
+      console.error("Error fetching transaction history (possibly too large):", err);
+      txHistory = [];
+    }
+
+    // If txHistory is empty (e.g. error/too large), fall back to UTXOs for history display
+    let txHashes: string[] = [];
+    if (txHistory.length > 0) {
+      // Use up to 15 most recent txs from history
+      txHashes = txHistory
+        .slice(-15)
+        .toReversed()
+        .map((h) => h.tx_hash)
+        .filter((v, i, arr) => arr.indexOf(v) === i);
+    } else {
+      // Use up to 15 most recent UTXO tx_hashes
+      const uniqueUtxoHashes = [...new Set(utxos.map((u) => u.tx_hash))];
+      txHashes = uniqueUtxoHashes.slice(-15).toReversed();
+    }
+    const utxosResult = utxos;
 
     const txsData = await Promise.all(
-      tx_history
-        .slice(-count)
-        .toReversed()
-        .map(async ({ tx_hash }) => {
-          const tx = await getEVRTransaction(tx_hash);
-          if (!tx) {
-            return null;
-          }
-          return tx;
-        })
+      txHashes.map((tx_hash) => getEVRTransaction(tx_hash))
     );
 
     const txs = txsData.reduce((acc, tx) => {
-      if (tx) {
-        acc[tx.hash] = tx;
-      }
+      if (tx) acc[tx.hash] = tx;
       return acc;
     }, {} as Record<string, Transaction>);
 
     const data = await Promise.all(
-      tx_history
-        .slice(-count)
-        .toReversed()
-        .map(async (utxo) => {
-          const tx = txs[utxo.tx_hash];
-          if (!tx) {
-            return null;
-          }
-
-          const item = await getItemFromTransaction(tx);
-          if (!item) {
-            return null;
-          }
-          return item;
-        })
+      txsData.map(async (tx) => {
+        if (!tx) return null;
+        return getItemFromTransaction(tx);
+      })
     );
 
     const filteredData = data.filter((item) => item !== null);
 
-    // electrumxClient.disconnect();
     return {
       txs,
-      utxos,
-      tx_history,
-      balance,
+      utxos: utxosResult,
+      balance: holder?.balance ?? 0,
       filteredData,
-      rank: holders?.assetHolders.find((h) => h.address === address)?.rank ?? 0,
-      total: holders?.assetHolders.length ?? 0,
+      rank: holder?.rank ?? 0,
+      total: holder?.total ?? 0,
     };
   } catch (e) {
     console.error("Error connecting to ElectrumX server:", e);

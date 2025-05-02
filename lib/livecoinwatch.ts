@@ -13,9 +13,7 @@ export async function getSatoriPriceForDate(date: Date): Promise<number> {
     return parseFloat(cachedPrice);
   }
   const price = await getSatoriPriceForDateLocal(date);
-  await redis.set(cacheKey, price.toString(), {
-    EX: 60 * 60 * 24 * 7, // 7 days
-  });
+  await redis.setex(cacheKey, 60 * 60 * 24 * 7, price);
   return price;
 }
 
