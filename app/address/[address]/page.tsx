@@ -40,24 +40,20 @@ export default async function AddressPage({
           <h2 className="text-lg font-semibold text-primary">
             Chains Overview
           </h2>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 border rounded-lg p-4">
+          <div className="flex flex-col xl:flex-row gap-4">
+            <div className="w-full flex-1 min-w-0 border rounded-lg p-4">
               <h3 className="text-md font-semibold text-primary mb-2">
                 Evrmore Chain
               </h3>
-              <Suspense
-                fallback={<Skeleton className="h-8 w-full text-center mb-4" />}
-              >
+              <Suspense fallback={<Skeleton className="h-8 w-full text-center mb-4" />}>
                 <EvrAddress address={address} />
               </Suspense>
             </div>
-            <div className="flex-1 border rounded-lg p-4">
+            <div className="w-full flex-1 min-w-0 border rounded-lg p-4">
               <h3 className="text-md font-semibold text-primary mb-2">
                 Base Chain
               </h3>
-              <Suspense
-                fallback={<Skeleton className="h-8 w-full text-center mb-4" />}
-              >
+              <Suspense fallback={<Skeleton className="h-8 w-full text-center mb-4" />}>
                 <BaseAddress address={address} />
               </Suspense>
             </div>

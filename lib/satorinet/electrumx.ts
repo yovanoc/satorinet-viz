@@ -43,6 +43,8 @@ export interface TransactionScriptPubKeyHash {
 export interface TransactionAsset {
   name: string;
   amount: number;
+  message?: string;
+  expire_time?: number;
 }
 
 export interface TransactionScriptPubKeyTransferAsset extends TransactionScriptPubKeyHash {

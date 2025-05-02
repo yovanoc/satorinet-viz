@@ -38,11 +38,11 @@ export async function EvrAddress({ address }: { address: string }) {
         </a>
       </div>
       <div className="flex h-full font-semibold text-xl">
-        EVR Balance: {formatSatori(res.balance ?? 0)} SATORI
+        EVR Balance: {formatSatori(res.balance)} SATORI
       </div>
       <div className="flex flex-col gap-2">
         {res.filteredData.map((tx) => (
-          <TransactionItem key={tx.hash} tx={tx} />
+          <TransactionItem currentAddress={address} key={tx.hash} tx={tx} />
         ))}
       </div>
     </div>

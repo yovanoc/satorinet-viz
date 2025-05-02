@@ -23,11 +23,7 @@ export async function SectionCardsPools({ date }: { date: Date }) {
       getMaxDelegatedStake(date),
     ]);
 
-  if (!earningsData) {
-    return null;
-  }
-
-  const { total_miner_earned, avg_miner_earned } = earningsData;
+  const { total_miner_earned, avg_miner_earned } = earningsData ? earningsData : { total_miner_earned: 0, avg_miner_earned: 0 };
   const totalEarnedUSD = total_miner_earned * price;
   const avgEarnedUSD = avg_miner_earned * price;
 
