@@ -6,6 +6,7 @@ import {
   type TxHistory,
 } from "@/lib/satorinet/electrumx";
 import Bottleneck from "bottleneck";
+import { getSatoriHolders } from "../get-satori-holders";
 
 const limiter = new Bottleneck({
   reservoir: 20,
@@ -120,6 +121,8 @@ export type AddressElectrumxData = {
   txs: Record<string, Transaction>;
   utxos: TxHistory[];
   balance: number;
+  rank: number;
+  total: number;
   filteredData: TxItem[];
 };
 
@@ -131,10 +134,13 @@ export async function getAddressDataOnElectrumx(
 
   try {
     await electrumxClient.connectToServer();
-    const [balance, tx_history, utxos] = await Promise.all([
+    // TODO maybe optimize this at some point like put in redis info needed to display this page
+    // ! Error 1: history too large while blockchain.scripthash.get_history
+    const [balance, tx_history, utxos, holders] = await Promise.all([
       electrumxClient.getAddressBalance(address, "SATORI"),
       electrumxClient.getTransactionHistory(address),
       electrumxClient.getAddressUtxos(address, "SATORI"),
+      getSatoriHolders(),
     ]);
 
     const count = 15;
@@ -186,6 +192,8 @@ export async function getAddressDataOnElectrumx(
       tx_history,
       balance,
       filteredData,
+      rank: holders?.assetHolders.find((h) => h.address === address)?.rank ?? 0,
+      total: holders?.assetHolders.length ?? 0,
     };
   } catch (e) {
     console.error("Error connecting to ElectrumX server:", e);

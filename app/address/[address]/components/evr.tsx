@@ -28,6 +28,18 @@ export async function EvrAddress({ address }: { address: string }) {
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+      <div className="flex justify-center">
+        <div className="flex items-center gap-2 rounded-full border border-primary bg-primary/10 px-6 py-2 shadow-sm">
+          <span className="text-primary font-bold text-lg">Rank</span>
+          <span className="inline-flex items-center justify-center rounded-full bg-primary text-white font-semibold px-3 py-1 text-base">
+            {res.rank}
+          </span>
+          <span className="text-muted-foreground text-base">/</span>
+          <span className="inline-flex items-center justify-center rounded-full bg-muted text-primary font-semibold px-3 py-1 text-base">
+            {res.total}
+          </span>
+        </div>
+      </div>
       <div className="text-primary text-2xl">
         <a
           href={`https://evr.cryptoscope.io/address/?address=${address}`}
