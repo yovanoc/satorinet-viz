@@ -14,6 +14,7 @@ export default function DatePickerWrapper({
   const searchParams = useSearchParams();
 
   const handleDateChange = (newDate?: Date) => {
+    if (!searchParams) return;
     const current = new URLSearchParams(Array.from(searchParams.entries()));
 
     newDate ??= new Date();

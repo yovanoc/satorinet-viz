@@ -62,10 +62,13 @@ const limiter = new Bottleneck({
   minTime: 250, // pick a value that makes sense for your use case
 });
 
-async function getSatoriPriceLivecoinwatch(
+export async function getSatoriPriceLivecoinwatch(
   start: number,
   end: number
 ): Promise<LiveCoinWatchResult> {
+  "use cache";
+  cacheLife("max");
+
   return await limiter.schedule(() =>
     ky
       .post("https://api.livecoinwatch.com/coins/single/history", {

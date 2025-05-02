@@ -7,6 +7,7 @@ import {
 import { SectionCards } from "@/components/section-cards";
 
 import { Suspense } from "react";
+import { PriceHistoryChart } from "@/components/price-history-chart";
 import { tiers as tiersInfo } from "@/lib/satorinet/holders";
 import { getAddressName, KNOWN_ADDRESSES } from "@/lib/known_addresses";
 import { formatSatori } from "@/lib/format";
@@ -107,27 +108,24 @@ export default function Page() {
       </Suspense>
       <div className="px-4 lg:px-6">
         <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
-          <Suspense
-            fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}
-          >
+          <Suspense fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}>
             <DailyWorkerCountsCard />
           </Suspense>
-          <Suspense
-            fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}
-          >
+          <div className="flex flex-col gap-2">
+            <PriceHistoryChart />
+          </div>
+        </div>
+      </div>
+      <div className="px-4 lg:px-6">
+        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
+          <Suspense fallback={<Skeleton className="h-[350px] w-full rounded-xl" />}>
+            <CustomDataTable />
+          </Suspense>
+          <Suspense fallback={<Skeleton className="h-[350px] w-full rounded-xl" />}>
             <DailyManifestCard />
           </Suspense>
         </div>
       </div>
-      <Suspense
-        fallback={
-          <div className="px-4 lg:px-6">
-            <Skeleton className="h-[350px] w-full rounded-xl" />
-          </div>
-        }
-      >
-        <CustomDataTable />
-      </Suspense>
     </div>
   );
 }

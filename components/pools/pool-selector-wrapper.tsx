@@ -14,6 +14,7 @@ export default function PoolSelectorWrapper({ pools, selectedPool }: PoolSelecto
   const searchParams = useSearchParams()
 
   const handlePoolChange = (newPool: string) => {
+    if (!searchParams) return
     const current = new URLSearchParams(Array.from(searchParams.entries()))
     current.set("pool", newPool)
     const search = current.toString()
