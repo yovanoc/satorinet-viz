@@ -94,7 +94,9 @@ export function StackedAreaManifest({
           <ToggleGroup
             type="single"
             value={timeRange}
-            onValueChange={setTimeRange}
+            onValueChange={(val) => {
+              if (val) setTimeRange(val);
+            }}
             variant="outline"
             className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
           >

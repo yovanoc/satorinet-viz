@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Montserrat, Fira_Code } from "next/font/google";
+import { SiteFooter } from "@/components/site-footer";
 
 const sans = Montserrat({
   variable: "--font-sans",
@@ -27,8 +28,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const lastUpdated = new Date().toUTCString();
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${sans.variable} ${mono.variable} antialiased`}>
@@ -55,12 +54,9 @@ export default function RootLayout({
                     {children}
                   </div>
                 </div>
+                <SiteFooter />
               </SidebarInset>
             </SidebarProvider>
-
-            <div className="fixed bottom-2 right-4 z-50 text-xs text-muted-foreground pointer-events-none select-none">
-              Last updated: {lastUpdated}
-            </div>
           </main>
         </ThemeProvider>
       </body>

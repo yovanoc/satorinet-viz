@@ -27,16 +27,20 @@ const RANGE_OPTIONS = [
   { value: "yearly", label: "1y" },
 ];
 
-  const chartConfig: ChartConfig = {
-    rate: { label: "Price" },
-  };
+const chartConfig: ChartConfig = {
+  rate: { label: "Price" },
+};
 
 export function PriceHistoryChart() {
-  const [range, setRange] = useState<"hourly" | "daily" | "weekly" | "monthly" | "yearly">("daily");
+  const [range, setRange] = useState<
+    "hourly" | "daily" | "weekly" | "monthly" | "yearly"
+  >("weekly");
   const [data, setData] = useState<{ date: number; rate: number }[]>([]);
   const [isPending, startTransition] = useTransition();
 
-  const fetchData = (period: "hourly" | "daily" | "weekly" | "monthly" | "yearly") => {
+  const fetchData = (
+    period: "hourly" | "daily" | "weekly" | "monthly" | "yearly"
+  ) => {
     startTransition(async () => {
       const result = await getPriceRange(period);
       setData(result.history);
@@ -55,11 +59,15 @@ export function PriceHistoryChart() {
   return (
     <Card className="@container/card h-full">
       <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
-        <CardTitle className="text-base font-semibold">Satori Price History</CardTitle>
+        <CardTitle className="text-base font-semibold">
+          Satori Price History
+        </CardTitle>
         <ToggleGroup
           type="single"
           value={range}
-          onValueChange={handleRangeChange}
+          onValueChange={(val) => {
+            if (val) handleRangeChange(val);
+          }}
           variant="outline"
           className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
         >
@@ -84,7 +92,11 @@ export function PriceHistoryChart() {
           </SelectTrigger>
           <SelectContent className="rounded-xl">
             {RANGE_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value} className="rounded-lg">
+              <SelectItem
+                key={opt.value}
+                value={opt.value}
+                className="rounded-lg"
+              >
                 {opt.label}
               </SelectItem>
             ))}
@@ -111,16 +123,26 @@ export function PriceHistoryChart() {
                 tickFormatter={(v) => {
                   const d = new Date(v);
                   if (range === "hourly") {
-                    return d.getHours().toString().padStart(2, "0") + ":" + d.getMinutes().toString().padStart(2, "0");
+                    return (
+                      d.getHours().toString().padStart(2, "0") +
+                      ":" +
+                      d.getMinutes().toString().padStart(2, "0")
+                    );
                   }
                   if (range === "daily") {
-                    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                    return d.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    });
                   }
                   if (range === "weekly" || range === "monthly") {
                     return d.toLocaleDateString();
                   }
                   if (range === "yearly") {
-                    return d.toLocaleDateString(undefined, { year: "numeric", month: "short" });
+                    return d.toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "short",
+                    });
                   }
                   return d.toLocaleDateString();
                 }}
@@ -144,12 +166,20 @@ export function PriceHistoryChart() {
                   />
                 }
               />
-              <Area type="monotone" dataKey="rate" stroke="#6366f1" fillOpacity={1} fill="url(#colorPrice)" />
+              <Area
+                type="monotone"
+                dataKey="rate"
+                stroke="#6366f1"
+                fillOpacity={1}
+                fill="url(#colorPrice)"
+              />
             </AreaChart>
           </ChartContainer>
           {isPending && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="text-xs text-muted-foreground bg-background/80 rounded px-3 py-1 shadow">Loading…</div>
+              <div className="text-xs text-muted-foreground bg-background/80 rounded px-3 py-1 shadow">
+                Loading…
+              </div>
             </div>
           )}
         </div>

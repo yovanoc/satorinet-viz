@@ -33,6 +33,14 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatSatori } from "@/lib/format";
 import Link from "next/link";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const schema = z.object({
@@ -185,6 +193,12 @@ function MyRowSingle({ row }: { row: Row<SingleHolderData> }) {
   );
 }
 
+const descriptions: Record<string, string> = {
+  ["holders-summary"]: `This table shows the distribution of Satori EVR across different tiers. Each tier represents a range of Satori EVR holdings, along with the total number of holders in that tier and their percentage of the total supply.`,
+  ["top-holders"]: `This table lists the top holders of Satori EVR, ranked by their balance. It includes the address, name, and balance of each holder. The rank is displayed for holders with a rank assigned. Click on an address to view more details about that holder.`,
+  ["known-addresses"]: `This table lists known addresses that hold Satori EVR. It includes the address, name, and balance of each holder. The rank is displayed for holders with a rank assigned. Click on an address to view more details about that holder.`,
+};
+
 export function DataTable({
   breakdown,
   topHolders,
@@ -233,165 +247,177 @@ export function DataTable({
   });
 
   return (
-    <Tabs
-      value={tab}
-      onValueChange={setTab}
-      className="w-full flex-col justify-start gap-6"
-    >
-      <div className="flex items-center justify-between px-4 lg:px-6">
-        <Label htmlFor="view-selector" className="sr-only">
-          View
-        </Label>
-        <Select value={tab} onValueChange={setTab}>
-          <SelectTrigger
-            className="flex w-fit @4xl/main:hidden"
-            size="sm"
-            id="view-selector"
+    <Card className="@container/card">
+      <CardHeader>
+        <CardTitle>Satori EVR Distribution</CardTitle>
+        <CardDescription>{descriptions[tab]}</CardDescription>
+        <CardAction>{/* TODO */}</CardAction>
+      </CardHeader>
+      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+        <Tabs
+          value={tab}
+          onValueChange={setTab}
+          className="w-full flex-col justify-start"
+        >
+          <div className="flex items-center justify-between px-1 lg:px-2">
+            <Label htmlFor="view-selector" className="sr-only">
+              View
+            </Label>
+            <Select value={tab} onValueChange={setTab}>
+              <SelectTrigger
+                className="flex w-fit @4xl/main:hidden"
+                size="sm"
+                id="view-selector"
+              >
+                <SelectValue placeholder="Select a view" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="holders-summary">Holders Summary</SelectItem>
+                <SelectItem value="top-holders">
+                  Top Holders - 🔱 Aquaman
+                </SelectItem>
+                <SelectItem value="known-addresses">Known Addresses</SelectItem>
+              </SelectContent>
+            </Select>
+            <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
+              <TabsTrigger value="holders-summary">Holders Summary</TabsTrigger>
+              <TabsTrigger value="top-holders">
+                Top Holders - 🔱 Aquaman
+              </TabsTrigger>
+              <TabsTrigger value="known-addresses">Known Addresses</TabsTrigger>
+            </TabsList>
+          </div>
+          <TabsContent
+            value="holders-summary"
+            className="relative flex flex-col overflow-auto px-1 lg:px-2"
           >
-            <SelectValue placeholder="Select a view" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="holders-summary">Holders Summary</SelectItem>
-            <SelectItem value="top-holders">
-              Top Holders - 🔱 Aquaman
-            </SelectItem>
-            <SelectItem value="known-addresses">Known Addresses</SelectItem>
-          </SelectContent>
-        </Select>
-        <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
-          <TabsTrigger value="holders-summary">Holders Summary</TabsTrigger>
-          <TabsTrigger value="top-holders">
-            Top Holders - 🔱 Aquaman
-          </TabsTrigger>
-          <TabsTrigger value="known-addresses">Known Addresses</TabsTrigger>
-        </TabsList>
-      </div>
-      <TabsContent
-        value="holders-summary"
-        className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
-      >
-        <div className="overflow-hidden rounded-lg border">
-          <Table>
-            <TableHeader className="bg-muted sticky top-0 z-10">
-              {breakdownTable.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    return (
-                      <TableHead key={header.id} colSpan={header.colSpan}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody className="**:data-[slot=table-cell]:first:w-8">
-              {breakdownTable.getRowModel().rows?.length ? (
-                breakdownTable
-                  .getRowModel()
-                  .rows.map((row) => <MyRow key={row.id} row={row} />)
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={breakdownColumns.length}
-                    className="h-24 text-center"
-                  >
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </TabsContent>
-      <TabsContent value="top-holders" className="flex flex-col px-4 lg:px-6">
-        <div className="overflow-hidden rounded-lg border">
-          <Table>
-            <TableHeader className="bg-muted sticky top-0 z-10">
-              {topHoldersTable.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    return (
-                      <TableHead key={header.id} colSpan={header.colSpan}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody className="**:data-[slot=table-cell]:first:w-8">
-              {topHoldersTable.getRowModel().rows?.length ? (
-                topHoldersTable
-                  .getRowModel()
-                  .rows.map((row) => <MyRowSingle key={row.id} row={row} />)
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={topHoldersColumns.length}
-                    className="h-24 text-center"
-                  >
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </TabsContent>
-      <TabsContent
-        value="known-addresses"
-        className="flex flex-col px-4 lg:px-6"
-      >
-        <div className="overflow-hidden rounded-lg border">
-          <Table>
-            <TableHeader className="bg-muted sticky top-0 z-10">
-              {knownAddressesTable.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    return (
-                      <TableHead key={header.id} colSpan={header.colSpan}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody className="**:data-[slot=table-cell]:first:w-8">
-              {knownAddressesTable.getRowModel().rows?.length ? (
-                knownAddressesTable
-                  .getRowModel()
-                  .rows.map((row) => <MyRowSingle key={row.id} row={row} />)
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={knownAddressesColumns.length}
-                    className="h-24 text-center"
-                  >
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </TabsContent>
-    </Tabs>
+            <div className="overflow-hidden rounded-lg border">
+              <Table>
+                <TableHeader className="bg-muted sticky top-0 z-10">
+                  {breakdownTable.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => {
+                        return (
+                          <TableHead key={header.id} colSpan={header.colSpan}>
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                          </TableHead>
+                        );
+                      })}
+                    </TableRow>
+                  ))}
+                </TableHeader>
+                <TableBody className="**:data-[slot=table-cell]:first:w-8">
+                  {breakdownTable.getRowModel().rows?.length ? (
+                    breakdownTable
+                      .getRowModel()
+                      .rows.map((row) => <MyRow key={row.id} row={row} />)
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={breakdownColumns.length}
+                        className="h-24 text-center"
+                      >
+                        No results.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+          <TabsContent
+            value="top-holders"
+            className="flex flex-col px-1 lg:px-2"
+          >
+            <div className="overflow-hidden rounded-lg border">
+              <Table>
+                <TableHeader className="bg-muted sticky top-0 z-10">
+                  {topHoldersTable.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => {
+                        return (
+                          <TableHead key={header.id} colSpan={header.colSpan}>
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                          </TableHead>
+                        );
+                      })}
+                    </TableRow>
+                  ))}
+                </TableHeader>
+                <TableBody className="**:data-[slot=table-cell]:first:w-8">
+                  {topHoldersTable.getRowModel().rows?.length ? (
+                    topHoldersTable
+                      .getRowModel()
+                      .rows.map((row) => <MyRowSingle key={row.id} row={row} />)
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={topHoldersColumns.length}
+                        className="h-24 text-center"
+                      >
+                        No results.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+          <TabsContent
+            value="known-addresses"
+            className="flex flex-col px-1 lg:px-2"
+          >
+            <div className="overflow-hidden rounded-lg border">
+              <Table>
+                <TableHeader className="bg-muted sticky top-0 z-10">
+                  {knownAddressesTable.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => {
+                        return (
+                          <TableHead key={header.id} colSpan={header.colSpan}>
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                          </TableHead>
+                        );
+                      })}
+                    </TableRow>
+                  ))}
+                </TableHeader>
+                <TableBody className="**:data-[slot=table-cell]:first:w-8">
+                  {knownAddressesTable.getRowModel().rows?.length ? (
+                    knownAddressesTable
+                      .getRowModel()
+                      .rows.map((row) => <MyRowSingle key={row.id} row={row} />)
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={knownAddressesColumns.length}
+                        className="h-24 text-center"
+                      >
+                        No results.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 }
