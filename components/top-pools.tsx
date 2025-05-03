@@ -22,7 +22,7 @@ import {
   type Row,
 } from "@tanstack/react-table";
 import { formatSatori } from "@/lib/format";
-import Link from "next/link";
+import { Address } from "./address";
 
 interface Pool {
   pool_address: string;
@@ -42,15 +42,7 @@ const dataColumns: ColumnDef<Pool>[] = [
     header: "Address",
     cell: ({ row }) => (
       <div className="w-auto flex items-center">
-        {row.original.pool_name && (
-          // TODO maybe add a link to the single pool page
-          <span className="mr-2 font-extrabold text-md">
-            ({row.original.pool_name})
-          </span>
-        )}
-        <Link href={`/address/${row.original.pool_address}`}>
-          {row.original.pool_address}
-        </Link>
+        <Address address={row.original.pool_address} />
       </div>
     ),
   },

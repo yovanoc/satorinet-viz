@@ -32,7 +32,6 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatSatori } from "@/lib/format";
-import Link from "next/link";
 import {
   Card,
   CardAction,
@@ -41,6 +40,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Address } from "./address";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const schema = z.object({
@@ -107,9 +107,7 @@ const topHoldersColumns: ColumnDef<SingleHolderData>[] = [
     header: "Address",
     cell: ({ row }) => (
       <div className="w-96">
-        <Link href={`/address/${row.original.address}`}>
-          {row.original.address}
-        </Link>
+        <Address hideName address={row.original.address} />
       </div>
     ),
   },
@@ -138,9 +136,7 @@ const knownAddressesColumns: ColumnDef<SingleHolderData>[] = [
     header: "Address",
     cell: ({ row }) => (
       <div className="w-96">
-        <Link href={`/address/${row.original.address}`}>
-          {row.original.address}
-        </Link>
+        <Address hideName address={row.original.address} />
       </div>
     ),
   },

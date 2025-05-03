@@ -12,6 +12,9 @@ import { getPoolAndDate } from "@/lib/get-pool-and-date-params";
 import { KNOWN_POOLS, type Pool } from "@/lib/known_pools";
 import { getWorkerReward, type WorkerReward } from "@/lib/satorinet/central";
 import { Suspense } from "react";
+import { getContributors } from "@/lib/db/queries/contributors";
+import { getPredictors } from "@/lib/db/queries/predictors";
+import { Address } from "@/components/address";
 
 // TODO show the different % fees staged ?
 
@@ -26,6 +29,63 @@ const tryGetWorkerReward = async (
     return null;
   }
 };
+
+async function ContributorsAndPredictors({
+  date,
+  pool,
+}: {
+  date: Date;
+  pool: Pool;
+}) {
+  const [contributors, predictors] = await Promise.all([
+    getContributors(pool.address, date),
+    pool.vault_address
+      ? getPredictors(pool.address, pool.vault_address, date)
+      : null,
+  ]);
+
+  const topContributors = contributors.slice(0, 15);
+  const topPredictors = (predictors ?? []).slice(0, 15);
+
+  return (
+    <div className="flex flex-col gap-6 px-4 lg:px-6">
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex-1 flex flex-col gap-4">
+          <h2 className="text-xl font-bold">Top Contributors</h2>
+          <ul className="flex flex-col gap-2">
+            {topContributors.map((contributor) => (
+              <li key={contributor.contributor}>
+                {contributor.contributor_vault ? (
+                  <>
+                    <span className="font-semibold">Vault: </span><Address address={contributor.contributor_vault} /> -{" "}
+                  </>
+                ) : null}
+                <span className="font-semibold">Wallet: </span><Address address={contributor.contributor} /> -{" "}
+                {contributor.staking_power_contribution} SP
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="flex-1 flex flex-col gap-4">
+          <h2 className="text-xl font-bold">Top Predictors</h2>
+          <ul className="flex flex-col gap-2">
+            {topPredictors.map((predictor) => (
+              <li key={predictor.worker_address}>
+                {predictor.worker_vault_address ? (
+                  <>
+                    <span className="font-semibold">Vault: </span><Address address={predictor.worker_vault_address} /> -{" "}
+                  </>
+                ) : null}
+                <span className="font-semibold">Wallet: </span><Address address={predictor.worker_address} /> -{" "}
+                {predictor.reward} Rewards
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 async function PoolDataSection({ date, pool }: { date: Date; pool: Pool }) {
   try {
@@ -75,7 +135,6 @@ async function PoolDataSection({ date, pool }: { date: Date; pool: Pool }) {
     return (
       <div className="h-full flex flex-col gap-8">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-          {/* Contributor card: smaller, always first */}
           <div className="xl:col-span-3 flex flex-col gap-6 order-1">
             <DailyContributorAddressCard
               poolData={enrichedPoolData}
@@ -83,7 +142,6 @@ async function PoolDataSection({ date, pool }: { date: Date; pool: Pool }) {
               poolName={pool.name}
             />
           </div>
-          {/* Historical data: less width */}
           <div className="xl:col-span-4 flex flex-col gap-6 order-2">
             <PoolHistoricalData
               historicalData={historicalData ?? []}
@@ -92,10 +150,11 @@ async function PoolDataSection({ date, pool }: { date: Date; pool: Pool }) {
               poolName={pool.name}
             />
           </div>
-          {/* Comparison chart: more room, most important */}
-          <div className="xl:col-span-5 flex flex-col gap-6 order-3">
-            <PoolWorkerComparison pool={pool} date={date} />
-          </div>
+          {pool.staking_fees ? (
+            <div className="xl:col-span-5 flex flex-col gap-6 order-3">
+              <PoolWorkerComparison pool={pool} date={date} />
+            </div>
+          ) : null}
         </div>
       </div>
     );
@@ -154,6 +213,13 @@ export default async function PoolsSingle({
           fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}
         >
           <PoolDataSection pool={selectedPool} date={selectedDate} />
+        </Suspense>
+      </div>
+      <div className="flex flex-col gap-4 px-4 lg:px-6 flex-1">
+        <Suspense
+          fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}
+        >
+          <ContributorsAndPredictors pool={selectedPool} date={selectedDate} />
         </Suspense>
       </div>
     </div>
