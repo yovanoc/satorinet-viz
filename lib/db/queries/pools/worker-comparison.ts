@@ -1,5 +1,5 @@
 import { unstable_cacheLife as cacheLife } from "next/cache";
-import type { Pool } from "@/lib/known_pools";
+import { KNOWN_POOLS, type Pool } from "@/lib/known_pools";
 import { getPoolHistoricalData } from "./historical-data";
 import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
 import { applyFees, FeeResult, type AppliedFees } from "@/lib/pool-utils";
@@ -12,10 +12,11 @@ type EarningsData = {
   current_amount: number;
   feePercent: number;
   feeAmountPerSatori: number;
-}
+};
 
 type PoolEarningsData = {
-  pool: Pool;
+  poolAddress: string;
+  pool?: Pool;
   min: EarningsData;
   max?: EarningsData;
 };
@@ -36,7 +37,7 @@ export type PoolsVSWorkerData = {
 };
 
 export async function getPoolVsWorkerComparison(
-  pools: Pool[],
+  pool_addresses: string[],
   date: Date,
   days: number = 30,
   startingAmount: number = 0
@@ -44,20 +45,10 @@ export async function getPoolVsWorkerComparison(
   "use cache";
   cacheLife("max");
 
-  if (pools.some((pool) => !pool.vault_address)) {
-    console.error("Pool vault address is not defined.");
-    return [];
-  }
-
   const poolsData = await Promise.all(
-    pools.map(async (pool) => ({
-      pool,
-      data: await getPoolHistoricalData(
-        pool.address,
-        pool.vault_address!,
-        date,
-        days
-      ),
+    pool_addresses.map(async (pool_address) => ({
+      pool_address,
+      data: await getPoolHistoricalData(pool_address, date, days),
     }))
   );
 
@@ -93,7 +84,7 @@ export async function getPoolVsWorkerComparison(
         const poolEntry = poolData.data[i];
         if (poolEntry && poolEntry.date !== entry.date) {
           console.error(
-            `Dates are not the same for all pools. Pool: ${poolData.pool.name} - Date: ${poolEntry.date} - Expected: ${entry.date}`
+            `Dates are not the same for all pools. Pool: ${poolData.pool_address} - Date: ${poolEntry.date} - Expected: ${entry.date}`
           );
           return [];
         }
@@ -106,13 +97,13 @@ export async function getPoolVsWorkerComparison(
   let selfAmount = startingAmount; // Track self-managed compounded value
   let selfEarnings = 0; // Track total self-managed earnings
 
-  const poolsTracking = pools.reduce(
+  const poolsTracking = pool_addresses.reduce(
     (acc, pool) => {
-      acc[pool.address] = {
+      acc[pool] = {
         min: {
           current_amount: startingAmount, // Track pool compounded value
           total_earnings: 0, // Track only earnings in pool
-        }
+        },
       };
       return acc;
     },
@@ -122,7 +113,7 @@ export async function getPoolVsWorkerComparison(
         min: {
           current_amount: number;
           total_earnings: number;
-        },
+        };
         max?: {
           current_amount: number;
           total_earnings: number;
@@ -150,7 +141,7 @@ export async function getPoolVsWorkerComparison(
 
     if (!firstPoolEntry) {
       console.error(
-        `No data found for pool ${pools[0]!.address} on date ${dailyDate}`
+        `No data found for pool ${pool_addresses[0]} on date ${dailyDate}`
       );
       continue;
     }
@@ -174,8 +165,10 @@ export async function getPoolVsWorkerComparison(
       },
     };
 
-    for (const pool of pools) {
-      if (pool.closed && pool.closed <= dailyDate) {
+    for (const poolAddress of pool_addresses) {
+      const pool = KNOWN_POOLS.find((pool) => pool.address === poolAddress);
+
+      if (pool && pool.closed && pool.closed <= dailyDate) {
         // console.warn(
         //   `Pool ${pool.name} is closed on date ${dailyDate}. Skipping...`
         // );
@@ -183,13 +176,13 @@ export async function getPoolVsWorkerComparison(
       }
 
       const entry = poolsData
-        .find((p) => p.pool.address === pool.address)!
+        .find((p) => p.pool_address === poolAddress)!
         .data.find(
           (entry) => new Date(entry.date).getTime() === dailyDate.getTime()
         );
       if (!entry) {
         console.error(
-          `No data found for pool ${pool.address} on date ${dailyDate}`
+          `No data found for pool ${poolAddress} on date ${dailyDate}`
         );
         continue;
       }
@@ -202,16 +195,16 @@ export async function getPoolVsWorkerComparison(
       //   continue;
       // }
 
-      const poolTracking = poolsTracking[pool.address];
+      const poolTracking = poolsTracking[poolAddress];
       if (!poolTracking) {
-        console.error(`No tracking data found for pool ${pool.address}`);
+        console.error(`No tracking data found for pool ${poolAddress}`);
         continue;
       }
 
       const appliedFees = new Array<AppliedFees>();
 
       const res = applyFees({
-        pool,
+        poolAddress,
         date: dailyDate,
         fullStakeAmount: stake,
         earnings_per_staking_power: entry.earnings_per_staking_power,
@@ -219,13 +212,11 @@ export async function getPoolVsWorkerComparison(
         satoriPrice: price,
       });
 
-      if (res) {
-        appliedFees.push(res);
-      }
+      appliedFees.push(res);
 
       if (poolTracking.max) {
         const res = applyFees({
-          pool,
+          poolAddress,
           date: dailyDate,
           fullStakeAmount: stake,
           earnings_per_staking_power: entry.earnings_per_staking_power,
@@ -233,20 +224,18 @@ export async function getPoolVsWorkerComparison(
           satoriPrice: price,
         });
 
-        if (res) {
-          appliedFees.push(res);
-        }
+        appliedFees.push(res);
       }
 
       if (appliedFees.length === 0) {
-        console.error(`No fee data found for pool ${pool.address}`);
+        console.error(`No fee data found for pool ${poolAddress}`);
         continue;
       }
 
       const feeResults = new Array<FeeResult>();
 
       for (const res of appliedFees) {
-        if (res.type === "single") {
+        if (res.type === "single" || res.type === "not_found") {
           feeResults.push(res.result);
         } else {
           feeResults.push(...res.results);
@@ -260,7 +249,8 @@ export async function getPoolVsWorkerComparison(
         poolTracking.min.current_amount += net;
         poolTracking.min.total_earnings += net;
 
-        data.pools[pool.address] = {
+        data.pools[poolAddress] = {
+          poolAddress,
           pool,
           min: {
             total_earnings: poolTracking.min.total_earnings,
@@ -269,9 +259,8 @@ export async function getPoolVsWorkerComparison(
             current_amount: poolTracking.min.current_amount,
             feePercent,
             feeAmountPerSatori,
-          }
+          },
         };
-
       } else {
         const [min, max] = feeResults.reduce(
           (acc, res) => {
@@ -286,11 +275,23 @@ export async function getPoolVsWorkerComparison(
           [feeResults[0]!, feeResults[0]!] as const
         );
 
-        const { net: minNet, netPerFullStake: minNetPerFullStake, feeAmountPerSatori: minFeeAmountPerSatori, feePercent: minFeePercent } = min;
-        const { net: maxNet, netPerFullStake: maxNetPerFullStake, feeAmountPerSatori: maxFeeAmountPerSatori, feePercent: maxFeePercent } = max;
+        const {
+          net: minNet,
+          netPerFullStake: minNetPerFullStake,
+          feeAmountPerSatori: minFeeAmountPerSatori,
+          feePercent: minFeePercent,
+        } = min;
+        const {
+          net: maxNet,
+          netPerFullStake: maxNetPerFullStake,
+          feeAmountPerSatori: maxFeeAmountPerSatori,
+          feePercent: maxFeePercent,
+        } = max;
 
-        const maxCurrentAmount = poolTracking.max?.current_amount ?? poolTracking.min.current_amount;
-        const maxTotalEarnings = poolTracking.max?.total_earnings ?? poolTracking.min.total_earnings;
+        const maxCurrentAmount =
+          poolTracking.max?.current_amount ?? poolTracking.min.current_amount;
+        const maxTotalEarnings =
+          poolTracking.max?.total_earnings ?? poolTracking.min.total_earnings;
 
         poolTracking.max = {
           current_amount: maxCurrentAmount + maxNet,
@@ -300,7 +301,8 @@ export async function getPoolVsWorkerComparison(
         poolTracking.min.current_amount += minNet;
         poolTracking.min.total_earnings += minNet;
 
-        data.pools[pool.address] = {
+        data.pools[poolAddress] = {
+          poolAddress,
           pool,
           min: {
             total_earnings: poolTracking.min.total_earnings,
@@ -317,7 +319,7 @@ export async function getPoolVsWorkerComparison(
             current_amount: poolTracking.max.current_amount,
             feePercent: maxFeePercent,
             feeAmountPerSatori: maxFeeAmountPerSatori,
-          }
+          },
         };
       }
     }

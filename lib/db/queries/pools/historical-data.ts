@@ -2,15 +2,23 @@ import { sql, and, or, eq, gte, lte } from "drizzle-orm";
 import { unstable_cacheLife as cacheLife } from "next/cache";
 import { db } from "../..";
 import { dailyPredictorAddress, dailyContributorAddress } from "../../schema";
+import { KNOWN_POOLS } from "@/lib/known_pools";
+import { getPoolFeesForDate } from "@/lib/pool-utils";
 
 export async function getPoolHistoricalData(
-  poolAddress: string,
-  poolVaultAddress: string,
+  pool_address: string,
   date: Date,
   days = 30
 ) {
   "use cache";
   cacheLife("max");
+
+  const pool = KNOWN_POOLS.find(
+    (pool) => pool.address === pool_address
+  );
+
+  const fees = pool ? getPoolFeesForDate(pool, date) : null;
+  const workerGivenPercent = fees?.workerGivenPercent ?? 0;
 
   // Subquery: Pre-aggregate daily_predictor_address with explicit aliases
   const predictorAgg = db
@@ -53,8 +61,8 @@ export async function getPoolHistoricalData(
         //   ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_vault_address),
         // ),
         or(
-          eq(dailyPredictorAddress.reward_address, poolAddress),
-          eq(dailyPredictorAddress.reward_address, poolVaultAddress)
+          eq(dailyPredictorAddress.reward_address, pool_address),
+            pool?.vault_address ? eq(dailyPredictorAddress.reward_address, pool.vault_address) : undefined,
         )
       )
     )
@@ -72,7 +80,7 @@ export async function getPoolHistoricalData(
       pool_balance: sql<number>`${predictorAgg.pool_balance}`,
       contributor_count_with_staking_power: sql<number>`COUNT(DISTINCT ${dailyContributorAddress.contributor}) FILTER (WHERE ${dailyContributorAddress.staking_power_contribution} > 0)`,
       earnings_per_staking_power: sql<number>`COALESCE(
-            (${predictorAgg.total_reward} - ${predictorAgg.total_miner_earned}) /
+            ((${predictorAgg.total_reward} - ${predictorAgg.total_miner_earned}) * (1 - ${sql`${workerGivenPercent}::double precision`})) /
             -- NULLIF(SUM(${dailyContributorAddress.staking_power_contribution}), 0),
             NULLIF(SUM(${dailyContributorAddress.staking_power_contribution}) + AVG(COALESCE(${dailyContributorAddress.pools_own_staking_power}, 0)), 0),
             -- NULLIF(${predictorAgg.total_delegated_stake}, 0),
@@ -82,7 +90,7 @@ export async function getPoolHistoricalData(
     .leftJoin(predictorAgg, eq(dailyContributorAddress.date, predictorAgg.date))
     .where(
       and(
-        eq(dailyContributorAddress.pool_address, poolAddress),
+        eq(dailyContributorAddress.pool_address, pool_address),
         gte(
           dailyContributorAddress.date,
           sql`${date}::timestamp - ${days} * interval '1 day'`

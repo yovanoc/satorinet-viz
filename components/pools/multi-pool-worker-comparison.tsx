@@ -1,58 +1,79 @@
 "use client";
 
 import { startTransition, useActionState, useEffect, useState } from "react";
-import type { Pool } from "@/lib/known_pools";
 import { VALID_POOLS } from "@/lib/known_pools";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import Loading from "@/app/loading";
 import { PoolComparisonChart } from "./pool-vs-worker";
 import PoolWorkerInputs from "./pool-vs-worker-inputs";
 import { getPoolVsWorkerComparisonData } from "@/app/pools/actions";
+import { MultiplePoolSelector } from "./pool-selector";
 
-export default function MultiPoolWorkerComparison({ date }: { date: Date }) {
-  const [selectedPools, setSelectedPools] = useState<Pool[]>(VALID_POOLS);
+export default function MultiPoolWorkerComparison({
+  date,
+  topPools,
+}: {
+  date: Date;
+  // ! maybe we can use this
+  topPools: {
+    pool_address: string;
+  }[];
+}) {
+  const [selectedPools, setSelectedPools] = useState<string[]>(
+    VALID_POOLS.map((pool) => pool.address)
+  );
   const [days, setDays] = useState(30);
   const [startingAmount, setStartingAmount] = useState(15);
   const [data, formAction, isPending] = useActionState(() => {
     if (!selectedPools.length) return [];
-    return getPoolVsWorkerComparisonData(selectedPools, date, days, startingAmount);
-  }, [])
-
-  const handlePoolToggle = (pool: Pool) => {
-    setSelectedPools((prev) =>
-      prev.includes(pool)
-        ? prev.filter((p) => p.address !== pool.address)
-        : [...prev, pool]
+    return getPoolVsWorkerComparisonData(
+      selectedPools,
+      date,
+      days,
+      startingAmount
     );
+  }, []);
+
+  const handlePoolsChange = (pool_addresses: string[]) => {
+    setSelectedPools(pool_addresses);
   };
 
   useEffect(() => {
     startTransition(formAction);
   }, [formAction, date, days, startingAmount, selectedPools]);
 
+  const allowedPools = topPools.map((pool) => {
+    const foundPool = VALID_POOLS.find((p) => p.address === pool.pool_address);
+    return foundPool
+      ? {
+          address: foundPool.address,
+          name: foundPool.name,
+        }
+      : {
+          address: pool.pool_address,
+        };
+  });
+
   return (
     <Card className="@container/card h-full flex flex-col">
       <CardHeader>
         <CardTitle>Multi Pool vs Self Worker(s) Comparison</CardTitle>
+        <CardAction>
+          <MultiplePoolSelector
+            pools={allowedPools}
+            selectedPools={selectedPools}
+            onPoolsChange={handlePoolsChange}
+          />
+        </CardAction>
       </CardHeader>
 
       <CardContent className="flex-1 overflow-hidden space-y-4 flex flex-col">
-        <div className="flex flex-wrap gap-4">
-          {VALID_POOLS.map((pool) => (
-            <label
-              key={pool.address}
-              className="flex items-center space-x-2 cursor-pointer"
-            >
-              <Checkbox
-                checked={selectedPools.some((p) => p.address === pool.address)}
-                onCheckedChange={() => handlePoolToggle(pool)}
-              />
-              <span className="text-sm">{pool.name}</span>
-            </label>
-          ))}
-        </div>
-
         <PoolWorkerInputs
           disableInputs={isPending}
           onDaysChange={setDays}

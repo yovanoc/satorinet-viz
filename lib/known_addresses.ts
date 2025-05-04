@@ -10,7 +10,7 @@ export function getAddressName(address: string): string | null {
     (p) => p.address === address || p.vault_address === address
   );
   if (pool) {
-    return pool.name;
+    return  `[POOL] ${pool.name}`;
   }
 
   return null;
@@ -38,8 +38,12 @@ export const KNOWN_ADDRESSES = [
     address: "EMR2q6gEBtjj9YU6y9LShc697Wuy3Tx24t",
   },
   {
-    name: "RESERVES",
+    name: "(OLD) RESERVES",
     address: "EQ9oxUyiCeAWVWeYQrjpV7AKhf7wp3Q8J3",
+  },
+  {
+    name: "RESERVES",
+    address: "EVDMSSNyKkFTWCFRqA47LhCi1MvycATMTa",
   },
   {
     name: "(OLD) MANAGERS",

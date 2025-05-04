@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getPoolHistoricalData } from "@/lib/db/queries/pools/historical-data";
 import { getPoolWorkerStats } from "@/lib/db/queries/predictors/worker-stats";
 import { getPoolAndDate } from "@/lib/get-pool-and-date-params";
-import { KNOWN_POOLS, type Pool } from "@/lib/known_pools";
+import { KNOWN_POOLS } from "@/lib/known_pools";
 import { getWorkerReward, type WorkerReward } from "@/lib/satorinet/central";
 import { Suspense } from "react";
 import { getContributors } from "@/lib/db/queries/contributors";
@@ -32,20 +32,20 @@ const tryGetWorkerReward = async (
 
 async function ContributorsAndPredictors({
   date,
-  pool,
+  poolAddress,
 }: {
   date: Date;
-  pool: Pool;
+  poolAddress: string;
 }) {
+  const knownPool = KNOWN_POOLS.find((pool) => pool.address === poolAddress);
+
   const [contributors, predictors] = await Promise.all([
-    getContributors(pool.address, date),
-    pool.vault_address
-      ? getPredictors(pool.address, pool.vault_address, date)
-      : null,
+    getContributors(poolAddress, date),
+    getPredictors(poolAddress, knownPool?.vault_address, date),
   ]);
 
-  const topContributors = contributors.slice(0, 15);
-  const topPredictors = (predictors ?? []).slice(0, 15);
+  const topContributors = contributors.slice(0, 20);
+  const topPredictors = (predictors ?? []).slice(0, 20);
 
   return (
     <div className="flex flex-col gap-6 px-4 lg:px-6">
@@ -57,10 +57,12 @@ async function ContributorsAndPredictors({
               <li key={contributor.contributor}>
                 {contributor.contributor_vault ? (
                   <>
-                    <span className="font-semibold">Vault: </span><Address address={contributor.contributor_vault} /> -{" "}
+                    <span className="font-semibold">Vault: </span>
+                    <Address address={contributor.contributor_vault} /> -{" "}
                   </>
                 ) : null}
-                <span className="font-semibold">Wallet: </span><Address address={contributor.contributor} /> -{" "}
+                <span className="font-semibold">Wallet: </span>
+                <Address address={contributor.contributor} /> -{" "}
                 {contributor.staking_power_contribution} SP
               </li>
             ))}
@@ -73,10 +75,12 @@ async function ContributorsAndPredictors({
               <li key={predictor.worker_address}>
                 {predictor.worker_vault_address ? (
                   <>
-                    <span className="font-semibold">Vault: </span><Address address={predictor.worker_vault_address} /> -{" "}
+                    <span className="font-semibold">Vault: </span>
+                    <Address address={predictor.worker_vault_address} /> -{" "}
                   </>
                 ) : null}
-                <span className="font-semibold">Wallet: </span><Address address={predictor.worker_address} /> -{" "}
+                <span className="font-semibold">Wallet: </span>
+                <Address address={predictor.worker_address} /> -{" "}
                 {predictor.reward} Rewards
               </li>
             ))}
@@ -87,29 +91,28 @@ async function ContributorsAndPredictors({
   );
 }
 
-async function PoolDataSection({ date, pool }: { date: Date; pool: Pool }) {
+async function PoolDataSection({
+  date,
+  poolAddress,
+}: {
+  date: Date;
+  poolAddress: string;
+}) {
+  const knownPool = KNOWN_POOLS.find((pool) => pool.address === poolAddress);
   try {
     const [historicalData, workerStats, workerReward] = await Promise.all([
-      pool.vault_address
-        ? getPoolHistoricalData(pool.address, pool.vault_address, date)
-        : null,
-      pool.vault_address
-        ? getPoolWorkerStats(pool.address, pool.vault_address, date)
-        : null,
-      tryGetWorkerReward(pool.address),
+      getPoolHistoricalData(poolAddress, date),
+      getPoolWorkerStats(poolAddress, knownPool?.vault_address, date),
+      tryGetWorkerReward(poolAddress),
     ]);
 
-    const dateWorkerStats = workerStats
-      ? workerStats.find(
-          (workerStat) => new Date(workerStat.date).getTime() === date.getTime()
-        )
-      : null;
-    const dateHistoricalData = historicalData
-      ? historicalData.find(
-          (historicalData) =>
-            new Date(historicalData.date).getTime() === date.getTime()
-        )
-      : null;
+    const dateWorkerStats = workerStats.find(
+      (workerStat) => new Date(workerStat.date).getTime() === date.getTime()
+    );
+    const dateHistoricalData = historicalData.find(
+      (historicalData) =>
+        new Date(historicalData.date).getTime() === date.getTime()
+    );
     const enrichedPoolData: PoolData = {
       workerReward,
       worker_count: dateWorkerStats?.worker_count,
@@ -120,7 +123,7 @@ async function PoolDataSection({ date, pool }: { date: Date; pool: Pool }) {
       contributor_count: dateHistoricalData?.contributor_count,
       contributor_count_with_staking_power:
         dateHistoricalData?.contributor_count_with_staking_power,
-      pool_address: pool.address,
+      pool_address: poolAddress,
       total_staking_power: dateHistoricalData?.total_staking_power ?? 0,
       total_delegated_stake: dateWorkerStats?.total_delegated_stake,
       total_balance: dateWorkerStats?.total_balance,
@@ -129,8 +132,10 @@ async function PoolDataSection({ date, pool }: { date: Date; pool: Pool }) {
       earnings_per_staking_power:
         dateHistoricalData?.earnings_per_staking_power,
       pool_miner_percent: dateWorkerStats?.pool_miner_percent,
-      closed: pool.closed,
+      closed: knownPool?.closed,
     };
+
+    const name = knownPool?.name ?? poolAddress;
 
     return (
       <div className="h-full flex flex-col gap-8">
@@ -139,7 +144,7 @@ async function PoolDataSection({ date, pool }: { date: Date; pool: Pool }) {
             <DailyContributorAddressCard
               poolData={enrichedPoolData}
               date={date}
-              poolName={pool.name}
+              poolName={name}
             />
           </div>
           <div className="xl:col-span-4 flex flex-col gap-6 order-2">
@@ -147,14 +152,12 @@ async function PoolDataSection({ date, pool }: { date: Date; pool: Pool }) {
               historicalData={historicalData ?? []}
               workerStats={workerStats ?? []}
               date={date}
-              poolName={pool.name}
+              poolName={name}
             />
           </div>
-          {pool.staking_fees ? (
-            <div className="xl:col-span-5 flex flex-col gap-6 order-3">
-              <PoolWorkerComparison pool={pool} date={date} />
-            </div>
-          ) : null}
+          <div className="xl:col-span-5 flex flex-col gap-6 order-3">
+            <PoolWorkerComparison poolAddress={poolAddress} date={date} />
+          </div>
         </div>
       </div>
     );
@@ -184,17 +187,15 @@ export default async function PoolsSingle({
     );
   }
 
-  const { selectedPool, selectedDate } = poolAndDate;
+  const { selectedPool, selectedDate, topPoolsWithNames } = poolAndDate;
 
   return (
     <div className="flex flex-col flex-1 gap-4 py-4 md:gap-6 md:py-6">
       <div className="flex items-center justify-between px-4 lg:px-6 h-16 relative">
-        {/* Mobile: left-aligned date */}
         <span className="text-xl font-bold lg:hidden">
           {selectedDate.toLocaleDateString()}
         </span>
 
-        {/* Desktop: centered date */}
         <span className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 text-2xl font-bold">
           {selectedDate.toLocaleDateString()}
         </span>
@@ -205,21 +206,24 @@ export default async function PoolsSingle({
       </div>
       <div className="flex flex-col gap-4 px-4 lg:px-6 flex-1">
         <PoolSelectorWrapper
-          pools={KNOWN_POOLS}
-          selectedPool={selectedPool.address}
+          pools={topPoolsWithNames}
+          selectedPool={selectedPool}
         />
 
         <Suspense
           fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}
         >
-          <PoolDataSection pool={selectedPool} date={selectedDate} />
+          <PoolDataSection poolAddress={selectedPool} date={selectedDate} />
         </Suspense>
       </div>
       <div className="flex flex-col gap-4 px-4 lg:px-6 flex-1">
         <Suspense
           fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}
         >
-          <ContributorsAndPredictors pool={selectedPool} date={selectedDate} />
+          <ContributorsAndPredictors
+            poolAddress={selectedPool}
+            date={selectedDate}
+          />
         </Suspense>
       </div>
     </div>

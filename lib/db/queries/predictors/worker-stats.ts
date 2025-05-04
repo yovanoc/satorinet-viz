@@ -5,7 +5,7 @@ import { dailyPredictorAddress } from "../../schema";
 
 export async function getPoolWorkerStats(
   poolAddress: string,
-  poolVaultAddress: string,
+  poolVaultAddress: string | undefined,
   date: Date,
   days = 30
 ) {
@@ -34,7 +34,7 @@ export async function getPoolWorkerStats(
         // ),
         or(
           eq(dailyPredictorAddress.reward_address, poolAddress),
-          eq(dailyPredictorAddress.reward_address, poolVaultAddress)
+          poolVaultAddress ? eq(dailyPredictorAddress.reward_address, poolVaultAddress) : undefined,
         ),
         gte(
           dailyPredictorAddress.date,

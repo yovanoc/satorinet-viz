@@ -7,6 +7,11 @@ import type { PoolsVSWorkerData } from "@/lib/db/queries/pools/worker-comparison
 
 const SELF_COLOR = "#388E3C";
 
+function getRandomHexColor(): string {
+  const hex = Math.floor(Math.random() * 0xffffff).toString(16);
+  return `#${hex.padStart(6, "0")}`;
+}
+
 interface PoolComparisonChartProps {
   data: PoolsVSWorkerData[];
 }
@@ -14,6 +19,7 @@ interface PoolComparisonChartProps {
 interface CustomTooltipProps {
   active?: boolean;
   payload?: { payload: PoolsVSWorkerData }[];
+  poolColors: Record<string, string>;
 }
 
 // TODO
@@ -29,7 +35,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
+const CustomTooltip = ({ active, payload, poolColors }: CustomTooltipProps) => {
   if (!active || !payload || payload.length === 0) return null;
 
   const entry = payload[0]!.payload;
@@ -78,9 +84,14 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
 
       {poolKeys.map((key) => {
         const pool = entry.pools[key]!;
+        const poolColor = poolColors[key]!;
+        const poolName = pool.pool?.name ?? pool.poolAddress;
         // For min
         const minDifference = pool.min.total_earnings - worker.total_rewards;
-        const minBetterInPool = minDifference > 0 ? `Better in ${pool.pool.name}` : "Better with self workers";
+        const minBetterInPool =
+          minDifference > 0
+            ? `Better in ${poolName}`
+            : "Better with self workers";
         const minPercentMore =
           Math.abs(minDifference) /
           (minDifference > 0 ? worker.total_rewards : pool.min.total_earnings);
@@ -91,32 +102,46 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
         let maxDiffText: string | null = null;
         if (pool.max) {
           const maxDifference = pool.max.total_earnings - worker.total_rewards;
-          const maxBetterInPool = maxDifference > 0 ? `Better in ${pool.pool.name}` : "Better with self workers";
+          const maxBetterInPool =
+            maxDifference > 0
+              ? `Better in ${poolName}`
+              : "Better with self workers";
           const maxPercentMore =
             Math.abs(maxDifference) /
-            (maxDifference > 0 ? worker.total_rewards : pool.max.total_earnings);
+            (maxDifference > 0
+              ? worker.total_rewards
+              : pool.max.total_earnings);
           maxDiffText = `${maxBetterInPool} by ${formatSatori(
             Math.abs(maxDifference)
           )} (${(maxPercentMore * 100).toFixed(2)}%) from start until this day`;
         }
-        const betterColor = minDifference > 0 ? pool.pool.color : SELF_COLOR;
-        const maxBetterColor = pool.max && (pool.max.total_earnings - worker.total_rewards > 0)
-          ? pool.pool.color
-          : SELF_COLOR;
+        const betterColor = minDifference > 0 ? poolColor : SELF_COLOR;
+        const maxBetterColor =
+          pool.max && pool.max.total_earnings - worker.total_rewards > 0
+            ? poolColor
+            : SELF_COLOR;
         return (
           <div key={key} className="mt-2 border-t pt-2">
             <p
               className="font-bold text-sm mb-1 flex items-center gap-2"
-              style={{ color: pool.pool.color }}
+              style={{ color: poolColor }}
             >
-              Pool: {pool.pool.name}
+              Pool: {poolName}
               {pool.max && (
-                <span className="text-xs font-normal text-muted-foreground">(Min & Max)</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  (Min & Max)
+                </span>
               )}
             </p>
-            <div className={pool.max ? "grid grid-cols-2 gap-4" : "flex flex-wrap gap-2"}>
+            <div
+              className={
+                pool.max ? "grid grid-cols-2 gap-4" : "flex flex-wrap gap-2"
+              }
+            >
               <div>
-                {pool.max && <p className="text-xs opacity-80 font-semibold mb-1">Min:</p>}
+                {pool.max && (
+                  <p className="text-xs opacity-80 font-semibold mb-1">Min:</p>
+                )}
                 <p className="text-xs opacity-80">Pool Earnings from start</p>
                 <p className="font-semibold text-accent">
                   {formatSatori(pool.min.total_earnings)}
@@ -129,11 +154,11 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
                   Pool earnings per full stake this day (
                   <span
                     className="font-bold text-sm"
-                    style={{ color: pool.pool.color }}
+                    style={{ color: poolColor }}
                   >
                     {(pool.min.feePercent * 100).toFixed(2)}%
-                  </span>
-                  {' '}fee)
+                  </span>{" "}
+                  fee)
                 </p>
                 <p className="font-semibold text-accent">
                   {formatSatori(pool.min.full_stake_earnings)}
@@ -166,11 +191,11 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
                     Pool earnings per full stake this day (
                     <span
                       className="font-bold text-sm"
-                      style={{ color: pool.pool.color }}
+                      style={{ color: poolColor }}
                     >
                       {(pool.max.feePercent * 100).toFixed(2)}%
-                    </span>
-                    {' '}fee)
+                    </span>{" "}
+                    fee)
                   </p>
                   <p className="font-semibold text-accent">
                     {formatSatori(pool.max.full_stake_earnings)}
@@ -209,20 +234,20 @@ export function PoolComparisonChart({ data }: PoolComparisonChartProps) {
   );
 
   const pools = data.flatMap((entry) =>
-    Object.values(entry.pools).map((pool) => pool.pool)
+    Object.values(entry.pools).map((pool) => pool.pool ?? pool.poolAddress)
   );
 
   const poolColors: Record<string, string> = {};
   for (const entry of data) {
     for (const [key, pool] of Object.entries(entry.pools)) {
       if (!poolColors[key]) {
-        poolColors[key] = pool.pool.color;
+        poolColors[key] = pool.pool?.color ?? getRandomHexColor();
       }
     }
   }
 
   // Prepare data for AreaChart: for each pool, add min and max if available
-  type R = Record<`pool_${string}_${'min' | 'max'}`, number>;
+  type R = Record<`pool_${string}_${"min" | "max"}`, number>;
   type Data = PoolsVSWorkerData & R;
   const formattedData: Array<Data> = data.map((entry) => {
     const poolEarnings: R = {};
@@ -259,22 +284,29 @@ export function PoolComparisonChart({ data }: PoolComparisonChartProps) {
         <YAxis
           domain={([dataMin, dataMax]: [number, number]) => {
             const range = dataMax - dataMin;
-            if (!isFinite(range) || range === 0) return [dataMin - 1, dataMax + 1];
+            if (!isFinite(range) || range === 0)
+              return [dataMin - 1, dataMax + 1];
             return [dataMin - range * 0.05, dataMax + range * 0.05];
           }}
-          tick={{ fontSize: 12, fill: '#888' }}
+          tick={{ fontSize: 12, fill: "#888" }}
           width={70}
-          tickFormatter={(value) => value?.toLocaleString?.(undefined, { maximumFractionDigits: 2 }) ?? value}
+          tickFormatter={(value) =>
+            value?.toLocaleString?.(undefined, { maximumFractionDigits: 2 }) ??
+            value
+          }
           allowDecimals={true}
           axisLine={true}
           tickLine={true}
         />
-        <Tooltip content={<CustomTooltip />} />
+        <Tooltip content={<CustomTooltip poolColors={poolColors} />} />
         <Legend verticalAlign="top" height={36} iconType="circle" />
 
         {/* Render Self Earnings line AFTER areas to ensure it is drawn on top */}
         {poolKeys.map((key) => {
           const color = poolColors[key];
+          const pool = pools.find((pool) =>
+            typeof pool === "string" ? pool === key : pool.address === key
+          );
           return (
             <Area
               key={key}
@@ -287,7 +319,9 @@ export function PoolComparisonChart({ data }: PoolComparisonChartProps) {
                 return null;
               }}
               isRange
-              name={`Pool: ${pools.find((pool) => pool.address === key)?.name}`}
+              name={`Pool: ${
+                pool ? (typeof pool === "string" ? pool : pool.name) : key
+              }`}
               stroke={color}
               fill={color}
               fillOpacity={0.4}

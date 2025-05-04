@@ -1,5 +1,6 @@
 import { KNOWN_POOLS } from "@/lib/known_pools";
 import { isValidAddress } from "./evr";
+import { getTopPools } from "./db/queries/contributors";
 
 export async function getPoolAndDate({
   pool,
@@ -8,14 +9,6 @@ export async function getPoolAndDate({
   pool?: string;
   date?: string;
 }) {
-  const selectedPool = pool && isValidAddress(pool)
-    ? KNOWN_POOLS.find((p) => p.address === pool) ?? KNOWN_POOLS[0]
-    : KNOWN_POOLS[0];
-
-  if (!selectedPool) {
-    return null;
-  }
-
   let selectedDate = new Date(
     Date.UTC(
       new Date().getUTCFullYear(),
@@ -35,8 +28,30 @@ export async function getPoolAndDate({
     }
   }
 
+  const topPools = await getTopPools(selectedDate);
+
+  const first = KNOWN_POOLS[0]?.address;
+
+  const selectedPool =
+    pool && isValidAddress(pool)
+      ? topPools.find((p) => p.pool_address === pool)?.pool_address ?? first
+      : first;
+
+  if (!selectedPool) {
+    return null;
+  }
+
+  const topPoolsWithNames = topPools.map((pool) => {
+    const knownPool = KNOWN_POOLS.find((p) => p.address === pool.pool_address);
+    return {
+      address: pool.pool_address,
+      name: knownPool?.name,
+    };
+  });
+
   return {
     selectedPool,
     selectedDate,
+    topPoolsWithNames,
   };
 }

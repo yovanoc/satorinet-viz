@@ -75,20 +75,18 @@ export function PoolsStakingComparisonChart({
             if (showNetEarnings) {
               const res = applyFees({
                 date: entry.date,
-                pool,
+                poolAddress: pool.address,
                 earnings_per_staking_power: gross,
                 current_staked_amount: 1,
                 satoriPrice: entry.satoriPrice,
                 fullStakeAmount: entry.fullStakeAmount,
               });
-              if (res) {
-                if (res.type === "single") {
-                  value = res.result.net;
-                } else {
-                  value =
-                    res.results.reduce((acc, r) => acc + r.net, 0) /
-                    res.results.length;
-                }
+              if (res.type === "single" || res.type === "not_found") {
+                value = res.result.net;
+              } else {
+                value =
+                  res.results.reduce((acc, r) => acc + r.net, 0) /
+                  res.results.length;
               }
             }
             return sum + value;

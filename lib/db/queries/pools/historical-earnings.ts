@@ -18,7 +18,6 @@ export async function getPoolsHistoricalEarnings(
       data: pool.vault_address
         ? await getPoolHistoricalData(
             pool.address,
-            pool.vault_address,
             date,
             days
           )

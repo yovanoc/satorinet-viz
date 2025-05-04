@@ -1,5 +1,5 @@
 import { PoolsStakingComparison } from "@/components/pools/pools-staking-comparison";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DatePickerWrapper from "@/components/date-picker-wrapper";
 import { Suspense } from "react";
 import TopPools from "@/components/top-pools";
@@ -11,10 +11,14 @@ import { getTopPools } from "@/lib/db/queries/contributors";
 async function TopPoolsCard({ date }: { date: Date }) {
   const topPools = await getTopPools(date);
   return (
-    <div className="mb-4">
-      <h2 className="text-2xl font-bold mb-4">Top {topPools.length} Pools</h2>
-      <TopPools key={date.toISOString()} pools={topPools} date={date} />
-    </div>
+      <Card className="@container/card">
+        <CardHeader>
+          <CardTitle className="font-bold text-2xl">Top {topPools.length} Pools</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TopPools key={date.toISOString()} pools={topPools} date={date} />
+        </CardContent>
+      </Card>
   );
 }
 

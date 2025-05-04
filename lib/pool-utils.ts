@@ -1,4 +1,4 @@
-import type { Pool } from "./known_pools";
+import { KNOWN_POOLS, type Pool } from "./known_pools";
 
 export function getPoolFeesForDate(pool: Pool, date: Date) {
   if (!pool.staking_fees) return null;
@@ -19,6 +19,10 @@ export type FeeResult = {
 
 export type AppliedFees =
   | {
+      type: "not_found";
+      result: FeeResult;
+    }
+  | {
       type: "single";
       result: FeeResult;
     }
@@ -28,23 +32,49 @@ export type AppliedFees =
     };
 
 export function applyFees({
-  pool,
+  poolAddress,
   date,
   earnings_per_staking_power,
   current_staked_amount,
   satoriPrice,
   fullStakeAmount,
 }: {
-  pool: Pool;
+  poolAddress: string;
   date: Date;
   earnings_per_staking_power: number;
   current_staked_amount: number;
   satoriPrice: number;
   fullStakeAmount: number;
-}): AppliedFees | null {
+}): AppliedFees {
+  const net = earnings_per_staking_power * current_staked_amount;
+  const netPerFullStake = earnings_per_staking_power * fullStakeAmount;
+
+  const pool = KNOWN_POOLS.find((pool) => pool.address === poolAddress);
+
+  if (!pool) {
+    return {
+      type: "not_found",
+      result: {
+        feePercent: 0,
+        feeAmountPerSatori: 0,
+        net,
+        netPerFullStake,
+      },
+    }
+  }
+
   const fees = getPoolFeesForDate(pool, date);
-  if (!fees) {
-    return null;
+
+  if (!fees?.fees) {
+    return {
+      type: "not_found",
+      result: {
+        feePercent: 0,
+        feeAmountPerSatori: 0,
+        net,
+        netPerFullStake,
+      },
+    };
   }
 
   switch (fees.fees.type) {
@@ -60,14 +90,8 @@ export function applyFees({
               feePercent,
               feeAmountPerSatori:
                 (earnings_per_staking_power * feePercent) / satoriPrice,
-              net: applyFeePercent(
-                earnings_per_staking_power * current_staked_amount,
-                feePercent
-              ),
-              netPerFullStake: applyFeePercent(
-                earnings_per_staking_power * fullStakeAmount,
-                feePercent
-              ),
+              net: applyFeePercent(net, feePercent),
+              netPerFullStake: applyFeePercent(netPerFullStake, feePercent),
             };
           }),
         };
@@ -83,14 +107,8 @@ export function applyFees({
           feePercent,
           feeAmountPerSatori:
             (earnings_per_staking_power * feePercent) / satoriPrice,
-          net: applyFeePercent(
-            earnings_per_staking_power * current_staked_amount,
-            feePercent
-          ),
-          netPerFullStake: applyFeePercent(
-            earnings_per_staking_power * fullStakeAmount,
-            feePercent
-          ),
+          net: applyFeePercent(net, feePercent),
+          netPerFullStake: applyFeePercent(netPerFullStake, feePercent),
         },
       };
     }
@@ -119,7 +137,7 @@ export function applyFees({
       const feeForCurrentStakeInSatori =
         (current_staked_amount / fullStakeAmount) * feeForFullStakeInSatori;
 
-      let feePercent = feeForCurrentStakeInSatori / (earnings_per_staking_power * current_staked_amount);
+      let feePercent = feeForCurrentStakeInSatori / net;
       if (fees.maxPercent !== undefined) {
         feePercent = Math.min(feePercent, fees.maxPercent);
       }
@@ -130,28 +148,12 @@ export function applyFees({
           feePercent,
           feeAmountPerSatori:
             (earnings_per_staking_power * feePercent) / satoriPrice,
-          net: applyFeePercent(
-            earnings_per_staking_power * current_staked_amount,
-            feePercent
-          ),
-          netPerFullStake: applyFeePercent(
-            earnings_per_staking_power * fullStakeAmount,
-            feePercent
-          ),
+          net: applyFeePercent(net, feePercent),
+          netPerFullStake: applyFeePercent(netPerFullStake, feePercent),
         },
       };
     }
-    default: {
-      return null;
-    }
   }
-}
-
-// TODO maybe not useful anymore
-export function poolHasMultipleFees(pool: Pool, date: Date): boolean {
-  const fees = getPoolFeesForDate(pool, date);
-  if (!fees) return false;
-  return fees.fees.type === "percent" && Array.isArray(fees.fees.percent);
 }
 
 export function getFeeRange(
@@ -166,7 +168,7 @@ export function getFeeRange(
   if (!fees) return { min: 0, max: 0 };
 
   const res = applyFees({
-    pool,
+    poolAddress: pool.address,
     date,
     earnings_per_staking_power,
     current_staked_amount: 1,
@@ -174,11 +176,7 @@ export function getFeeRange(
     fullStakeAmount,
   });
 
-  if (!res) {
-    return { min: 0, max: 0 };
-  }
-
-  if (res.type === "single") {
+  if (res.type === "single" || res.type === "not_found") {
     return {
       min: res.result.feePercent,
       max: res.result.feePercent,

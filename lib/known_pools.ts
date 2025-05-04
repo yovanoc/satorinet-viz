@@ -11,8 +11,9 @@ export type StakingFee =
     };
 
 export type StakingFees = {
-  fees: StakingFee;
+  fees: StakingFee | null;
   maxPercent?: number;
+  workerGivenPercent?: number;
   until: Date | null;
 };
 
@@ -58,7 +59,7 @@ export const KNOWN_POOLS: Pool[] = [
     ],
   },
   {
-    name: "Cortex Pool",
+    name: "Cortex",
     color: "#ebe534",
     canCompare: true,
     address: "EMB5n2ia3JWCjtNXzCMbU7TmJYA2eQ7vZh",
@@ -74,14 +75,14 @@ export const KNOWN_POOLS: Pool[] = [
     ],
   },
   {
-    name: "Managers/Reserves Pool",
+    name: "Managers/Dev",
     color: "#dbaf00",
     canCompare: false,
     address: "EU79P29a9PoDpQMkyBWkW8wGhMMVMHXwEs",
     vault_address: "EdtCNZnBMyJTruSaY1saSrC8Wx1iGMHrww",
   },
   {
-    name: "Dev Pool",
+    name: "Dev",
     color: "#ddd",
     canCompare: false,
     address: "EZ7SCvVdDTR1e6B2532C85KDteYZ56KCiC",
@@ -137,13 +138,13 @@ export const KNOWN_POOLS: Pool[] = [
     ],
   },
   {
-    name: "Zen Pool",
+    name: "Zen",
     color: "#ddd",
     canCompare: true,
     address: "EeV6em8GHU9VeDepzsqbRmvA2NotMrTiK9",
   },
   {
-    name: "Cost Pool",
+    name: "Cost",
     color: "#29e317",
     canCompare: true,
     address: "EdC6EVXD54mhiVYBFF1Dw5P3xGNjBFiarq",
@@ -152,8 +153,13 @@ export const KNOWN_POOLS: Pool[] = [
       {
         fees: {
           type: "percent",
-          percent: 0.15,
+          percent: 0.03,
         },
+        until: new Date("2025-05-04T00:00:00Z"),
+      },
+      {
+        fees: null,
+        workerGivenPercent: 1 / 3,
         until: null,
       },
     ],

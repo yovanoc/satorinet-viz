@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useActionState, startTransition } from "react";
-import type { Pool } from "@/lib/known_pools";
+import { KNOWN_POOLS } from "@/lib/known_pools";
 import PoolWorkerInputs from "./pool-vs-worker-inputs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Loading from "@/app/loading";
@@ -10,20 +10,20 @@ import { PoolComparisonChart } from "./pool-vs-worker";
 import { getPoolVsWorkerComparisonData } from "@/app/pools/actions";
 
 type Props = {
-  pool: Pool;
+  poolAddress: string;
   date: Date;
 };
 
-export default function PoolWorkerComparison({ pool, date }: Props) {
+export default function PoolWorkerComparison({ poolAddress, date }: Props) {
   const [days, setDays] = useState(30);
   const [startingAmount, setStartingAmount] = useState(15);
   const [data, formAction, isPending] = useActionState(() => {
-    return getPoolVsWorkerComparisonData([pool], date, days, startingAmount);
+    return getPoolVsWorkerComparisonData([poolAddress], date, days, startingAmount);
   }, []);
 
   useEffect(() => {
     startTransition(formAction);
-  }, [formAction, date, days, startingAmount, pool]);
+  }, [formAction, date, days, startingAmount, poolAddress]);
 
   const handleDaysChange = async (newDays: number) => {
     setDays(newDays);
@@ -33,10 +33,12 @@ export default function PoolWorkerComparison({ pool, date }: Props) {
     setStartingAmount(newAmount);
   };
 
+  const knownPool = KNOWN_POOLS.find((pool) => pool.address === poolAddress);
+
   return (
     <Card className="p-4 flex flex-col flex-1 overflow-hidden">
       <CardHeader>
-        <CardTitle>{pool.name} vs Self Worker(s) Comparison</CardTitle>
+        <CardTitle>{knownPool?.name ?? poolAddress} vs Self Worker(s) Comparison</CardTitle>
       </CardHeader>
 
       <div className="space-y-4 flex flex-col flex-1 overflow-hidden">

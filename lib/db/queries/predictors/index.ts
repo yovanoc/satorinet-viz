@@ -5,7 +5,7 @@ import { dailyPredictorAddress } from "../../schema";
 
 export async function getPredictors(
   poolAddress: string,
-  poolVaultAddress: string,
+  poolVaultAddress: string | undefined,
   date: Date,
   limit = 4000
 ): Promise<
@@ -42,7 +42,7 @@ export async function getPredictors(
         sql`${dailyPredictorAddress.date} = ${date}`,
         or(
           eq(dailyPredictorAddress.reward_address, poolAddress),
-          eq(dailyPredictorAddress.reward_address, poolVaultAddress)
+          poolVaultAddress ? eq(dailyPredictorAddress.reward_address, poolVaultAddress) : undefined,
         )
       )
     )
