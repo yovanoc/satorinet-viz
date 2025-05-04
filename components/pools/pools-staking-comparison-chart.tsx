@@ -18,10 +18,7 @@ import {
   getFeeRange,
   getPoolFeesForDate,
 } from "@/lib/pool-utils";
-import {
-  ChartConfig,
-  ChartContainer,
-} from "@/components/ui/chart";
+import { ChartConfig, ChartContainer } from "@/components/ui/chart";
 // import { useIsMobile } from "@/hooks/use-mobile";
 
 const chartConfig = {
@@ -121,8 +118,9 @@ export function PoolsStakingComparisonChart({
           </div>
         </CardTitle>
         <CardDescription>
-          How many <span className="font-medium">SATORI</span> tokens earned by staking <span className="font-medium">1 SATORI</span>{" "}
-          in each pool over these days.
+          How many <span className="font-medium">SATORI</span> tokens earned by
+          staking <span className="font-medium">1 SATORI</span> in each pool
+          over these days.
           <div className="mt-2 text-sm">
             <div className="font-semibold">Formula used:</div>
             <div className="mt-1 font-mono">
@@ -161,7 +159,9 @@ export function PoolsStakingComparisonChart({
               }
             /> */}
             <Tooltip
-            labelClassName="text-black"
+              contentStyle={{
+                backgroundColor: "var(--background)",
+              }}
               labelFormatter={(value) => {
                 return value.toLocaleDateString();
               }}
@@ -209,8 +209,7 @@ export function PoolsStakingComparisonChart({
                 const { min, max } = getFeeRange(
                   pool,
                   entry.date,
-                  entry.poolEarnings[pool.address]!
-                    .earnings_per_staking_power,
+                  entry.poolEarnings[pool.address]!.earnings_per_staking_power,
                   entry.satoriPrice,
                   entry.fullStakeAmount
                 );
@@ -244,8 +243,9 @@ export function PoolsStakingComparisonChart({
 
                   if (pool.closed && pool.closed < actualDate) {
                     return {
-                      value: `${pool.name
-                        } (CLOSED since ${pool.closed.toLocaleDateString()})`,
+                      value: `${
+                        pool.name
+                      } (CLOSED since ${pool.closed.toLocaleDateString()})`,
                       type: "circle",
                       color: pool.color,
                     };
@@ -262,18 +262,19 @@ export function PoolsStakingComparisonChart({
                   const feeDisplay =
                     min !== max
                       ? `${(min * 100).toFixed(2)}% - ${(max * 100).toFixed(
-                        2
-                      )}%`
+                          2
+                        )}%`
                       : `${(min * 100).toFixed(2)}%`;
 
                   return {
-                    value: `${pool.name
-                      } (${feeDisplay}) (Mean: ${poolInfo.mean.toLocaleString(
-                        undefined,
-                        {
-                          maximumFractionDigits: 8,
-                        }
-                      )})`,
+                    value: `${
+                      pool.name
+                    } (${feeDisplay}) (Mean: ${poolInfo.mean.toLocaleString(
+                      undefined,
+                      {
+                        maximumFractionDigits: 8,
+                      }
+                    )})`,
                     type: "circle",
                     color: pool.color,
                   };

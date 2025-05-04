@@ -17,6 +17,18 @@ export type Manifest = {
 type Name = "predictors" | "oracles" | "inviters" | "creators" | "managers";
 
 export function getManifest(manifest: DailyManifestAddress, date: Date): Manifest {
+  if (date >= new Date("2025-05-04")) {
+    // new percentage distribution and remove voting
+    return {
+      predictions: 85,
+      oracles: 0,
+      inviters: 0,
+      developers: 14,
+      managers: 1,
+    }
+  }
+
+
   const total_weighted =
     manifest.predictors_weighted +
     manifest.oracles_weighted +

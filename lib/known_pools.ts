@@ -58,17 +58,16 @@ export const KNOWN_POOLS: Pool[] = [
     ],
   },
   {
-    name: "Pool Mudita",
-    color: "#ff4f00",
-    canCompare: false,
-    closed: new Date("2025-04-13T00:00:00Z"),
-    address: "ELs9eiFDCYAKBREL7g8d3WjQxrYDE7x5eY",
-    vault_address: "EHAAy7YivL1Lba6azhMmfbLKRzdcBVAv5x",
+    name: "Cortex Pool",
+    color: "#ebe534",
+    canCompare: true,
+    address: "EMB5n2ia3JWCjtNXzCMbU7TmJYA2eQ7vZh",
+    vault_address: "EeLdyM1r6ksDrLM8dZVpC1aVuY9UiEvitY",
     staking_fees: [
       {
         fees: {
           type: "percent",
-          percent: 0.15,
+          percent: 0.5,
         },
         until: null,
       },
@@ -79,7 +78,7 @@ export const KNOWN_POOLS: Pool[] = [
     color: "#dbaf00",
     canCompare: false,
     address: "EU79P29a9PoDpQMkyBWkW8wGhMMVMHXwEs",
-    vault_address: 'EdtCNZnBMyJTruSaY1saSrC8Wx1iGMHrww'
+    vault_address: "EdtCNZnBMyJTruSaY1saSrC8Wx1iGMHrww",
   },
   {
     name: "Dev Pool",
@@ -116,6 +115,23 @@ export const KNOWN_POOLS: Pool[] = [
           per: "full_stake",
         },
         maxPercent: 0.75,
+        until: null,
+      },
+    ],
+  },
+  {
+    name: "Pool Mudita",
+    color: "#ff4f00",
+    canCompare: false,
+    closed: new Date("2025-04-13T00:00:00Z"),
+    address: "ELs9eiFDCYAKBREL7g8d3WjQxrYDE7x5eY",
+    vault_address: "EHAAy7YivL1Lba6azhMmfbLKRzdcBVAv5x",
+    staking_fees: [
+      {
+        fees: {
+          type: "percent",
+          percent: 0.15,
+        },
         until: null,
       },
     ],

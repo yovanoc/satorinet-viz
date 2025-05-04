@@ -1,16 +1,22 @@
+import { getBaseAddressBalance } from "@/lib/base";
+import { getBaseAddress } from "@/lib/base/evr_to_base";
 import { formatSatori } from "@/lib/format";
 
 export async function BaseAddress({ address }: { address: string }) {
-  // TODO: Uncomment the line above when we know how to get the eth base address starting from the evr address
-  // const balance = await getBaseAddressBalance(address);
-  const balance = 0;
+  const baseAddress = await getBaseAddress(address);
+
+  if (!baseAddress) {
+    return <div className="text-red-500">No Base address found</div>;
+  }
+
+  const balance = await getBaseAddressBalance(baseAddress);
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
       <div className="flex h-full">
         <div className="text-primary text-2xl">
           <a
-            href={`https://base.blockscout.com/address/${address}`}
+            href={`https://base.blockscout.com/address/${baseAddress}`}
             target="_blank"
             rel="noopener noreferrer"
           >

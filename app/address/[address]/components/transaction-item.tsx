@@ -4,6 +4,7 @@ import React from "react";
 import { formatSatori } from "@/lib/format";
 import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import type { TxItem } from "@/lib/evr/tx";
+import { Address } from "@/components/address";
 
 interface TransactionItemProps {
   tx: TxItem;
@@ -47,10 +48,10 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
             className="sm:hidden flex items-center gap-1"
             title={tx.memo ? tx.memo : recipient.address}
           >
-            {recipient.address}
+            <Address address={recipient.address} />
           </span>
           <span className="hidden sm:inline" title={recipient.address}>
-            {recipient.address}
+            <Address address={recipient.address} />
           </span>
         </span>
       );
@@ -69,13 +70,21 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
           className="sm:hidden flex items-center gap-1"
           title={tx.memo ? tx.memo : tx.senderAddress || undefined}
         >
-          {tx.senderAddress || "Unknown sender"}
+          {tx.senderAddress ? (
+            <Address address={tx.senderAddress} />
+          ) : (
+            "Unknown sender"
+          )}
         </span>
         <span
           className="hidden sm:inline"
           title={tx.senderAddress || undefined}
         >
-          {tx.senderAddress || "Unknown sender"}
+          {tx.senderAddress ? (
+            <Address address={tx.senderAddress} />
+          ) : (
+            "Unknown sender"
+          )}
         </span>
       </span>
     );
@@ -89,7 +98,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
         window.open(`https://evr.cryptoscope.io/tx/?txid=${tx.hash}`, "_blank")
       }
     >
-      <div className="w-full sm:grid sm:grid-cols-[minmax(0,36ch)_8ch_1fr_1fr] sm:gap-x-2 sm:items-center flex flex-col gap-0">
+      <div className="w-full sm:grid sm:grid-cols-[minmax(0,50ch)_8ch_1fr_1fr] sm:gap-x-2 sm:items-center flex flex-col gap-0">
         <div className="flex items-center min-w-0 truncate sm:col-span-1">
           {icon}
           <span className="ml-1 text-sm text-gray-700 dark:text-gray-300 truncate">

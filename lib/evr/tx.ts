@@ -2,7 +2,6 @@ import { unstable_cacheLife as cacheLife } from "next/cache";
 import {
   electrumxClient,
   type Transaction,
-  type TransactionOutput,
   type TxHistory,
 } from "@/lib/satorinet/electrumx";
 import Bottleneck from "bottleneck";
@@ -61,16 +60,19 @@ type AssetTransfer = {
   amount: number;
 };
 
-function extractTransfersFromVout(vout: TransactionOutput[]): {
+export async function extractTransfersFromVout(
+  tx: Transaction
+): Promise<{
+  tx: Transaction;
   memo?: string;
   senderAddress?: string;
   transfers: AssetTransfer[];
-} {
+}> {
   const transfers: AssetTransfer[] = [];
   let senderAddress: string | undefined;
   let memo: string | undefined;
 
-  for (const output of vout) {
+  for (const output of tx.vout) {
     const type = output.scriptPubKey?.type;
 
     if (type === "transfer_asset") {
@@ -81,9 +83,6 @@ function extractTransfersFromVout(vout: TransactionOutput[]): {
       if (address) {
         transfers.push({ address, asset, amount });
       }
-    } else if (type === "pubkeyhash" && output.value > 0) {
-      // Assume sender or change output
-      senderAddress = output.scriptPubKey.addresses?.[0];
     } else if (type === "nulldata") {
       const asm = output.scriptPubKey.asm.split(" ");
       if (asm.length > 1) {
@@ -92,7 +91,26 @@ function extractTransfersFromVout(vout: TransactionOutput[]): {
     }
   }
 
+  // Fetch first vin's transaction to get the sender's address
+  if (tx.vin.length > 0) {
+    const firstInput = tx.vin[0]!;
+    try {
+      const prevTx = await getEVRTransaction(firstInput.txid);
+      if (!prevTx) {
+        console.error(`Transaction ${firstInput.txid} not found`);
+        return { tx, transfers, memo, senderAddress };
+      }
+      const prevOutput = prevTx.vout[firstInput.vout];
+      if (prevOutput && prevOutput.scriptPubKey.type !== 'nulldata') {
+        senderAddress = prevOutput.scriptPubKey.addresses[0];
+      }
+    } catch (err) {
+      console.error(`Failed to fetch input transaction ${firstInput.txid}:`, err);
+    }
+  }
+
   return {
+    tx,
     senderAddress,
     memo,
     transfers,
@@ -105,7 +123,7 @@ export async function getItemFromTransaction(
   "use cache";
   cacheLife("max");
 
-  const { transfers, memo, senderAddress } = extractTransfersFromVout(tx.vout);
+  const { transfers, memo, senderAddress } = await extractTransfersFromVout(tx);
 
   return {
     time: tx.time ? new Date(tx.time * 1000) : undefined,

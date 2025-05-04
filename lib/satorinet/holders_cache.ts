@@ -7,8 +7,8 @@ export type AssetHolderDataWithRankAndTotal = Omit<AssetHolderWithRank, 'address
 
 const redisKey = 'satori:holders:evr';
 export async function saveSatoriEvrHolders(data: AssetHolderWithRank[]) {
+  await redis.del(redisKey);
   const p = redis.pipeline();
-  p.hdel(redisKey);
   for (const holder of data) {
     const d: AssetHolderDataWithRankAndTotal = {
       balance: holder.balance,
