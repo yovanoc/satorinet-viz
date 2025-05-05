@@ -1,4 +1,4 @@
-import { getBaseAddressBalance } from "@/lib/base";
+import { getBaseAddressBalance } from "@/lib/base/balance";
 import { getBaseAddress } from "@/lib/base/evr_to_base";
 import { formatSatori } from "@/lib/format";
 

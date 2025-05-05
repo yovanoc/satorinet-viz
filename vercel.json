@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/check-base-addresses",
       "schedule": "0 */12 * * *"
+    },
+    {
+      "path": "/api/cron/associate-wallet-vault-addresses",
+      "schedule": "30 1 * * *"
     }
   ]
 }
