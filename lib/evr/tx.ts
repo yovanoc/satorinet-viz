@@ -2,6 +2,7 @@ import { unstable_cacheLife as cacheLife } from "next/cache";
 import {
   electrumxClient,
   type Transaction,
+  type TransactionInput,
   type TxHistory,
 } from "@/lib/satorinet/electrumx";
 import Bottleneck from "bottleneck";
@@ -69,7 +70,6 @@ export async function extractTransfersFromVout(
   transfers: AssetTransfer[];
 }> {
   const transfers: AssetTransfer[] = [];
-  let senderAddress: string | undefined;
   let memo: string | undefined;
 
   for (const output of tx.vout) {
@@ -91,23 +91,11 @@ export async function extractTransfersFromVout(
     }
   }
 
-  // Fetch first vin's transaction to get the sender's address
-  if (tx.vin.length > 0) {
-    const firstInput = tx.vin[0]!;
-    try {
-      const prevTx = await getEVRTransaction(firstInput.txid);
-      if (!prevTx) {
-        console.error(`Transaction ${firstInput.txid} not found`);
-        return { tx, transfers, memo, senderAddress };
-      }
-      const prevOutput = prevTx.vout[firstInput.vout];
-      if (prevOutput && prevOutput.scriptPubKey.type !== 'nulldata') {
-        senderAddress = prevOutput.scriptPubKey.addresses[0];
-      }
-    } catch (err) {
-      console.error(`Failed to fetch input transaction ${firstInput.txid}:`, err);
-    }
-  }
+  const senderAddress = findSenderAddressForAssetInput(
+    tx.vin,
+    await buildInputTxs(tx),
+    "SATORI"
+  ) ?? undefined;
 
   return {
     tx,
@@ -115,6 +103,42 @@ export async function extractTransfersFromVout(
     memo,
     transfers,
   };
+}
+
+async function buildInputTxs(tx: Transaction): Promise<Map<string, Transaction>> {
+  const inputTxs = new Map<string, Transaction>();
+  const uniqueTxids = new Set(tx.vin.map((v) => v.txid));
+
+  const txsData = await Promise.all(
+    Array.from(uniqueTxids).map((txid) => getEVRTransaction(txid))
+  );
+
+  for (const txData of txsData) {
+    if (txData) {
+      inputTxs.set(txData.hash, txData);
+    }
+  }
+
+  return inputTxs;
+}
+
+function findSenderAddressForAssetInput(vin: TransactionInput[], inputTxs: Map<string, Transaction>, assetName: string): string | null {
+  for (const input of vin) {
+    const prevTx = inputTxs.get(input.txid);
+    if (!prevTx) continue;
+
+    const prevVout = prevTx.vout[input.vout];
+    if (!prevVout || prevVout.scriptPubKey.type !== 'transfer_asset') continue;
+
+    const asset = prevVout.scriptPubKey.asset;
+
+    // Evrmore-style: match asset transfer
+    if (asset.name === assetName && asset.amount > 0) {
+      return prevVout.scriptPubKey.addresses[0] ?? null; // assume single sender address
+    }
+  }
+
+  return null;
 }
 
 export async function getItemFromTransaction(

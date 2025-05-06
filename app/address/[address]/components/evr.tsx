@@ -63,13 +63,20 @@ export async function EvrAddress({ address }: { address: string }) {
           <div className="text-sm text-muted-foreground">
             This is a <span className="font-medium text-primary">wallet</span>{" "}
             address linked to:
-            <ul className="list-disc list-inside mt-1 ml-1">
-              {resolve.vaults.map((vault) => (
-                <li key={vault}>
-                  <Address address={vault} />
-                </li>
-              ))}
-            </ul>
+            {resolve.vaults.length === 1 ? (
+              <>
+                {" "}
+                <Address address={resolve.vaults[0]!} />
+              </>
+            ) : (
+              <ul className="list-disc list-inside mt-1 ml-1">
+                {resolve.vaults.map((vault) => (
+                  <li key={vault}>
+                    <Address address={vault} />
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
 

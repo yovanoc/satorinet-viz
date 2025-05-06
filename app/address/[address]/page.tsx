@@ -23,8 +23,8 @@ export default async function AddressPage({
     <div className="flex flex-col gap-6 py-6 px-4 md:gap-8 md:py-8 md:px-8">
       <div className="flex flex-col gap-6">
         <div className="flex flex-row items-center gap-2 flex-wrap">
-          <div className="flex-grow text-primary text-sm md:text-lg text-center">
-            Address: <Address address={address} />
+          <div className="flex-grow text-center">
+            <Address className="text-xl md:text-3xl" address={address} />
           </div>
           <CopyAddressButton address={address} />
         </div>
