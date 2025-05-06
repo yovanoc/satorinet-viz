@@ -1,14 +1,7 @@
 import { getBaseAddressBalance } from "@/lib/base/balance";
-import { getBaseAddress } from "@/lib/base/evr_to_base";
 import { formatSatori } from "@/lib/format";
 
-export async function BaseAddress({ address }: { address: string }) {
-  const baseAddress = await getBaseAddress(address);
-
-  if (!baseAddress) {
-    return <div className="text-red-500">No Base address found</div>;
-  }
-
+export async function BaseAddress({ baseAddress }: { baseAddress: string }) {
   const balance = await getBaseAddressBalance(baseAddress);
 
   return (

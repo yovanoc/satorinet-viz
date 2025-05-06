@@ -7,6 +7,7 @@ import {
 } from "@/lib/satorinet/electrumx";
 import Bottleneck from "bottleneck";
 import { getSatoriHolder } from "../satorinet/holders_cache";
+import { redis } from "../redis";
 
 const limiter = new Bottleneck({
   reservoir: 20,
@@ -24,22 +25,20 @@ export async function getEVRTransaction(
   "use cache";
   cacheLife("minutes");
 
-  // const cacheKey = `evr-tx-${tx_hash}`;
-  // const cachedTx = await redis.get(cacheKey);
-  // if (cachedTx) {
-  //   const t: Transaction = JSON.parse(cachedTx);
+  const cacheKey = `evr-tx-${tx_hash}`;
+  const cachedTx = await redis.get(cacheKey);
+  if (cachedTx) {
+    const t: Transaction = JSON.parse(cachedTx);
 
-  //   // TODO if added in cache more than 5 mins ago, fetch again
+    // TODO if added in cache more than 5 mins ago, fetch again
 
-  //   return t;
-  // }
+    return t;
+  }
   try {
     const tx = await limiter.schedule(() =>
       electrumxClient.getTransaction(tx_hash)
     );
-    // await redis.set(cacheKey, JSON.stringify(tx), {
-    //   EX: 60 * 60 * 1, // 1 hour
-    // });
+    await redis.setex(cacheKey, 30, JSON.stringify(tx));
     return tx;
   } catch (e) {
     console.error(`Error fetching transaction ${tx_hash}:`, e);
@@ -190,19 +189,21 @@ export async function getAddressDataOnElectrumx(
       txHistory = [];
     }
 
+    const len = 15;
+
     // If txHistory is empty (e.g. error/too large), fall back to UTXOs for history display
     let txHashes: string[] = [];
     if (txHistory.length > 0) {
       // Use up to 15 most recent txs from history
       txHashes = txHistory
-        .slice(-15)
+        .slice(-len)
         .toReversed()
         .map((h) => h.tx_hash)
         .filter((v, i, arr) => arr.indexOf(v) === i);
     } else {
       // Use up to 15 most recent UTXO tx_hashes
       const uniqueUtxoHashes = [...new Set(utxos.map((u) => u.tx_hash))];
-      txHashes = uniqueUtxoHashes.slice(-15).toReversed();
+      txHashes = uniqueUtxoHashes.slice(-len).toReversed();
     }
     const utxosResult = utxos;
 

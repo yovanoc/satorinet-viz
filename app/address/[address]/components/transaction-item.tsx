@@ -5,6 +5,7 @@ import { formatSatori } from "@/lib/format";
 import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import type { TxItem } from "@/lib/evr/tx";
 import { Address } from "@/components/address";
+import { EvrTxButton } from "@/components/evr-tx-button";
 
 interface TransactionItemProps {
   tx: TxItem;
@@ -93,15 +94,14 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
 
   return (
     <div
-      className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md px-2 py-1"
-      onClick={() =>
-        window.open(`https://evr.cryptoscope.io/tx/?txid=${tx.hash}`, "_blank")
-      }
+      className="hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md px-0.5 py-0.5 sm:px-1 sm:py-1"
     >
-      <div className="w-full sm:grid sm:grid-cols-[minmax(0,50ch)_8ch_1fr_1fr] sm:gap-x-2 sm:items-center flex flex-col gap-0">
-        <div className="flex items-center min-w-0 truncate sm:col-span-1">
+      <div
+        className="w-full sm:grid sm:grid-cols-[minmax(0,50ch)_8ch_1fr_1fr_auto] sm:gap-x-2 sm:items-center flex flex-col gap-0.5 sm:gap-0"
+      >
+        <div className="flex items-center min-w-0 truncate sm:col-span-1 gap-0">
           {icon}
-          <span className="ml-1 text-sm text-gray-700 dark:text-gray-300 truncate">
+          <span className="ml-0.5 sm:ml-1 text-sm text-gray-700 dark:text-gray-300 truncate">
             {label}
           </span>
         </div>
@@ -118,7 +118,11 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
           {tx.memo ? <span title={tx.memo}>memo: {tx.memo}</span> : "\u00A0"}
         </div>
 
-        <div className="flex flex-col gap-0.5 sm:hidden mt-1 text-xs">
+        <div className="flex justify-end items-center sm:col-span-1">
+          <EvrTxButton txid={tx.hash} />
+        </div>
+
+        <div className="flex flex-col gap-0 sm:hidden mt-0.5 text-xs">
           <div className="flex justify-between">
             <span className="text-gray-500 dark:text-gray-400">Amount:</span>
             <span className="font-semibold text-gray-900 dark:text-gray-100">
@@ -133,9 +137,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
           </div>
           {tx.memo && (
             <div className="flex">
-              <span className="text-gray-500 dark:text-gray-400 mr-1">
-                Memo:
-              </span>
+              <span className="text-gray-500 dark:text-gray-400 mr-1">Memo:</span>
               <span
                 className="break-words text-gray-500 dark:text-gray-400"
                 title={tx.memo}
@@ -144,6 +146,9 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
               </span>
             </div>
           )}
+          <div className="flex justify-end mt-0.5">
+            <EvrTxButton txid={tx.hash} size="sm" />
+          </div>
         </div>
       </div>
     </div>

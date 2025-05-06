@@ -32,9 +32,9 @@ export async function EvrAddress({ address }: { address: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-      <div className="flex justify-center">
-        <div className="flex items-center gap-2 rounded-full border border-primary bg-primary/10 px-6 py-2 shadow-sm">
+    <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 w-full">
+      <div className="flex justify-center w-full">
+        <div className="inline-flex items-center gap-2 rounded-full border border-primary bg-primary/10 px-6 py-2 shadow-sm max-w-xl mx-auto">
           <span className="text-primary font-bold text-lg">Rank</span>
           <span className="inline-flex items-center justify-center rounded-full bg-primary text-white font-semibold px-3 py-1 text-base">
             {data.rank}
@@ -45,7 +45,7 @@ export async function EvrAddress({ address }: { address: string }) {
           </span>
         </div>
       </div>
-      <div className="text-primary text-2xl">
+      <div className="text-primary text-2xl w-full break-all">
         <a
           href={`https://evr.cryptoscope.io/address/?address=${address}`}
           target="_blank"
@@ -54,7 +54,7 @@ export async function EvrAddress({ address }: { address: string }) {
           See on Evrmore Explorer
         </a>
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 w-full">
         <div className="font-semibold text-xl">
           Balance: {formatSatori(data.balance)} SATORI
         </div>
@@ -93,7 +93,7 @@ export async function EvrAddress({ address }: { address: string }) {
           </div>
         )}
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 w-full">
         {data.filteredData.map((tx) => (
           <TransactionItem currentAddress={address} key={tx.hash} tx={tx} />
         ))}
