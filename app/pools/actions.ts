@@ -1,9 +1,10 @@
 "use server";
 
 import { getPoolVsWorkerComparison } from "@/lib/db/queries/pools/worker-comparison";
+import type { TopPool } from "@/lib/known_pools";
 
 export async function getPoolVsWorkerComparisonData(
-  pool_addresses: string[],
+  pools: TopPool[],
   date: Date,
   days: number,
   startingAmount: number
@@ -21,7 +22,7 @@ export async function getPoolVsWorkerComparisonData(
   );
 
   return getPoolVsWorkerComparison(
-    pool_addresses,
+    pools,
     sanitizedDate,
     days,
     startingAmount

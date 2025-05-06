@@ -15,16 +15,25 @@ import {
 import { ChevronDown } from "lucide-react";
 import * as React from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import type { TopPoolWithName } from "@/lib/get-pool-and-date-params";
 
 interface PoolSelectorProps {
-  pools: Array<{ address: string; name?: string; }>
-  selectedPool: string
-  onPoolChange: (pool: string) => void
+  pools: Array<TopPoolWithName>
+  selectedPool: TopPoolWithName
+  onPoolChange: (pool: TopPoolWithName) => void
 }
 
 export const SimplePoolSelector: React.FC<PoolSelectorProps> = ({ pools, selectedPool, onPoolChange }) => {
+
+  const onPoolChangeInner = (poolAddress: string) => {
+    const pool = pools.find((p) => p.address === poolAddress);
+    if (pool) {
+      onPoolChange(pool);
+    }
+  };
+
   return (
-    <Select defaultValue={selectedPool} onValueChange={onPoolChange}>
+    <Select defaultValue={selectedPool.address} onValueChange={onPoolChangeInner}>
       <SelectTrigger className="w-full text-base md:text-xl font-bold cursor-pointer">
         <SelectValue placeholder="Select a pool" />
       </SelectTrigger>
@@ -50,9 +59,9 @@ export const SimplePoolSelector: React.FC<PoolSelectorProps> = ({ pools, selecte
 
 
 interface MultiplePoolSelectorProps {
-  pools: Array<{ address: string; name?: string; }>;
-  selectedPools: string[];
-  onPoolsChange: (pools: string[]) => void
+  pools: Array<TopPoolWithName>;
+  selectedPools: TopPoolWithName[];
+  onPoolsChange: (pools: TopPoolWithName[]) => void
 }
 
 export const MultiplePoolSelector: React.FC<MultiplePoolSelectorProps> = ({
@@ -60,7 +69,7 @@ export const MultiplePoolSelector: React.FC<MultiplePoolSelectorProps> = ({
   selectedPools,
   onPoolsChange,
 }) => {
-  const [value, setValue] = React.useState<string[]>(selectedPools);
+  const [value, setValue] = React.useState<TopPoolWithName[]>(selectedPools);
 
   React.useEffect(() => {
     setValue(selectedPools);
@@ -70,10 +79,15 @@ export const MultiplePoolSelector: React.FC<MultiplePoolSelectorProps> = ({
     onPoolsChange(value);
   }, [value, onPoolsChange]);
 
+  const onChangeInner = (addresses: string[]) => {
+    const selected = pools.filter((p) => addresses.includes(p.address));
+    setValue(selected);
+  }
+
   return (
     <Combobox
-      value={value}
-      onValueChange={setValue}
+      value={value.map((p) => p.address)}
+      onValueChange={onChangeInner}
       className="w-[400px]"
       multiple
       autoHighlight
@@ -82,11 +96,11 @@ export const MultiplePoolSelector: React.FC<MultiplePoolSelectorProps> = ({
       <ComboboxAnchor className="h-full min-h-10 flex-wrap px-3 py-2">
         <ComboboxBadgeList>
           {value.map((item) => {
-            const option = pools.find((p) => p.address === item);
+            const option = pools.find((p) => p.address === item.address);
             if (!option) return null;
 
             return (
-              <ComboboxBadgeItem key={item} value={item}>
+              <ComboboxBadgeItem key={item.address} value={item.address}>
                 {option.name ?? option.address}
               </ComboboxBadgeItem>
             );

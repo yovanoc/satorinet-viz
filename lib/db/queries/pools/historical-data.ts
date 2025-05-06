@@ -2,23 +2,27 @@ import { sql, and, or, eq, gte, lte } from "drizzle-orm";
 import { unstable_cacheLife as cacheLife } from "next/cache";
 import { db } from "../..";
 import { dailyPredictorAddress, dailyContributorAddress } from "../../schema";
-import { KNOWN_POOLS } from "@/lib/known_pools";
+import { KNOWN_POOLS, type TopPool } from "@/lib/known_pools";
 import { getPoolFeesForDate } from "@/lib/pool-utils";
+import { getVaultsForWallet } from "@/lib/evr/wallet-vault";
 
 export async function getPoolHistoricalData(
-  pool_address: string,
+  pool: TopPool,
   date: Date,
   days = 30
 ) {
   "use cache";
   cacheLife("max");
 
-  const pool = KNOWN_POOLS.find(
-    (pool) => pool.address === pool_address
-  );
+  const knownPool = KNOWN_POOLS.find((p) => p.address === pool.address);
 
-  const fees = pool ? getPoolFeesForDate(pool, date) : null;
+  const fees = knownPool ? getPoolFeesForDate(knownPool, date) : null;
   const workerGivenPercent = fees?.workerGivenPercent ?? 0;
+
+  const vaultAddress =
+    pool?.vault_address ??
+    knownPool?.vault_address ??
+    (await getVaultsForWallet(pool.address))[0]; // ! nearly everyone has a single vault address
 
   // Subquery: Pre-aggregate daily_predictor_address with explicit aliases
   const predictorAgg = db
@@ -61,8 +65,10 @@ export async function getPoolHistoricalData(
         //   ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_vault_address),
         // ),
         or(
-          eq(dailyPredictorAddress.reward_address, pool_address),
-            pool?.vault_address ? eq(dailyPredictorAddress.reward_address, pool.vault_address) : undefined,
+          eq(dailyPredictorAddress.reward_address, pool.address),
+          vaultAddress
+            ? eq(dailyPredictorAddress.reward_address, vaultAddress)
+            : undefined
         )
       )
     )
@@ -80,9 +86,17 @@ export async function getPoolHistoricalData(
       pool_balance: sql<number>`${predictorAgg.pool_balance}`,
       contributor_count_with_staking_power: sql<number>`COUNT(DISTINCT ${dailyContributorAddress.contributor}) FILTER (WHERE ${dailyContributorAddress.staking_power_contribution} > 0)`,
       earnings_per_staking_power: sql<number>`COALESCE(
-            ((${predictorAgg.total_reward} - ${predictorAgg.total_miner_earned}) * (1 - ${sql`${workerGivenPercent}::double precision`})) /
-            -- NULLIF(SUM(${dailyContributorAddress.staking_power_contribution}), 0),
-            NULLIF(SUM(${dailyContributorAddress.staking_power_contribution}) + AVG(COALESCE(${dailyContributorAddress.pools_own_staking_power}, 0)), 0),
+            ((${predictorAgg.total_reward} - ${
+        predictorAgg.total_miner_earned
+      }) * (1 - ${sql`${workerGivenPercent}::double precision`})) /
+            -- NULLIF(SUM(${
+              dailyContributorAddress.staking_power_contribution
+            }), 0),
+            NULLIF(SUM(${
+              dailyContributorAddress.staking_power_contribution
+            }) + AVG(COALESCE(${
+        dailyContributorAddress.pools_own_staking_power
+      }, 0)), 0),
             -- NULLIF(${predictorAgg.total_delegated_stake}, 0),
           0)`,
     })
@@ -90,7 +104,7 @@ export async function getPoolHistoricalData(
     .leftJoin(predictorAgg, eq(dailyContributorAddress.date, predictorAgg.date))
     .where(
       and(
-        eq(dailyContributorAddress.pool_address, pool_address),
+        eq(dailyContributorAddress.pool_address, pool.address),
         gte(
           dailyContributorAddress.date,
           sql`${date}::timestamp - ${days} * interval '1 day'`

@@ -1,7 +1,6 @@
 "use client";
 
 import { startTransition, useActionState, useEffect, useState } from "react";
-import { VALID_POOLS } from "@/lib/known_pools";
 import {
   Card,
   CardAction,
@@ -14,19 +13,18 @@ import { PoolComparisonChart } from "./pool-vs-worker";
 import PoolWorkerInputs from "./pool-vs-worker-inputs";
 import { getPoolVsWorkerComparisonData } from "@/app/pools/actions";
 import { MultiplePoolSelector } from "./pool-selector";
+import { KNOWN_POOLS, mostWantedTop } from "@/lib/known_pools";
+import type { TopPoolWithName } from "@/lib/get-pool-and-date-params";
 
 export default function MultiPoolWorkerComparison({
   date,
   topPools,
 }: {
   date: Date;
-  // ! maybe we can use this
-  topPools: {
-    pool_address: string;
-  }[];
+  topPools: TopPoolWithName[];
 }) {
-  const [selectedPools, setSelectedPools] = useState<string[]>(
-    VALID_POOLS.map((pool) => pool.address)
+  const [selectedPools, setSelectedPools] = useState<TopPoolWithName[]>(
+    mostWantedTop(topPools)
   );
   const [days, setDays] = useState(30);
   const [startingAmount, setStartingAmount] = useState(15);
@@ -40,8 +38,8 @@ export default function MultiPoolWorkerComparison({
     );
   }, []);
 
-  const handlePoolsChange = (pool_addresses: string[]) => {
-    setSelectedPools(pool_addresses);
+  const handlePoolsChange = (pools: TopPoolWithName[]) => {
+    setSelectedPools(pools);
   };
 
   useEffect(() => {
@@ -49,14 +47,14 @@ export default function MultiPoolWorkerComparison({
   }, [formAction, date, days, startingAmount, selectedPools]);
 
   const allowedPools = topPools.map((pool) => {
-    const foundPool = VALID_POOLS.find((p) => p.address === pool.pool_address);
+    const foundPool = KNOWN_POOLS.find((p) => p.address === pool.address);
     return foundPool
       ? {
           address: foundPool.address,
           name: foundPool.name,
         }
       : {
-          address: pool.pool_address,
+          address: pool.address,
         };
   });
 

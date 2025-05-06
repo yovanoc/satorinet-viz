@@ -4,6 +4,7 @@ import { CopyAddressButton } from "@/components/copy-address-button";
 import { ManifestVoteHistory } from "./components/manifest";
 import { EvrAddress } from "./components/evr";
 import { BaseAddress } from "./components/base";
+import { Address } from "@/components/address";
 
 // TODO show inviter rewards?
 // TODO show delegate from/to ?
@@ -23,7 +24,7 @@ export default async function AddressPage({
       <div className="flex flex-col gap-6">
         <div className="flex flex-row items-center gap-2 flex-wrap">
           <div className="flex-grow text-primary text-sm md:text-lg text-center">
-            Address: {address}
+            Address: <Address address={address} />
           </div>
           <CopyAddressButton address={address} />
         </div>
@@ -45,7 +46,9 @@ export default async function AddressPage({
               <h3 className="text-md font-semibold text-primary mb-2">
                 Evrmore Chain
               </h3>
-              <Suspense fallback={<Skeleton className="h-8 w-full text-center mb-4" />}>
+              <Suspense
+                fallback={<Skeleton className="h-8 w-full text-center mb-4" />}
+              >
                 <EvrAddress address={address} />
               </Suspense>
             </div>
@@ -53,7 +56,9 @@ export default async function AddressPage({
               <h3 className="text-md font-semibold text-primary mb-2">
                 Base Chain
               </h3>
-              <Suspense fallback={<Skeleton className="h-8 w-full text-center mb-4" />}>
+              <Suspense
+                fallback={<Skeleton className="h-8 w-full text-center mb-4" />}
+              >
                 <BaseAddress address={address} />
               </Suspense>
             </div>
@@ -63,4 +68,3 @@ export default async function AddressPage({
     </div>
   );
 }
-

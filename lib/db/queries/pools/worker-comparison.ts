@@ -1,5 +1,5 @@
 import { unstable_cacheLife as cacheLife } from "next/cache";
-import { KNOWN_POOLS, type Pool } from "@/lib/known_pools";
+import { KNOWN_POOLS, type Pool, type TopPool } from "@/lib/known_pools";
 import { getPoolHistoricalData } from "./historical-data";
 import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
 import { applyFees, FeeResult, type AppliedFees } from "@/lib/pool-utils";
@@ -37,7 +37,7 @@ export type PoolsVSWorkerData = {
 };
 
 export async function getPoolVsWorkerComparison(
-  pool_addresses: string[],
+  pools: TopPool[],
   date: Date,
   days: number = 30,
   startingAmount: number = 0
@@ -46,9 +46,9 @@ export async function getPoolVsWorkerComparison(
   cacheLife("max");
 
   const poolsData = await Promise.all(
-    pool_addresses.map(async (pool_address) => ({
-      pool_address,
-      data: await getPoolHistoricalData(pool_address, date, days),
+    pools.map(async (pool) => ({
+      pool,
+      data: await getPoolHistoricalData(pool, date, days),
     }))
   );
 
@@ -84,7 +84,7 @@ export async function getPoolVsWorkerComparison(
         const poolEntry = poolData.data[i];
         if (poolEntry && poolEntry.date !== entry.date) {
           console.error(
-            `Dates are not the same for all pools. Pool: ${poolData.pool_address} - Date: ${poolEntry.date} - Expected: ${entry.date}`
+            `Dates are not the same for all pools. Pool: ${poolData.pool.address} - Date: ${poolEntry.date} - Expected: ${entry.date}`
           );
           return [];
         }
@@ -97,9 +97,9 @@ export async function getPoolVsWorkerComparison(
   let selfAmount = startingAmount; // Track self-managed compounded value
   let selfEarnings = 0; // Track total self-managed earnings
 
-  const poolsTracking = pool_addresses.reduce(
+  const poolsTracking = pools.reduce(
     (acc, pool) => {
-      acc[pool] = {
+      acc[pool.address] = {
         min: {
           current_amount: startingAmount, // Track pool compounded value
           total_earnings: 0, // Track only earnings in pool
@@ -141,7 +141,7 @@ export async function getPoolVsWorkerComparison(
 
     if (!firstPoolEntry) {
       console.error(
-        `No data found for pool ${pool_addresses[0]} on date ${dailyDate}`
+        `No data found for pool ${pools[0]?.address} on date ${dailyDate}`
       );
       continue;
     }
@@ -165,10 +165,10 @@ export async function getPoolVsWorkerComparison(
       },
     };
 
-    for (const poolAddress of pool_addresses) {
-      const pool = KNOWN_POOLS.find((pool) => pool.address === poolAddress);
+    for (const pool of pools) {
+      const knownPool = KNOWN_POOLS.find((p) => p.address === pool.address);
 
-      if (pool && pool.closed && pool.closed <= dailyDate) {
+      if (knownPool && knownPool.closed && knownPool.closed <= dailyDate) {
         // console.warn(
         //   `Pool ${pool.name} is closed on date ${dailyDate}. Skipping...`
         // );
@@ -176,13 +176,13 @@ export async function getPoolVsWorkerComparison(
       }
 
       const entry = poolsData
-        .find((p) => p.pool_address === poolAddress)!
+        .find((p) => p.pool.address === pool.address)!
         .data.find(
           (entry) => new Date(entry.date).getTime() === dailyDate.getTime()
         );
       if (!entry) {
         console.error(
-          `No data found for pool ${poolAddress} on date ${dailyDate}`
+          `No data found for pool ${pool.address} on date ${dailyDate}`
         );
         continue;
       }
@@ -195,16 +195,16 @@ export async function getPoolVsWorkerComparison(
       //   continue;
       // }
 
-      const poolTracking = poolsTracking[poolAddress];
+      const poolTracking = poolsTracking[pool.address];
       if (!poolTracking) {
-        console.error(`No tracking data found for pool ${poolAddress}`);
+        console.error(`No tracking data found for pool ${pool.address}`);
         continue;
       }
 
       const appliedFees = new Array<AppliedFees>();
 
       const res = applyFees({
-        poolAddress,
+        poolAddress: pool.address,
         date: dailyDate,
         fullStakeAmount: stake,
         earnings_per_staking_power: entry.earnings_per_staking_power,
@@ -216,7 +216,7 @@ export async function getPoolVsWorkerComparison(
 
       if (poolTracking.max) {
         const res = applyFees({
-          poolAddress,
+          poolAddress: pool.address,
           date: dailyDate,
           fullStakeAmount: stake,
           earnings_per_staking_power: entry.earnings_per_staking_power,
@@ -228,7 +228,7 @@ export async function getPoolVsWorkerComparison(
       }
 
       if (appliedFees.length === 0) {
-        console.error(`No fee data found for pool ${poolAddress}`);
+        console.error(`No fee data found for pool ${pool.address}`);
         continue;
       }
 
@@ -249,9 +249,9 @@ export async function getPoolVsWorkerComparison(
         poolTracking.min.current_amount += net;
         poolTracking.min.total_earnings += net;
 
-        data.pools[poolAddress] = {
-          poolAddress,
-          pool,
+        data.pools[pool.address] = {
+          poolAddress: pool.address,
+          pool: knownPool,
           min: {
             total_earnings: poolTracking.min.total_earnings,
             full_stake_earnings: netPerFullStake,
@@ -301,9 +301,9 @@ export async function getPoolVsWorkerComparison(
         poolTracking.min.current_amount += minNet;
         poolTracking.min.total_earnings += minNet;
 
-        data.pools[poolAddress] = {
-          poolAddress,
-          pool,
+        data.pools[pool.address] = {
+          poolAddress: pool.address,
+          pool: knownPool,
           min: {
             total_earnings: poolTracking.min.total_earnings,
             full_stake_earnings: minNetPerFullStake,

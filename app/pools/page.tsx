@@ -30,15 +30,7 @@ export default async function PoolsPage({
   const params = await searchParams;
   const poolAndDate = await getPoolAndDate(params);
 
-  if (!poolAndDate) {
-    return (
-      <Card className="h-[500px] flex items-center justify-center">
-        Pool not found
-      </Card>
-    );
-  }
-
-  const { selectedDate } = poolAndDate;
+  const { selectedDate, topPoolsWithNames } = poolAndDate;
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -76,7 +68,7 @@ export default async function PoolsPage({
         <Suspense
           fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}
         >
-          <PoolsStakingComparison date={selectedDate} />
+          <PoolsStakingComparison topPools={topPoolsWithNames} date={selectedDate} />
         </Suspense>
       </div>
     </div>

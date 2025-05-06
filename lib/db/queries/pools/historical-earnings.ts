@@ -15,13 +15,7 @@ export async function getPoolsHistoricalEarnings(
   return Promise.all(
     pools.map(async (pool) => ({
       pool,
-      data: pool.vault_address
-        ? await getPoolHistoricalData(
-            pool.address,
-            date,
-            days
-          )
-        : null,
+      data: await getPoolHistoricalData(pool, date, days)
     }))
   );
 }

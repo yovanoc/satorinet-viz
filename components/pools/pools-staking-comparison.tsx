@@ -1,4 +1,9 @@
-import { VALID_POOLS, type Pool } from "@/lib/known_pools";
+import {
+  KNOWN_POOLS,
+  mostWantedTop,
+  type Pool,
+  type TopPool,
+} from "@/lib/known_pools";
 import {
   PoolsStakingComparisonChart,
   type Entry,
@@ -11,6 +16,7 @@ import { getMaxDelegatedStake } from "@/lib/db/queries/predictors/max-delegated-
 
 interface PoolsStakingComparisonProps {
   date: Date;
+  topPools: TopPool[];
 }
 
 async function transformData(
@@ -59,17 +65,19 @@ async function transformData(
     );
   }
 
-  return Array.from(dateMap.entries()).map(([date, data]) => ({
-    date: new Date(date),
-    satoriPrice: data.satoriPrice,
-    fullStakeAmount: data.fullStakeAmount,
-    poolEarnings: data.pools,
-  }))
-  .sort((a, b) => a.date.getTime() - b.date.getTime());
+  return Array.from(dateMap.entries())
+    .map(([date, data]) => ({
+      date: new Date(date),
+      satoriPrice: data.satoriPrice,
+      fullStakeAmount: data.fullStakeAmount,
+      poolEarnings: data.pools,
+    }))
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
 }
 
 export async function PoolsStakingComparison({
   date,
+  topPools,
 }: PoolsStakingComparisonProps) {
   "use cache";
   cacheLife("max");
@@ -79,13 +87,17 @@ export async function PoolsStakingComparison({
     getMaxDelegatedStake(date),
   ]);
 
-  const data = await getPoolsHistoricalEarnings(VALID_POOLS, date);
+  const top3 = mostWantedTop(topPools)
+    .map((pool) => KNOWN_POOLS.find((p) => p.address === pool.address))
+    .filter((pool) => !!pool);
+
+  const data = await getPoolsHistoricalEarnings(top3, date);
   const transformedData = await transformData(data);
 
   return (
     <PoolsStakingComparisonChart
       data={transformedData}
-      pools={VALID_POOLS}
+      pools={top3}
       fullStakeAmount={fullStakeAmount ?? 0}
       satoriPrice={satoriPrice}
     />

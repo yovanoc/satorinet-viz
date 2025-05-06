@@ -2,20 +2,21 @@
 
 import { useRouter, useSearchParams } from "next/navigation"
 import { SimplePoolSelector } from "./pool-selector"
+import type { TopPoolWithName } from "@/lib/get-pool-and-date-params";
 
 interface PoolSelectorWrapperProps {
-  pools: Array<{ address: string; name?: string }>
-  selectedPool: string
+  pools: Array<TopPoolWithName>
+  selectedPool: TopPoolWithName
 }
 
 export default function PoolSelectorWrapper({ pools, selectedPool }: PoolSelectorWrapperProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const handlePoolChange = (newPool: string) => {
+  const handlePoolChange = (newPool: TopPoolWithName) => {
     if (!searchParams) return
     const current = new URLSearchParams(Array.from(searchParams.entries()))
-    current.set("pool", newPool)
+    current.set("pool", newPool.address)
     const search = current.toString()
     const query = search ? `?${search}` : ""
     router.push(`${query}`)
