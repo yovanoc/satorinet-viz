@@ -14,6 +14,8 @@ export async function saveSatoriEvrHolders(data: AssetHolderWithRank[]) {
       balance: holder.balance,
       rank: holder.rank,
       total: data.length,
+      percent: holder.percent,
+      tier: holder.tier,
     };
     p.hset(redisKey, holder.address, JSON.stringify(d));
   }

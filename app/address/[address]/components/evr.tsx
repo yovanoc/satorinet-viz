@@ -34,30 +34,51 @@ export async function EvrAddress({ address }: { address: string }) {
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 w-full">
       <div className="flex justify-center w-full">
-        <div className="inline-flex items-center gap-2 rounded-full border border-primary bg-primary/10 px-6 py-2 shadow-sm max-w-xl mx-auto">
-          <span className="text-primary font-bold text-lg">Rank</span>
-          <span className="inline-flex items-center justify-center rounded-full bg-primary text-white font-semibold px-3 py-1 text-base">
-            {data.rank}
-          </span>
-          <span className="text-muted-foreground text-base">/</span>
-          <span className="inline-flex items-center justify-center rounded-full bg-muted text-primary font-semibold px-3 py-1 text-base">
-            {data.total}
-          </span>
+        <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary bg-primary/10 px-6 py-2 shadow-sm">
+            <span className="text-primary font-bold text-lg">Rank</span>
+            <span className="inline-flex items-center justify-center rounded-full bg-primary text-white font-semibold px-3 py-1 text-base">
+              {data.rank}
+            </span>
+            <span className="text-muted-foreground text-base">/</span>
+            <span className="inline-flex items-center justify-center rounded-full bg-muted text-primary font-semibold px-3 py-1 text-base">
+              {data.total}
+            </span>
+          </div>
+
+          {data.tier && (
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary bg-primary/10 px-6 py-2 shadow-sm">
+              <span className="text-primary font-bold text-lg">Tier</span>
+              <span className="inline-flex items-center justify-center rounded-full bg-primary text-white font-semibold px-3 py-1 text-base">
+                {data.tier}
+              </span>
+            </div>
+          )}
+
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary bg-primary/10 px-6 py-2 shadow-sm">
+            <span className="text-primary font-bold text-lg">Holdings</span>
+            <span className="inline-flex items-center justify-center rounded-full bg-primary text-white font-semibold px-3 py-1 text-base">
+              {data.percent.toFixed(2)}%
+            </span>
+          </div>
         </div>
       </div>
-      <div className="text-primary text-2xl w-full break-all">
-        <a
-          href={`https://evr.cryptoscope.io/address/?address=${address}`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          See on Evrmore Explorer
-        </a>
-      </div>
-      <div className="flex flex-col gap-2 w-full">
-        <div className="font-semibold text-xl">
-          Balance: {formatSatori(data.balance)} SATORI
+      {/* Chain Details Section */}
+      <div className="mb-2">
+        <h2 className="text-xl font-semibold mb-2">Address Details</h2>
+        <div className="text-primary text-lg w-full break-all mb-4">
+          <a
+            href={`https://evr.cryptoscope.io/address/?address=${address}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            See on Evrmore Explorer
+          </a>
         </div>
+        <div className="flex flex-col gap-2 w-full">
+          <div className="font-semibold text-xl">
+            Balance: {formatSatori(data.balance)} SATORI
+          </div>
 
         {resolve.type === "wallet" && (
           <div className="text-sm text-muted-foreground">
@@ -92,12 +113,20 @@ export async function EvrAddress({ address }: { address: string }) {
             This address is not linked to any wallet or vault.
           </div>
         )}
+        </div>
       </div>
-      <div className="flex flex-col gap-2 w-full">
-        {data.filteredData.map((tx) => (
-          <TransactionItem currentAddress={address} key={tx.hash} tx={tx} />
-        ))}
-      </div>
+
+      {/* Transaction History Section */}
+      {data.filteredData.length > 0 && (
+        <div className="mt-6 pt-4 border-t border-border">
+          <h2 className="text-xl font-semibold mb-4">Transaction History</h2>
+          <div className="flex flex-col gap-2 w-full">
+            {data.filteredData.map((tx) => (
+              <TransactionItem currentAddress={address} key={tx.hash} tx={tx} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

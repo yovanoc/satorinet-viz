@@ -7,7 +7,7 @@ export const getAllSatoriHolders = async () => {
   try {
     await electrumxClient.connectToServer();
     const holders = await electrumxClient.getAssetHolders(null, 'SATORI');
-    electrumxClient.disconnect();
+    await electrumxClient.disconnect();
     return holders;
   } catch (e) {
     console.error('Error connecting to ElectrumX server:', e);
@@ -45,13 +45,18 @@ export type HoldersSummary = {
 
 export type AssetHolderWithRank = AssetHolder & {
   rank: number;
+  tier: TierName | null;
+  percent: number;
 };
 
 export const classifyAssetHolders = (assetHolders: AssetHolder[]) => {
   assetHolders.sort((a, b) => b.balance - a.balance);
+  const totalBalance = assetHolders.reduce((acc, holder) => acc + holder.balance, 0);
   const assetHoldersWithRank: AssetHolderWithRank[] = assetHolders.map((holder, idx) => ({
       ...holder,
       rank: idx + 1,
+      percent: (holder.balance / totalBalance) * 100,
+      tier: tiers.find(tier => holder.balance >= tier.min && holder.balance < tier.max)?.name ?? null,
   }));
   const summary: HoldersSummary = {
       totalSatori: 0,

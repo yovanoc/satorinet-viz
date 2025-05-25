@@ -111,14 +111,21 @@ export const KNOWN_POOLS: Pool[] = [
         },
         until: new Date("2025-04-13T00:00:00Z"),
       },
+      // {
+      //   fees: {
+      //     type: "cost",
+      //     amount: 0.1,
+      //     amount_type: "usd",
+      //     per: "full_stake",
+      //   },
+      //   maxPercent: 0.75,
+      //   until: null,
+      // },
       {
         fees: {
-          type: "cost",
-          amount: 0.1,
-          amount_type: "usd",
-          per: "full_stake",
+          type: "percent",
+          percent: 0.75,
         },
-        maxPercent: 0.75,
         until: null,
       },
     ],

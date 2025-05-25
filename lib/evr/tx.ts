@@ -8,14 +8,15 @@ import {
 import Bottleneck from "bottleneck";
 import { getSatoriHolder } from "../satorinet/holders_cache";
 import { redis } from "../redis";
+import type { TierName } from "../satorinet/holders";
 
 const limiter = new Bottleneck({
-  reservoir: 20,
-  reservoirIncreaseAmount: 2,
+  reservoir: 15,
+  reservoirIncreaseAmount: 1,
   reservoirIncreaseInterval: 1000, // must be divisible by 250
-  reservoirIncreaseMaximum: 40,
+  reservoirIncreaseMaximum: 20,
 
-  maxConcurrent: 5,
+  maxConcurrent: 2,
   minTime: 250,
 });
 
@@ -38,7 +39,7 @@ export async function getEVRTransaction(
     const tx = await limiter.schedule(() =>
       electrumxClient.getTransaction(tx_hash)
     );
-    await redis.setex(cacheKey, 30, JSON.stringify(tx));
+    // await redis.setex(cacheKey, 30, JSON.stringify(tx));
     return tx;
   } catch (e) {
     console.error(`Error fetching transaction ${tx_hash}:`, e);
@@ -61,7 +62,8 @@ type AssetTransfer = {
 };
 
 export async function extractTransfersFromVout(
-  tx: Transaction
+  tx: Transaction,
+  assetName: string = "SATORI"
 ): Promise<{
   tx: Transaction;
   memo?: string;
@@ -93,7 +95,7 @@ export async function extractTransfersFromVout(
   const senderAddress = findSenderAddressForAssetInput(
     tx.vin,
     await buildInputTxs(tx),
-    "SATORI"
+    assetName
   ) ?? undefined;
 
   return {
@@ -163,6 +165,8 @@ export type AddressElectrumxData = {
   balance: number;
   rank: number;
   total: number;
+  tier: TierName | null;
+  percent: number;
   filteredData: TxItem[];
 };
 
@@ -232,6 +236,8 @@ export async function getAddressDataOnElectrumx(
       filteredData,
       rank: holder?.rank ?? 0,
       total: holder?.total ?? 0,
+      tier: holder?.tier ?? null,
+      percent: holder?.percent ?? 0,
     };
   } catch (e) {
     console.error("Error connecting to ElectrumX server:", e);

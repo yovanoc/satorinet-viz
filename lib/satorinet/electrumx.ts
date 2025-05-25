@@ -1,22 +1,22 @@
 import { connect, Socket } from "net";
-import Emittery from 'emittery';
+import Emittery from "emittery";
 import { setTimeout } from "timers/promises";
 import { getScriptHash } from "../evr";
 
 const EVRMORE_ELECTRUMX_SERVERS_WITHOUT_SSL = [
-  "128.199.1.149:50001",
-  "146.190.149.237:50001",
-  "146.190.38.120:50001",
+  // "128.199.1.149:50001",
+  // "146.190.149.237:50001",
+  // "146.190.38.120:50001",
   "electrum1-mainnet.evrmorecoin.org:50001",
   "electrum2-mainnet.evrmorecoin.org:50001",
-  "evr-electrum.wutup.io:50001",
-  "aethyn.org:50001",
+  // "evr-electrum.wutup.io:50001",
+  // "aethyn.org:50001",
 ];
 
 export type TxHistory = {
   tx_hash: string;
   height: number;
-}
+};
 
 export interface TransactionScriptSig {
   asm: string;
@@ -47,7 +47,8 @@ export interface TransactionAsset {
   expire_time?: number;
 }
 
-export interface TransactionScriptPubKeyTransferAsset extends TransactionScriptPubKeyHash {
+export interface TransactionScriptPubKeyTransferAsset
+  extends TransactionScriptPubKeyHash {
   asset: TransactionAsset;
 }
 
@@ -57,20 +58,20 @@ export interface TransactionScriptPubKeyNullData {
 }
 
 export type TransactionScriptPubKey =
-  | {
+  | ({
       type: "pubkeyhash";
     } & {
       asm: string;
       hex: string;
       reqSigs: number;
       addresses: string[];
-    }
-  | {
+    })
+  | ({
       type: "transfer_asset";
-    } & TransactionScriptPubKeyTransferAsset
-  | {
+    } & TransactionScriptPubKeyTransferAsset)
+  | ({
       type: "nulldata";
-    } & TransactionScriptPubKeyNullData;
+    } & TransactionScriptPubKeyNullData);
 
 export interface TransactionOutput {
   value: number;
@@ -104,6 +105,46 @@ export type AssetHolder = {
   balance: number;
 };
 
+export type EvrmoreHeader = {
+  hex: string;
+  height: number;
+  version: number;
+  prevhash: string;
+  merkle_root: string;
+  time: number;
+  bits: string;
+  nonce: number;
+  asset_burned: bigint;
+  reserved: string;
+  merkle_root_with_burn: string;
+};
+
+export function decodeEvrmoreHeader(
+  hex: string,
+  height: number
+): EvrmoreHeader {
+  const buf = Buffer.from(hex, "hex");
+  if (buf.length !== 120) {
+    throw new Error(
+      `Invalid Evrmore block header length: got ${buf.length} bytes`
+    );
+  }
+
+  return {
+    hex,
+    height,
+    version: buf.readInt32LE(0),
+    prevhash: buf.subarray(4, 36).reverse().toString("hex"),
+    merkle_root: buf.subarray(36, 68).reverse().toString("hex"),
+    time: buf.readUInt32LE(68),
+    bits: buf.subarray(72, 76).toString("hex"),
+    nonce: buf.readUInt32LE(76),
+    asset_burned: buf.readBigUInt64LE(80),
+    reserved: buf.subarray(88, 96).toString("hex"),
+    merkle_root_with_burn: buf.subarray(96, 120).reverse().toString("hex"),
+  };
+}
+
 class ElectrumxClient extends Emittery<{
   connected: undefined;
   disconnected: undefined;
@@ -115,6 +156,10 @@ class ElectrumxClient extends Emittery<{
   private isConnected: boolean = false;
 
   async connectToServer(attempt: number = 0): Promise<void> {
+    if (this.client) {
+      await this.disconnect();
+    }
+
     const randomServer = this.getRandomServer();
     if (!randomServer) throw new Error("No electrum server available");
 
@@ -134,7 +179,8 @@ class ElectrumxClient extends Emittery<{
       console.error(error);
       if (attempt < maxRetries) {
         console.warn(
-          `Connection attempt ${attempt + 1
+          `Connection attempt ${
+            attempt + 1
           } to ${randomServer} failed. Retrying with a new server...`
         );
         return this.connectToServer(attempt + 1);
@@ -175,17 +221,32 @@ class ElectrumxClient extends Emittery<{
     });
   }
 
-  disconnect() {
-    if (this.client) {
-      this.client.destroy();
-      this.client = null;
-      this.isConnected = false;
-    }
+  async disconnect(): Promise<void> {
+    return new Promise((resolve) => {
+      this.once("disconnected").then(() => {
+        resolve();
+      });
+      if (this.client) {
+        this.client.destroy();
+      } else {
+        resolve();
+      }
+    });
   }
 
-  private async handleRPC<T>(method: string, params: unknown[], callId: number | null = null): Promise<T> {
+  private async handleRPC<T>(
+    method: string,
+    params: unknown[],
+    callId: number | null = null
+  ): Promise<T> {
     return new Promise((resolve, reject) => {
       const id = callId ?? Date.now() + Math.floor(Math.random() * 1000000);
+
+      // console.log(
+      //   `Sending RPC request: ${method} with params: ${JSON.stringify(
+      //     params
+      //   )} and id: ${id}, isConnected: ${this.isConnected}`
+      // );
 
       if (this.isConnected) {
         this.sendRPC(method, params, id);
@@ -221,19 +282,30 @@ class ElectrumxClient extends Emittery<{
 
   async getTransactionHistory(targetAddress: string): Promise<TxHistory[]> {
     const scriptHash = getScriptHash(targetAddress);
-    return this.handleRPC<TxHistory[]>("blockchain.scripthash.get_history", [scriptHash]);
+    return this.handleRPC<TxHistory[]>("blockchain.scripthash.get_history", [
+      scriptHash,
+    ]);
   }
 
-  async getAddressBalance(targetAddress: string, asset?: string): Promise<number> {
+  async getAddressBalance(
+    targetAddress: string,
+    asset?: string
+  ): Promise<number> {
     const scriptHash = getScriptHash(targetAddress);
-    const balance = await this.handleRPC<{ confirmed: number; unconfirmed: number }>(
+    const balance = await this.handleRPC<{
+      confirmed: number;
+      unconfirmed: number;
+    }>(
       "blockchain.scripthash.get_balance",
       asset ? [scriptHash, asset] : [scriptHash]
     );
     return (balance.confirmed + balance.unconfirmed) / 1e8;
   }
 
-  async getAddressUtxos(targetAddress: string, asset?: string): Promise<TxHistory[]> {
+  async getAddressUtxos(
+    targetAddress: string,
+    asset?: string
+  ): Promise<TxHistory[]> {
     const scriptHash = getScriptHash(targetAddress);
     return this.handleRPC<TxHistory[]>(
       "blockchain.scripthash.listunspent",
@@ -242,10 +314,42 @@ class ElectrumxClient extends Emittery<{
   }
 
   async getTransaction(tx_hash: string): Promise<Transaction> {
-    return this.handleRPC<Transaction>("blockchain.transaction.get", [tx_hash, true]);
+    return this.handleRPC<Transaction>("blockchain.transaction.get", [
+      tx_hash,
+      true,
+    ]);
   }
 
-  async getAssetHolders(targetAddress: string | null, targetAsset: string): Promise<AssetHolder[]> {
+  async getTransactionMerkle(
+    tx_hash: string,
+    height: number
+  ): Promise<{ block_height: number; pos: number; merkle: string[] }> {
+    return this.handleRPC<{
+      block_height: number;
+      pos: number;
+      merkle: string[];
+    }>("blockchain.transaction.get_merkle", [tx_hash, height]);
+  }
+
+  async getBlockHeader(height: number) {
+    const b64 = await this.handleRPC<string>("blockchain.block.header", [
+      height,
+    ]);
+    return decodeEvrmoreHeader(b64, height);
+  }
+
+  async headersSubscribe() {
+    const data = await this.handleRPC<{ hex: string; height: number }>(
+      "blockchain.headers.subscribe",
+      []
+    );
+    return decodeEvrmoreHeader(data.hex, data.height);
+  }
+
+  async getAssetHolders(
+    targetAddress: string | null,
+    targetAsset: string
+  ): Promise<AssetHolder[]> {
     const addresses: Record<string, number> = {};
     let lastAddresses: Record<string, number> | null = null;
     let i = 0;
@@ -287,7 +391,7 @@ class ElectrumxClient extends Emittery<{
     callId: number | null = null
   ) {
     if (!this.client) {
-      throw new Error("Client is not connected");
+      throw new Error("Client is not initialized");
     }
 
     if (!this.isConnected) {

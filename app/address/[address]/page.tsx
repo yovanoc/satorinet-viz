@@ -11,7 +11,6 @@ import { getBaseAddress } from "@/lib/base/evr_to_base";
 // TODO show delegate from/to ?
 // TODO show pooling history like staking power in which pools
 // TODO show entries on predictors reports
-// TODO show wallet/vault pair ?
 
 export default async function AddressPage({
   params,
@@ -28,16 +27,6 @@ export default async function AddressPage({
         <div className="flex flex-row items-center gap-4 max-w-full w-full justify-center">
           <Address className="text-2xl md:text-4xl font-bold break-all" address={address} />
           <CopyAddressButton address={address} />
-        </div>
-      </section>
-
-      {/* Manifest Vote History (centered, even larger) */}
-      <section className="w-full flex flex-col items-center justify-center py-8 px-2 md:px-8 lg:px-0">
-        <div className="w-full max-w-[1800px]">
-          <h2 className="text-lg font-semibold text-primary text-center">Manifest Vote History</h2>
-          <Suspense fallback={<Skeleton className="h-64 w-full mt-6" />}>
-            <ManifestVoteHistory address={address} />
-          </Suspense>
         </div>
       </section>
 
@@ -73,6 +62,17 @@ export default async function AddressPage({
               </Suspense>
             </div>
           </div>
+        </div>
+      </section>
+
+
+      {/* Manifest Vote History (centered, even larger) */}
+      <section className="w-full flex flex-col items-center justify-center py-8 px-2 md:px-8 lg:px-0">
+        <div className="w-full max-w-[1800px]">
+          <h2 className="text-lg font-semibold text-primary text-center">Manifest Vote History</h2>
+          <Suspense fallback={<Skeleton className="h-64 w-full mt-6" />}>
+            <ManifestVoteHistory address={address} />
+          </Suspense>
         </div>
       </section>
     </main>

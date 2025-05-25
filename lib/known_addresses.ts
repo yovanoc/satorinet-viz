@@ -31,6 +31,10 @@ export const KNOWN_ADDRESSES = [
   },
   {
     name: "DEV",
+    address: "EXBtqLRnZwA6i2kcJ5fMCMwdWKXUNSA23Y",
+  },
+  {
+    name: "(OLD) DEV",
     address: "EXyiVYPxweAAxo8DhS7b17qBn8xLMTdLKn",
   },
   {
@@ -50,10 +54,13 @@ export const KNOWN_ADDRESSES = [
     address: "EZmixuqWYA5TVw4GeokCTHNFqmJf1gAjB8",
   },
   {
-    name: "MANAGERS",
+    name: "(OLD) MANAGERS",
     address: "EejWurUgGXPZZCs9mnKSmNLsTR9mHmLuSy",
   },
-
+{
+    name: "MANAGERS",
+    address: "ELePymwH8qasUw6bgAV7ywSfNbCQk7UJDZ",
+  },
   {
     name: "RESERVES",
     address: "EPjNqjManH8Qnd2HdbwRdW5dySgUvGYkJs",
