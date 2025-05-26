@@ -171,6 +171,28 @@ export const KNOWN_POOLS: Pool[] = [
       },
     ],
   },
+    {
+    name: "SpacePool",
+    color: "#071025",
+    address: "EeDa6uaD1YFjypvGkhCmFptFdZmgSe8pCW",
+    vault_address: "EbZ3dF9GxeqAvoHYjjae7RidxrTMUfcUpA",
+    staking_fees: [
+      {
+        fees: {
+          type: "percent",
+          percent: 0.01,
+        },
+        until: new Date("2025-05-28T00:00:00Z"),
+      },
+      {
+        fees: {
+          type: "percent",
+          percent: 0.5,
+        },
+        until: null,
+      },
+    ],
+  },
   // {
   //   name: 'Unknown',
   //   address: 'ETU972nu9naUffZuUkVFoHGpq2AZJdBjFi',
