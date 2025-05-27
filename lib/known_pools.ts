@@ -173,7 +173,7 @@ export const KNOWN_POOLS: Pool[] = [
   },
     {
     name: "SpacePool",
-    color: "#071025",
+    color: "#b91c1c",
     address: "EeDa6uaD1YFjypvGkhCmFptFdZmgSe8pCW",
     vault_address: "EbZ3dF9GxeqAvoHYjjae7RidxrTMUfcUpA",
     staking_fees: [
