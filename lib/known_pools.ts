@@ -172,7 +172,7 @@ export const KNOWN_POOLS: Pool[] = [
     ],
   },
     {
-    name: "SpacePool",
+    name: "Space",
     color: "#b91c1c",
     address: "EeDa6uaD1YFjypvGkhCmFptFdZmgSe8pCW",
     vault_address: "EbZ3dF9GxeqAvoHYjjae7RidxrTMUfcUpA",
@@ -208,5 +208,5 @@ export const KNOWN_POOLS: Pool[] = [
 export function mostWantedTop(pools: TopPoolWithName[]) {
   return pools
     .filter((pool) => pool.name && !["Managers/Dev", "Dev", "Reserves"].includes(pool.name))
-    .slice(0, 4);
+    .slice(0, 5);
 }
