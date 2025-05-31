@@ -1,10 +1,10 @@
-"use server";
-
 import ky from "ky";
 import { env } from "./env";
 import { unstable_cacheLife as cacheLife } from "next/cache";
 import Bottleneck from "bottleneck";
 import { redis } from "./redis";
+
+const DELAY = 450 * 1000; // 450 seconds in milliseconds
 
 export async function getSatoriPriceForDate(date: Date): Promise<number> {
   const cacheKey = `satori-price-${date.toISOString()}`;
@@ -20,18 +20,10 @@ export async function getSatoriPriceForDate(date: Date): Promise<number> {
 interface LiveCoinWatchResult {
   history: { date: number; rate: number }[];
 }
-async function getSatoriPriceForDateLocal(date: Date): Promise<number> {
-  "use cache";
-  cacheLife("max");
 
-  const delay = 450 * 1000; // 450 seconds in milliseconds
-  const end = date.getTime() + delay;
-  const start = date.getTime() - delay;
-
-  const res = await getSatoriPriceLivecoinwatch(start, end);
-
-  // Take the closest price to the time
-  const closest = res.history.reduce((prev, curr) =>
+export function getClosestPrice(result: LiveCoinWatchResult, date: Date): number {
+    // Take the closest price to the time
+  const closest = result.history.reduce((prev, curr) =>
     Math.abs(date.getTime() - curr.date) < Math.abs(date.getTime() - prev.date)
       ? curr
       : prev
@@ -39,7 +31,7 @@ async function getSatoriPriceForDateLocal(date: Date): Promise<number> {
 
   const diff = Math.abs(closest.date - date.getTime());
 
-  if (diff > delay) {
+  if (diff > DELAY) {
     console.error(
       `No price found for date: ${date} - ${JSON.stringify(
         closest
@@ -51,15 +43,23 @@ async function getSatoriPriceForDateLocal(date: Date): Promise<number> {
   return closest.rate;
 }
 
-const limiter = new Bottleneck({
-  reservoir: 40, // initial value
-  reservoirIncreaseAmount: 2,
-  reservoirIncreaseInterval: 1000, // must be divisible by 250
-  reservoirIncreaseMaximum: 40,
+async function getSatoriPriceForDateLocal(date: Date): Promise<number> {
+  "use cache";
+  cacheLife("max");
+  const end = date.getTime() + DELAY;
+  const start = date.getTime() - DELAY;
+  const res = await getSatoriPriceLivecoinwatch(start, end);
+  return getClosestPrice(res, date);
+}
 
-  // also use maxConcurrent and/or minTime for safety
-  maxConcurrent: 5,
-  minTime: 250, // pick a value that makes sense for your use case
+const limiter = new Bottleneck({
+  reservoir: 20,
+  reservoirIncreaseAmount: 2,
+  // ! must be divisible by 250
+  reservoirIncreaseInterval: 1000,
+  reservoirIncreaseMaximum: 20,
+  maxConcurrent: 3,
+  minTime: 250,
 });
 
 export async function getSatoriPriceLivecoinwatch(
