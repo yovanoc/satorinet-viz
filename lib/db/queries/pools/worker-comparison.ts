@@ -4,6 +4,112 @@ import { getPoolHistoricalData } from "./historical-data";
 import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
 import { applyFees, FeeResult, type AppliedFees } from "@/lib/pool-utils";
 import { getWorkerRewardAverage } from "../predictors/worker-reward-avg";
+import { generateDateRangeBackwards, isSameUTCDate } from "@/lib/date";
+import { env } from "@/lib/env";
+
+/**
+ * Validate data coverage across pools for the given date range
+ */
+function validateDataCoverage(
+  poolsData: Array<{ pool: TopPool; data: Array<{ date: string }> }>,
+  dateRange: Date[]
+): { missingDatesCount: number; poolsCoverage: Record<string, number> } {
+  const poolsCoverage: Record<string, number> = {};
+  let totalMissingDates = 0;
+
+  for (const { pool, data } of poolsData) {
+    const dataDateSet = new Set(
+      data.map((entry) => new Date(entry.date).toISOString().split("T")[0])
+    );
+
+    let missingForPool = 0;
+    for (const date of dateRange) {
+      const dateString = date.toISOString().split("T")[0];
+      if (!dataDateSet.has(dateString)) {
+        missingForPool++;
+      }
+    }
+
+    poolsCoverage[pool.address] = missingForPool;
+    totalMissingDates = Math.max(totalMissingDates, missingForPool);
+  }
+
+  return {
+    missingDatesCount: totalMissingDates,
+    poolsCoverage,
+  };
+}
+
+/**
+ * Find pool data for a specific date, returning null if not found
+ * Uses normalized date comparison for better matching
+ */
+function findPoolDataForDate(
+  poolData: Array<{
+    date: string;
+    max_delegated_stake: number;
+    earnings_per_staking_power: number;
+  }>,
+  targetDate: Date
+): {
+  date: string;
+  max_delegated_stake: number;
+  earnings_per_staking_power: number;
+} | null {
+  return (
+    poolData.find((entry) => isSameUTCDate(new Date(entry.date), targetDate)) ??
+    null
+  );
+}
+
+/**
+ * Get stake information for a date, with fallback strategies
+ */
+function getStakeForDate(
+  poolsData: Array<{
+    pool: TopPool;
+    data: Array<{
+      date: string;
+      max_delegated_stake: number;
+      earnings_per_staking_power: number;
+    }>;
+  }>,
+  targetDate: Date
+): { stake: number; source: "exact" | "fallback" | "none" } {
+  // First, try to find exact data for this date
+  for (const poolData of poolsData) {
+    const entry = findPoolDataForDate(poolData.data, targetDate);
+    if (entry && entry.max_delegated_stake > 0) {
+      return { stake: entry.max_delegated_stake, source: "exact" };
+    }
+  }
+
+  // Fallback: find the closest date with data (within 7 days)
+  const maxFallbackDays = 7;
+  for (let dayOffset = 1; dayOffset <= maxFallbackDays; dayOffset++) {
+    // Check both before and after the target date
+    for (const direction of [-1, 1]) {
+      const fallbackDate = new Date(targetDate);
+      fallbackDate.setUTCDate(
+        fallbackDate.getUTCDate() + dayOffset * direction
+      );
+
+      for (const poolData of poolsData) {
+        const entry = findPoolDataForDate(poolData.data, fallbackDate);
+        if (entry && entry.max_delegated_stake > 0) {
+          console.warn(
+            `Using fallback stake data from ${
+              fallbackDate.toISOString().split("T")[0]
+            } for ${targetDate.toISOString().split("T")[0]}`
+          );
+          return { stake: entry.max_delegated_stake, source: "fallback" };
+        }
+      }
+    }
+  }
+
+  return { stake: 0, source: "none" };
+}
 
 type EarningsData = {
   total_earnings: number;
@@ -64,34 +170,29 @@ export async function getPoolVsWorkerComparison(
     return [];
   }
 
-  const dates = new Array<Date>();
+  // Create a complete date range based on the requested parameters
+  const dates = generateDateRangeBackwards(date, days);
 
-  // Check if all pools have the same length, and same dates at the same places, that dates are one day apart each time, then populate the dates array
-  for (let i = 0; i < poolData.data.length; i++) {
-    const entry = poolData.data[i]!;
-    const currentDate = new Date(entry.date);
-    if (i === 0) {
-      dates.push(currentDate);
-    } else {
-      const lastDate = dates[dates.length - 1]!;
-      if (currentDate.getTime() !== lastDate.getTime() + 86400000) {
-        console.error("Dates are not one day apart.");
-        return [];
-      }
+  // Validate that we have sufficient data coverage
+  const dataCoverage = validateDataCoverage(poolsData, dates);
+  if (dataCoverage.missingDatesCount > days * 0.5) {
+    console.warn(
+      `High amount of missing data: ${dataCoverage.missingDatesCount}/${days} days missing. Consider using a different date range.`
+    );
+  }
 
-      // check every pool has the same date
-      for (const poolData of poolsData) {
-        const poolEntry = poolData.data[i];
-        if (poolEntry && poolEntry.date !== entry.date) {
-          console.error(
-            `Dates are not the same for all pools. Pool: ${poolData.pool.address} - Date: ${poolEntry.date} - Expected: ${entry.date}`
-          );
-          return [];
-        }
-      }
-
-      dates.push(currentDate);
-    }
+  // Log data coverage per pool for debugging
+  if (env.NODE_ENV === "development") {
+    console.log("Data coverage by pool:", {
+      totalDays: days,
+      coverage: Object.entries(dataCoverage.poolsCoverage).map(
+        ([address, missing]) => ({
+          pool: address.slice(0, 8) + "...", // Truncate for readability
+          missingDays: missing,
+          coveragePercent: Math.round(((days - missing) / days) * 100),
+        })
+      ),
+    });
   }
 
   let selfAmount = startingAmount; // Track self-managed compounded value
@@ -130,23 +231,23 @@ export async function getPoolVsWorkerComparison(
       getSatoriPriceForDate(dailyDate),
     ]);
     if (!workerRewardData) {
-      throw new Error(
-        `Failed to fetch worker reward data for date ${dailyDate}.`
-      );
-    }
-
-    const firstPoolEntry = poolsData[0]!.data.find(
-      (entry) => new Date(entry.date).getTime() === dailyDate.getTime()
-    );
-
-    if (!firstPoolEntry) {
-      console.error(
-        `No data found for pool ${pools[0]?.address} on date ${dailyDate}`
+      console.warn(
+        `No worker reward data for date ${dailyDate.toDateString()}. Skipping this date.`
       );
       continue;
     }
 
-    const stake = firstPoolEntry.max_delegated_stake;
+    // Get stake information with fallback strategies
+    const stakeInfo = getStakeForDate(poolsData, dailyDate);
+
+    if (stakeInfo.source === "none") {
+      console.warn(
+        `No stake data found for date ${dailyDate.toDateString()} even with fallbacks. Skipping this date.`
+      );
+      continue;
+    }
+
+    const stake = stakeInfo.stake;
     const rewardAvg = workerRewardData.reward_avg;
     const newRewards = Math.floor(selfAmount / stake) * rewardAvg;
     selfAmount += newRewards;
@@ -175,14 +276,16 @@ export async function getPoolVsWorkerComparison(
         continue;
       }
 
-      const entry = poolsData
-        .find((p) => p.pool.address === pool.address)!
-        .data.find(
-          (entry) => new Date(entry.date).getTime() === dailyDate.getTime()
-        );
+      const entry = findPoolDataForDate(
+        poolsData.find((p) => p.pool.address === pool.address)!.data,
+        dailyDate
+      );
+
       if (!entry) {
-        console.error(
-          `No data found for pool ${pool.address} on date ${dailyDate}`
+        console.warn(
+          `No data found for pool ${
+            pool.address
+          } on date ${dailyDate.toDateString()}. Skipping this pool for this date.`
         );
         continue;
       }
