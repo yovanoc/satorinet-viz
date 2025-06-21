@@ -109,6 +109,10 @@ export const KNOWN_ADDRESSES = [
     name: "(VERY OLD) RESERVES",
     address: "EbccivHNKBPRefS4PwcwTPSiLT68nnUmHc",
   },
+  {
+    name: "Echelon",
+    address: "ER1giCQnUMR2CA288dKxDMZTxkg1d8V1qH"
+  }
 ];
 
 // // check if there is multiple time the same address
