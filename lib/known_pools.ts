@@ -21,6 +21,7 @@ export type StakingFees = {
 
 export type Pool = {
   name: string;
+  url?: string;
   color: string;
   closed?: Date;
   address: string;
@@ -34,6 +35,7 @@ export const KNOWN_POOLS: Pool[] = [
   {
     name: "Satorinet",
     color: "#0072ff",
+    url: "https://www.satorinet-pools.com",
     address: "EcJRjWynLxVZcGSY5nXXXMmrQvddeLQRVY",
     vault_address: "EKKtydH4pbq86aJmiNuEVR4kP17exCcV25",
     staking_fees: [
@@ -101,6 +103,7 @@ export const KNOWN_POOLS: Pool[] = [
   {
     name: "Lightning",
     color: "#e738ef",
+    url: 'https://pool.lightningdc.com',
     address: "EJSHjPzLpRmubnRm9ARNDRtrqNum7EU3mK",
     vault_address: "Ef6VmYt6ywXxpMikjKWQCnETpSBbF4z7yw",
     staking_fees: [
@@ -181,6 +184,7 @@ export const KNOWN_POOLS: Pool[] = [
     {
     name: "Space",
     color: "#b91c1c",
+    url: 'https://space-pool.com',
     address: "EeDa6uaD1YFjypvGkhCmFptFdZmgSe8pCW",
     vault_address: "EbZ3dF9GxeqAvoHYjjae7RidxrTMUfcUpA",
     staking_fees: [

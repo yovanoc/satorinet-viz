@@ -10,6 +10,7 @@ import type { WorkerReward } from "@/lib/satorinet/central";
 import Link from "next/link";
 
 export interface PoolData {
+  url?: string;
   closed?: Date;
   workerReward: WorkerReward | null;
   pool_address: string;
@@ -81,6 +82,17 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({
               {poolData.pool_address}
             </Link>
           </p>
+          {poolData.url ? (
+            <p className="text-xs md:text-sm font-bold">
+              <a
+                href={poolData.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Pool URL: {poolData.url}
+              </a>
+            </p>
+          ) : null}
           <p className="text-xs md:text-sm font-bold">
             Staking Power Received:{" "}
             {poolData.total_staking_power.toLocaleString(undefined, {

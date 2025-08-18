@@ -107,6 +107,7 @@ async function PoolDataSection({ date, pool }: { date: Date; pool: TopPoolWithNa
     );
     const enrichedPoolData: PoolData = {
       workerReward,
+      url: knownPool?.url,
       worker_count: dateWorkerStats?.worker_count,
       worker_count_with_earnings: dateWorkerStats?.worker_count_with_earnings,
       total_reward: dateWorkerStats?.total_reward,
