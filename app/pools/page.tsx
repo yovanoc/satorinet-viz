@@ -59,7 +59,7 @@ export default async function PoolsPage({
       >
         <SectionCardsPools date={selectedDate} />
       </Suspense>
-      <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @7xl/main:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @7xl/main:grid-cols-4">
         <Suspense
           fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}
         >
