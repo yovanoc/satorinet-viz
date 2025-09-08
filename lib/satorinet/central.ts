@@ -160,7 +160,7 @@ const streamSchema = z.object({
   tags: z.nullable(z.string()),
   target: z.string(),
   total_vote: z.float64(),
-  url: z.nullable(z.url()),
+  url: z.nullable(z.string()), // TODO no more url?
   utc_offset: z.int32(),
   uuid: z.uuid(),
 });
@@ -188,6 +188,8 @@ export async function streamsSearch(): Promise<Stream[]> {
   const sortedStreams = parsedArray.data.toSorted(
     (a, b) => a.total_vote - b.total_vote
   );
+
+  console.log(`Fetched and parsed ${sortedStreams.length} streams`);
 
   return sortedStreams;
 }

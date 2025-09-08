@@ -23,7 +23,10 @@ async function getTopStreams(query?: string) {
         (s.oracle_alias?.toLowerCase().includes(q) ?? false)
     );
   }
-  return filtered.sort((a, b) => b.total_vote - a.total_vote).slice(0, 10);
+  return {
+    filtered: filtered.sort((a, b) => b.total_vote - a.total_vote).slice(0, 10),
+    total: streams.length,
+  };
 }
 
 export default async function StreamsPage({
@@ -38,6 +41,12 @@ export default async function StreamsPage({
     <div className="space-y-6">
       <div className="flex flex-col items-center justify-center min-h-[120px] px-2 sm:px-4 md:px-8 mt-2 sm:mt-4" style={{ minHeight: '18vh' }}>
         <form action="/streams" method="get" className="w-full max-w-2xl">
+          <div className="mb-4 text-center">
+            <h1 className="text-4xl sm:text-5xl font-extrabold mb-2">Streams</h1>
+            <p className="text-lg text-muted-foreground">
+              Explore real-time data streams from the Satori Network. Total streams: {streams.total}
+            </p>
+          </div>
           <div className="flex items-center gap-0 rounded-2xl shadow-lg border-2 border-primary/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30 transition-all bg-card">
             <Input
               name="q"
@@ -53,7 +62,7 @@ export default async function StreamsPage({
         </form>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-2 sm:px-4 md:px-8">
-        {streams.map((stream) => (
+        {streams.filtered.map((stream) => (
           <Link key={stream.uuid} href={`/streams/${stream.uuid}`}>
             <Card className="hover:shadow-lg transition-shadow cursor-pointer group border-primary/30 border-2 bg-gradient-to-t from-primary/5 to-card dark:bg-card">
               <CardHeader>
