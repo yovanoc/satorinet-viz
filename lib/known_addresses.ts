@@ -116,6 +116,10 @@ export const KNOWN_ADDRESSES = [
   {
     name: 'Community Marketing',
     address: 'ELZuGNaAe4yASU2nj6dnBKNBNK1dHrtMhU'
+  },
+  {
+    name: 'New Managers',
+    address: 'EPNopqqMfHJ1Xc43i6ZAfThYeSewZbhcKu'
   }
 ];
 
