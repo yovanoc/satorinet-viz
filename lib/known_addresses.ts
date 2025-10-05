@@ -118,8 +118,12 @@ export const KNOWN_ADDRESSES = [
     address: 'ELZuGNaAe4yASU2nj6dnBKNBNK1dHrtMhU'
   },
   {
-    name: 'New Managers',
+    name: 'New MANAGERS',
     address: 'EPNopqqMfHJ1Xc43i6ZAfThYeSewZbhcKu'
+  },
+  {
+    name: 'New DEV',
+    address: 'EcuCNLuZqR1PosBSVQ19fqtG4zPzgZMSdi'
   }
 ];
 
