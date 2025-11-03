@@ -124,6 +124,10 @@ export const KNOWN_ADDRESSES = [
   {
     name: 'New DEV',
     address: 'EcuCNLuZqR1PosBSVQ19fqtG4zPzgZMSdi'
+  },
+  {
+    name: 'ECHELON CREATORS/MANAGERS/COMMUNITY_MARKETING',
+    address: 'EHrUDKPCEQ24CqgoDkgg5sjVRDK7CU5gEj'
   }
 ];
 
