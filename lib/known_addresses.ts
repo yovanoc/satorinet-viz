@@ -110,7 +110,7 @@ export const KNOWN_ADDRESSES = [
     address: "EbccivHNKBPRefS4PwcwTPSiLT68nnUmHc",
   },
   {
-    name: "Echelon",
+    name: "(OLD) ECHELON",
     address: "ER1giCQnUMR2CA288dKxDMZTxkg1d8V1qH"
   },
   {
@@ -126,7 +126,7 @@ export const KNOWN_ADDRESSES = [
     address: 'EcuCNLuZqR1PosBSVQ19fqtG4zPzgZMSdi'
   },
   {
-    name: 'ECHELON CREATORS/MANAGERS/COMMUNITY_MARKETING',
+    name: 'ECHELON',
     address: 'EHrUDKPCEQ24CqgoDkgg5sjVRDK7CU5gEj'
   }
 ];
