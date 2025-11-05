@@ -1,6 +1,6 @@
 import ky from "ky";
 import { env } from "./env";
-import { unstable_cacheLife as cacheLife } from "next/cache";
+import { cacheLife } from "next/cache";
 import Bottleneck from "bottleneck";
 import { redis } from "./redis";
 

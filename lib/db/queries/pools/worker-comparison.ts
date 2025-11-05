@@ -1,4 +1,4 @@
-import { unstable_cacheLife as cacheLife } from "next/cache";
+import { cacheLife } from "next/cache";
 import { KNOWN_POOLS, type Pool, type TopPool } from "@/lib/known_pools";
 import { getPoolHistoricalData } from "./historical-data";
 import { getSatoriPriceForDate } from "@/lib/livecoinwatch";

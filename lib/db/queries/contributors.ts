@@ -1,5 +1,5 @@
 import { sql, desc, and } from "drizzle-orm";
-import { unstable_cacheLife as cacheLife } from "next/cache";
+import { cacheLife } from "next/cache";
 import { db } from "..";
 import { dailyContributorAddress } from "../schema";
 

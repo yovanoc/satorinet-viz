@@ -282,7 +282,7 @@ export function PoolComparisonChart({ data }: PoolComparisonChartProps) {
           padding={{ left: 20, right: 20 }}
         />
         <YAxis
-          domain={([dataMin, dataMax]: [number, number]) => {
+          domain={([dataMin, dataMax]) => {
             const range = dataMax - dataMin;
             if (!isFinite(range) || range === 0)
               return [dataMin - 1, dataMax + 1];

@@ -1,5 +1,5 @@
 import type { Pool } from "@/lib/known_pools";
-import { unstable_cacheLife as cacheLife } from "next/cache";
+import { cacheLife } from "next/cache";
 import { getPoolHistoricalData } from "./historical-data";
 
 export async function getPoolsHistoricalEarnings(

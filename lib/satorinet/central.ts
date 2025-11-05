@@ -1,8 +1,15 @@
 import ky from "ky";
-import { unstable_cacheLife as cacheLife } from "next/cache";
-import * as z from "@zod/mini";
+import { cacheLife } from "next/cache";
+import * as z from "zod/mini";
 
 const BASE_URL = "https://stage.satorinet.io";
+
+const client = ky.create({
+  prefixUrl: BASE_URL,
+  retry: { limit: 5, methods: ["get", "post"] },
+  timeout: 10_000,
+  keepalive: true,
+});
 
 // TODO https://stage.satorinet.io/api/v0/content/created/get
 // TODO getManifestVote - /votes_for/manifest
@@ -12,7 +19,7 @@ const BASE_URL = "https://stage.satorinet.io";
 //   'use cache';
 //   cacheLife("weeks");;
 //
-//   return ky.get(`${BASE_URL}/pool/size/get/${address}`, { retry: 3 }).json<PoolSize>();
+//   return client.get(`pool/size/get/${address}`).json<PoolSize>();
 // }
 
 export type WorkerReward = {
@@ -22,10 +29,15 @@ export async function getWorkerReward(address: string) {
   "use cache";
   cacheLife("hours");
 
-  const res = await ky
-    .get(`${BASE_URL}/pool/worker/reward/get/${address}`, { retry: 3 })
-    .json<[WorkerReward]>();
-  return res[0];
+  try {
+    const res = await ky
+      .get(`${BASE_URL}/pool/worker/reward/get/${address}`, { retry: 3 })
+      .json<[WorkerReward]>();
+    return res[0];
+  } catch (e) {
+    console.error("Error fetching worker reward for", address, e);
+    return { offer: 0 };
+  }
 }
 
 export async function getMiningMode(address: string): Promise<boolean> {
@@ -60,17 +72,26 @@ export async function getDailyCounts(): Promise<DailyCounts> {
   "use cache";
   cacheLife("days");
 
-  const res = await ky.get(`${BASE_URL}/daily/counts`, { retry: 3 }).json();
-  const parsed = dailyCountsSchema.safeParse(res);
-  if (!parsed.success) {
-    console.error("Failed to parse daily counts", parsed.error);
+  try {
+    const res = await client.get(`daily/counts`).json();
+    const parsed = dailyCountsSchema.safeParse(res);
+    if (!parsed.success) {
+      console.error("Failed to parse daily counts", parsed.error);
+      return {
+        neuronCount: "0",
+        oracleCount: "0",
+        predictionCount: "0",
+      };
+    }
+    return parsed.data;
+  } catch (e) {
+    console.error("Error fetching daily counts", e);
     return {
       neuronCount: "0",
       oracleCount: "0",
       predictionCount: "0",
     };
   }
-  return parsed.data;
 }
 
 const dailyPredictorStatsSchema = z.object({
@@ -93,17 +114,32 @@ export async function getDailyPredictorStats(
   cacheLife("hours");
 
   if (date) {
-    const res = await ky
-      .get(
-        `${BASE_URL}/reports/daily/stats/predictors/${
-          date.toISOString().split("T")[0]
-        }`,
-        { retry: 3 }
-      )
-      .json();
-    const parsed = dailyPredictorStatsSchema.safeParse(res);
-    if (!parsed.success) {
-      console.error("Failed to parse daily predictor stats", parsed.error);
+    try {
+      const res = await ky
+        .get(
+          `${BASE_URL}/reports/daily/stats/predictors/${
+            date.toISOString().split("T")[0]
+          }`,
+          { retry: 3 }
+        )
+        .json();
+      const parsed = dailyPredictorStatsSchema.safeParse(res);
+      if (!parsed.success) {
+        console.error("Failed to parse daily predictor stats", parsed.error);
+        return {
+          "Average Score of Delegated-staked Neurons": 0,
+          "Average Score of Self-staked Neurons": 0,
+          "Competing Neurons": 0,
+          "Current Neuron Version": "",
+          "Current Staking Requirement": 0,
+          Date: "",
+          "Delegated-staked Neurons": 0,
+          "Self-staked Neurons": 0,
+        };
+      }
+      return parsed.data;
+    } catch (e) {
+      console.error("Error fetching daily predictor stats", e);
       return {
         "Average Score of Delegated-staked Neurons": 0,
         "Average Score of Self-staked Neurons": 0,
@@ -115,7 +151,6 @@ export async function getDailyPredictorStats(
         "Self-staked Neurons": 0,
       };
     }
-    return parsed.data;
   }
 
   const res = await ky
@@ -173,7 +208,7 @@ export async function streamsSearch(): Promise<Stream[]> {
   "use cache";
   cacheLife("minutes");
 
-  const res = await ky.post(`${BASE_URL}/streams/search`, { retry: 3 }).text();
+  const res = await client.post(`streams/search`).text();
 
   const parsed = safeParseAndSanitize(res);
 
@@ -223,15 +258,13 @@ export async function getSubscribers(): Promise<unknown> {
   return res;
 }
 
-
-const streamsPubSubSchema = z.record(
-  z.string(),
-  z.array(z.string())
-);
+const streamsPubSubSchema = z.record(z.string(), z.array(z.string()));
 
 export type StreamsPubSub = z.infer<typeof streamsPubSubSchema>;
 
-export async function getStreamsSubscribers(streams: string[]): Promise<StreamsPubSub> {
+export async function getStreamsSubscribers(
+  streams: string[]
+): Promise<StreamsPubSub> {
   "use cache";
   cacheLife("seconds");
 
@@ -250,7 +283,9 @@ export async function getStreamsSubscribers(streams: string[]): Promise<StreamsP
   return parsed.data;
 }
 
-export async function getStreamsPublishers(streams: string[]): Promise<StreamsPubSub> {
+export async function getStreamsPublishers(
+  streams: string[]
+): Promise<StreamsPubSub> {
   "use cache";
   cacheLife("seconds");
 
@@ -278,7 +313,7 @@ export async function getDataManagerPortByAddress(
   const res = await ky
     .get(`${BASE_URL}/api/v0/datamanager/port/get/${address}`, { retry: 3 })
     .text();
-    console.log(res);
+  console.log(res);
   const num = parseInt(res);
   return Number.isNaN(num) ? -1 : num;
 }

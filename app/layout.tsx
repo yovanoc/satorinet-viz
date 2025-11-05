@@ -7,6 +7,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Montserrat, Fira_Code } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
+import { Suspense } from "react";
 
 const sans = Montserrat({
   variable: "--font-sans",
@@ -54,7 +55,9 @@ export default function RootLayout({
                     {children}
                   </div>
                 </div>
-                <SiteFooter />
+                <Suspense>
+                  <SiteFooter />
+                </Suspense>
               </SidebarInset>
             </SidebarProvider>
           </main>

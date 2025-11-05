@@ -8,7 +8,7 @@ import {
   PoolsStakingComparisonChart,
   type Entry,
 } from "./pools-staking-comparison-chart";
-import { unstable_cacheLife as cacheLife } from "next/cache";
+import { cacheLife } from "next/cache";
 import { getPoolFeesForDate } from "@/lib/pool-utils";
 import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
 import { getPoolsHistoricalEarnings } from "@/lib/db/queries/pools/historical-earnings";

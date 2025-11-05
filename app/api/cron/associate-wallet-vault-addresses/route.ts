@@ -3,8 +3,6 @@ import { db } from "@/lib/db";
 import { getAllWalletVaults, saveWalletVaults } from "@/lib/evr/wallet-vault";
 import { redis } from "@/lib/redis";
 
-export const dynamic = "force-dynamic";
-
 async function handler() {
   await associateWalletVaultAddresses();
   return new Response("OK");

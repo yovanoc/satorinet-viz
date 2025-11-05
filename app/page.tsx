@@ -19,12 +19,16 @@ import { getDailyWorkerCounts } from "@/lib/db/queries/predictors/worker-count";
 import { getManifests } from "@/lib/db/queries/manifest";
 
 async function DailyWorkerCountsCard() {
+  'use cache';
+
   const date = new Date();
   const dailyCounts = await getDailyWorkerCounts(date, 90);
   return <ChartAreaInteractive dailyCounts={dailyCounts} />;
 }
 
 async function DailyManifestCard() {
+  'use cache';
+
   const date = new Date();
   const all = await getManifests(date, 90);
   const data: React.ComponentProps<typeof StackedAreaManifest>["manifests"] =

@@ -5,9 +5,7 @@ import {
 import { extractTransfersFromVout, getEVRTransaction } from "@/lib/evr/tx";
 import { KNOWN_ADDRESSES } from "@/lib/known_addresses";
 import { redis } from "@/lib/redis";
-import { electrumxClient, type TxHistory } from "@/lib/satorinet/electrumx";
-
-export const dynamic = "force-dynamic";
+import { getElectrumxClient, type TxHistory } from "@/lib/satorinet/electrumx";
 
 async function handler() {
   const burnAddress = KNOWN_ADDRESSES.find(
@@ -19,10 +17,9 @@ async function handler() {
   }
 
   try {
-    await electrumxClient.connectToServer();
+    const electrumxClient = await getElectrumxClient();
     const txHistory = await electrumxClient.getTransactionHistory(burnAddress);
     await handleHistory(txHistory);
-    electrumxClient.disconnect();
 
     return new Response(txHistory.length.toString());
   } catch (error) {

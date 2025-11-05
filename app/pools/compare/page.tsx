@@ -1,10 +1,12 @@
 import MultiPoolWorkerComparison from "@/components/pools/multi-pool-worker-comparison";
 import { getTodayMidnightUTC } from "@/lib/date";
 import { getPoolAndDate } from "@/lib/get-pool-and-date-params";
-
-export const revalidate = 3_600; // 1 hour
+import { cacheLife } from "next/cache";
 
 export default async function PoolsCompare() {
+  'use cache';
+  cacheLife('hours');
+
   const date = getTodayMidnightUTC();
   const { topPoolsWithNames } = await getPoolAndDate({});
   return (

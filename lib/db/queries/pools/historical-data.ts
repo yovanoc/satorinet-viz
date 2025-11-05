@@ -1,5 +1,5 @@
 import { sql, and, or, eq, gte, lte } from "drizzle-orm";
-import { unstable_cacheLife as cacheLife } from "next/cache";
+import { cacheLife } from "next/cache";
 import { db } from "../..";
 import { dailyPredictorAddress, dailyContributorAddress } from "../../schema";
 import { KNOWN_POOLS, type TopPool } from "@/lib/known_pools";

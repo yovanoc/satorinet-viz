@@ -1,5 +1,5 @@
 import { and, or, eq, gte, lte, sql } from "drizzle-orm";
-import { unstable_cacheLife as cacheLife } from "next/cache";
+import { cacheLife } from "next/cache";
 import { db } from "../..";
 import { dailyPredictorAddress } from "../../schema";
 

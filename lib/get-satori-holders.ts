@@ -1,5 +1,5 @@
 import { classifyAssetHolders, getAllSatoriHolders } from "@/lib/satorinet/holders";
-import { unstable_cacheLife as cacheLife } from "next/cache";
+import { cacheLife } from "next/cache";
 import { saveSatoriEvrHolders } from "./satorinet/holders_cache";
 
 export async function getSatoriHolders() {

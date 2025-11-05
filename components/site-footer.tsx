@@ -1,4 +1,6 @@
-export function SiteFooter() {
+export async function SiteFooter() {
+  'use cache';
+
   const lastUpdated = new Date().toUTCString();
 
   return (

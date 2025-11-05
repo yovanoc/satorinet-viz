@@ -1,5 +1,5 @@
 import ky from 'ky';
-import { unstable_cacheLife as cacheLife } from 'next/cache';
+import { cacheLife } from 'next/cache';
 
 const ALCHEMY_URL = 'https://base-mainnet.g.alchemy.com/v2/wdwSzh0cONBj81_XmHWvODOBq-wuQiAi';
 

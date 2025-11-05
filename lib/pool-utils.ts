@@ -4,7 +4,7 @@ export function getPoolFeesForDate(pool: Pool, date: Date) {
   if (!pool.staking_fees) return null;
   const fees = pool.staking_fees.find((fee) => {
     if (fee.until === null) return true;
-    return new Date(fee.until) >= date;
+    return fee.until >= date;
   });
 
   return fees ?? null;

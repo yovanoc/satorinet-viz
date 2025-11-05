@@ -2,7 +2,7 @@ import { KNOWN_POOLS, type TopPool } from "@/lib/known_pools";
 import { isValidAddress } from "./evr";
 import { getTopPools } from "./db/queries/contributors";
 import { getVaultsForWallet } from "./evr/wallet-vault";
-import { unstable_cacheLife as cacheLife } from "next/cache";
+import { cacheLife } from "next/cache";
 
 export type TopPoolWithName = TopPool & { name?: string };
 
@@ -22,11 +22,13 @@ export async function getPoolAndDate({
   "use cache";
   cacheLife("max");
 
+  const now = new Date();
+
   let selectedDate = new Date(
     Date.UTC(
-      new Date().getUTCFullYear(),
-      new Date().getUTCMonth(),
-      new Date().getUTCDate(),
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
       0,
       0,
       0
@@ -76,7 +78,11 @@ export async function getPoolAndDate({
 
   const selectedPool = topPoolsWithNames.find(
     (pool) => pool.address === selectedPoolAddress
-  )!;
+  );
+
+  if (!selectedPool) {
+    throw new Error("Selected pool not found");
+  }
 
   return {
     selectedPool,

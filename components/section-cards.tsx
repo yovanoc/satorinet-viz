@@ -12,6 +12,8 @@ import { getSatoriHolders } from "@/lib/get-satori-holders";
 import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
 
 export async function SectionCards() {
+  'use cache';
+
   const [price, dailyCounts, satoriHolders] =
     await Promise.all([
       getSatoriPriceForDate(new Date()),

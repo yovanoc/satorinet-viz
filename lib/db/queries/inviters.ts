@@ -1,5 +1,5 @@
 import { sql, eq } from "drizzle-orm";
-import { unstable_cacheLife as cacheLife } from "next/cache";
+import { cacheLife } from "next/cache";
 import { db } from "..";
 
 export async function getInvitersForDate(date: Date) {
