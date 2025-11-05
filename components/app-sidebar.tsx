@@ -65,10 +65,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
+              className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
               <Link href="/">
-                <IconInnerShadowTop className="!size-5" />
+                <IconInnerShadowTop className="size-5!" />
                 <span className="text-base font-semibold">Satori Viz</span>
               </Link>
             </SidebarMenuButton>
@@ -76,9 +76,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavStreams items={data.streams} />
-        <NavPools items={data.pools} />
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <NavMain items={data.navMain} />
+          <NavStreams items={data.streams} />
+          <NavPools items={data.pools} />
+        </React.Suspense>
       </SidebarContent>
     </Sidebar>
   );

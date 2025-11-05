@@ -52,8 +52,8 @@ export default async function AddressPage({
             <div
               className={
                 baseAddress
-                  ? "sm:col-span-5 border rounded-lg p-8 flex flex-col items-start bg-card min-w-[320px]"
-                  : "border rounded-lg p-8 flex flex-col items-start bg-card min-w-[320px]"
+                  ? "sm:col-span-5 border rounded-lg p-8 flex flex-col items-start bg-card min-w-xs"
+                  : "border rounded-lg p-8 flex flex-col items-start bg-card min-w-xs"
               }
             >
               <h3 className="text-md font-semibold text-primary mb-4">Evrmore Chain</h3>
