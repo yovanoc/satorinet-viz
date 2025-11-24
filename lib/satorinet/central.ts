@@ -208,7 +208,14 @@ export async function streamsSearch(): Promise<Stream[]> {
   "use cache";
   cacheLife("minutes");
 
-  const res = await client.post(`streams/search`).text();
+  let res: string;
+
+  try {
+    res = await client.post(`streams/search`).text();
+  } catch (e) {
+    console.error("Error fetching streams search", e);
+    return [];
+  }
 
   const parsed = safeParseAndSanitize(res);
 

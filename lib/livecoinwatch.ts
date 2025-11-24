@@ -5,6 +5,7 @@ import Bottleneck from "bottleneck";
 import { redis } from "./redis";
 
 const DELAY = 450 * 1000; // 450 seconds in milliseconds
+const MAX_RETRIES = 10;
 
 export async function getSatoriPriceForDate(date: Date): Promise<number> {
   const cacheKey = `satori-price-${date.toISOString()}`;
@@ -21,7 +22,12 @@ interface LiveCoinWatchResult {
   history: { date: number; rate: number }[];
 }
 
-export function getClosestPrice(result: LiveCoinWatchResult, date: Date): number {
+function getClosestPrice(
+  result: LiveCoinWatchResult,
+  date: Date,
+  allowedDiff = DELAY,
+  attempt?: number
+): number {
     // Take the closest price to the time
   const closest = result.history.reduce((prev, curr) =>
     Math.abs(date.getTime() - curr.date) < Math.abs(date.getTime() - prev.date)
@@ -31,11 +37,11 @@ export function getClosestPrice(result: LiveCoinWatchResult, date: Date): number
 
   const diff = Math.abs(closest.date - date.getTime());
 
-  if (diff > DELAY) {
+  if (diff > allowedDiff) {
     console.error(
-      `No price found for date: ${date} - ${JSON.stringify(
+      `No price found for date: ${date} - attempt ${attempt ?? "n/a"} - ${JSON.stringify(
         closest
-      )} - diff ${diff} ms`
+      )} - diff ${diff} ms (allowed ${allowedDiff} ms)`
     );
     throw new Error("No price found");
   }
@@ -46,10 +52,21 @@ export function getClosestPrice(result: LiveCoinWatchResult, date: Date): number
 async function getSatoriPriceForDateLocal(date: Date): Promise<number> {
   "use cache";
   cacheLife("max");
-  const end = date.getTime() + DELAY;
-  const start = date.getTime() - DELAY;
-  const res = await getSatoriPriceLivecoinwatch(start, end);
-  return getClosestPrice(res, date);
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const windowSize = DELAY * Math.pow(2, attempt);
+    const end = date.getTime() + windowSize;
+    const start = date.getTime() - windowSize;
+    const res = await getSatoriPriceLivecoinwatch(start, end);
+
+    if (res.history.length > 0) {
+      return getClosestPrice(res, date, windowSize, attempt + 1);
+    }
+  }
+
+  console.error(
+    `LiveCoinWatch history empty after ${MAX_RETRIES} attempts for ${date.toISOString()}`
+  );
+  throw new Error("No price history available");
 }
 
 const limiter = new Bottleneck({

@@ -7,9 +7,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   cacheComponents: true,
   experimental: {
-    webpackBuildWorker: true,
     parallelServerCompiles: true,
-    turbopackFileSystemCacheForDev: true
+    turbopackFileSystemCacheForDev: true,
+    // turbopackFileSystemCacheForBuild: true
   },
   logging: {
     fetches: {
