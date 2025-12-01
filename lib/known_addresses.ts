@@ -128,6 +128,10 @@ export const KNOWN_ADDRESSES = [
   {
     name: 'ECHELON',
     address: 'EHrUDKPCEQ24CqgoDkgg5sjVRDK7CU5gEj'
+  },
+  {
+    name: "New Association",
+    address: "ERDJmNCumVpB2TEURZShQYKN4yw2zftfYQ"
   }
 ];
 

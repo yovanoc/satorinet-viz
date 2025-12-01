@@ -193,7 +193,7 @@ export async function getAddressDataOnElectrumx(
       txHistory = [];
     }
 
-    const len = 15;
+    const len = 20;
 
     // If txHistory is empty (e.g. error/too large), fall back to UTXOs for history display
     let txHashes: string[] = [];
