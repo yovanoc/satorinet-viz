@@ -42,8 +42,8 @@ async function ContributorsAndPredictors({
     getPredictors(pool.address, pool.vault_address, date),
   ]);
 
-  const topContributors = contributors.slice(0, 20);
-  const topPredictors = predictors.slice(0, 20);
+  const topContributors = contributors;
+  const topPredictors = predictors;
 
   return (
     <div className="flex flex-col gap-6 px-4 lg:px-6">
