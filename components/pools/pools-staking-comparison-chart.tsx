@@ -164,13 +164,16 @@ export function PoolsStakingComparisonChart({
               labelFormatter={(value) => {
                 return value.toLocaleDateString();
               }}
-              formatter={(value, _name, props) => {
-                const entry: Entry = props.payload;
+              formatter={(value, _name, item: { payload?: Entry; color?: string }) => {
+                if (!item.payload) {
+                  return [];
+                }
+                const entry: Entry = item.payload;
                 const allPools = entry.poolEarnings;
 
                 // TODO didn't find a better way to get the pool data
                 const poolData = Object.values(allPools).find(
-                  (pool) => pool.pool.color === props.color
+                  (pool) => pool.pool.color === item.color
                 );
 
                 if (!poolData) {
@@ -241,6 +244,7 @@ export function PoolsStakingComparisonChart({
             />
             <Legend
               content={(props) => {
+                const { ref, ...legendProps } = props;
                 const customPayload = pools
                   .filter((p) => p.vault_address !== undefined)
                   .map((pool) => {
@@ -304,7 +308,7 @@ export function PoolsStakingComparisonChart({
                     };
                   });
 
-                return <DefaultLegendContent {...props} payload={customPayload} />;
+                return <DefaultLegendContent {...legendProps} payload={customPayload} />;
               }}
             />
 

@@ -187,7 +187,7 @@ const streamSchema = z.object({
   oracle_pubkey: z.string(),
   predicting_id: z.nullable(z.int32()),
   predictors_count: z.int32(),
-  sanctioned: z.int32(),
+  sanctioned: z.nullable(z.int32()),
   source: z.string(),
   stream: z.string(),
   stream_created_ts: z.coerce.date(),

@@ -26,7 +26,7 @@ export default async function StreamDetailPage({
             <div className="flex flex-wrap items-center gap-2 mb-1 min-h-[2.5rem] w-full">
               <div className="flex flex-wrap gap-2 w-full">
                 <Badge variant="secondary" className="uppercase tracking-wide text-xs">{stream.datatype || "Missing Data Type"}</Badge>
-                {stream.sanctioned > 0 && <Badge variant="destructive">Sanctioned</Badge>}
+                {stream.sanctioned && stream.sanctioned > 0 && <Badge variant="destructive">Sanctioned</Badge>}
                 {stream.tags && stream.tags.split(',').map((tag: string) => (
                   <Badge key={tag.trim()} variant="outline">{tag.trim()}</Badge>
                 ))}
