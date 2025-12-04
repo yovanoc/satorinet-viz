@@ -2,10 +2,44 @@ import { KNOWN_POOLS, type Pool } from "./known_pools";
 
 export function getPoolFeesForDate(pool: Pool, date: Date) {
   if (!pool.staking_fees) return null;
-  const fees = pool.staking_fees.find((fee) => {
+  let fees = pool.staking_fees.find((fee) => {
     if (fee.until === null) return true;
     return fee.until >= date;
   });
+
+  if (fees?.fees && pool.temporary_fee_reductions) {
+    const reductions = pool.temporary_fee_reductions.filter(
+      (reduction) => reduction.from <= date && reduction.until >= date
+    );
+    if (reductions.length > 0) {
+      // TODO we handle temporary fee reductions only for percent fees for now
+      if (fees.fees.type === "percent") {
+        const totalReduction = reductions.reduce(
+          (acc, reduction) => acc + reduction.percent,
+          0
+        );
+        if (Array.isArray(fees.fees.percent)) {
+          fees = {
+            ...fees,
+            fees: {
+              ...fees.fees,
+              percent: fees.fees.percent.map((p) =>
+                Math.max(0, p - totalReduction)
+              ),
+            },
+          };
+        } else {
+          fees = {
+            ...fees,
+            fees: {
+              ...fees.fees,
+              percent: Math.max(0, fees.fees.percent - totalReduction),
+            },
+          };
+        }
+      }
+    }
+  }
 
   return fees ?? null;
 }
@@ -191,4 +225,11 @@ export function getFeeRange(
 
 export function applyFeePercent(num: number, fee: number): number {
   return num * (1 - fee);
+}
+
+export function getActiveTemporaryReductions(pool: Pool, date: Date) {
+  if (!pool.temporary_fee_reductions) return [];
+  return pool.temporary_fee_reductions.filter(
+    (reduction) => reduction.from <= date && reduction.until >= date
+  );
 }

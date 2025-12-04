@@ -19,6 +19,13 @@ export type StakingFees = {
   until: Date | null;
 };
 
+export type TemporaryFeeReduction = {
+  percent: number;
+  reason: string;
+  from: Date;
+  until: Date;
+};
+
 export type Pool = {
   name: string;
   url?: string;
@@ -27,6 +34,7 @@ export type Pool = {
   address: string;
   vault_address?: string;
   staking_fees?: StakingFees[];
+  temporary_fee_reductions?: TemporaryFeeReduction[];
 };
 
 export type TopPool = Pick<Pool, "address" | "vault_address">;
@@ -75,6 +83,20 @@ export const KNOWN_POOLS: Pool[] = [
         until: null,
       },
     ],
+    temporary_fee_reductions: [
+      {
+        percent: 0.25,
+        reason: "Power Outage Compensation",
+        from: new Date("2025-09-13T00:00:00Z"),
+        until: new Date("2025-09-15T15:00:00Z"),
+      },
+      {
+        percent: 0.05,
+        reason: "2025 Christmas Bonus",
+        from: new Date("2025-12-05T00:00:00Z"),
+        until: new Date("2026-01-05T15:00:00Z"),
+      }
+    ]
   },
   {
     name: "Cortex",

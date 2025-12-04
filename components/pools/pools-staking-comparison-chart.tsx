@@ -11,10 +11,11 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import type { Pool } from "@/lib/known_pools";
-import { ComposedChart, Area, XAxis, YAxis, Tooltip, Legend } from "recharts";
+import { ComposedChart, Area, XAxis, YAxis, Tooltip, Legend, DefaultLegendContent } from "recharts";
 import {
   applyFeePercent,
   applyFees,
+  getActiveTemporaryReductions,
   getFeeRange,
   getPoolFeesForDate,
 } from "@/lib/pool-utils";
@@ -220,63 +221,91 @@ export function PoolsStakingComparisonChart({
                   finalName += ` (${(min * 100).toFixed(2)}%)`;
                 }
 
+                const activeReductions = getActiveTemporaryReductions(
+                  pool,
+                  entry.date
+                );
+                if (activeReductions.length > 0) {
+                  const totalReduction = activeReductions.reduce(
+                    (acc, r) => acc + r.percent,
+                    0
+                  );
+                  const reasons = activeReductions
+                    .map((r) => r.reason)
+                    .join(", ");
+                  finalName += ` 🎁 -${(totalReduction * 100).toFixed(0)}% (${reasons})`;
+                }
+
                 return [valueStr, finalName];
               }}
             />
             <Legend
-              payload={pools
-                .filter((p) => p.vault_address !== undefined)
-                .map((pool) => {
-                  const actualDate = new Date();
+              content={(props) => {
+                const customPayload = pools
+                  .filter((p) => p.vault_address !== undefined)
+                  .map((pool) => {
+                    const actualDate = new Date();
 
-                  const poolInfo = poolInfos[pool.address];
+                    const poolInfo = poolInfos[pool.address];
 
-                  if (!poolInfo) {
-                    return {
-                      value: `${pool.name} (0%)`,
-                      type: "circle",
-                      color: pool.color,
-                    };
-                  }
+                    if (!poolInfo) {
+                      return {
+                        value: `${pool.name} (0%)`,
+                        type: "circle" as const,
+                        color: pool.color,
+                      };
+                    }
 
-                  if (pool.closed && pool.closed < actualDate) {
+                    if (pool.closed && pool.closed < actualDate) {
+                      return {
+                        value: `${
+                          pool.name
+                        } (CLOSED since ${pool.closed.toLocaleDateString()})`,
+                        type: "circle" as const,
+                        color: pool.color,
+                      };
+                    }
+
+                    const { min, max } = getFeeRange(
+                      pool,
+                      actualDate,
+                      poolInfo.last_gross_rewards,
+                      satoriPrice,
+                      fullStakeAmount
+                    );
+
+                    const feeDisplay =
+                      min !== max
+                        ? `${(min * 100).toFixed(2)}% - ${(max * 100).toFixed(
+                            2
+                          )}%`
+                        : `${(min * 100).toFixed(2)}%`;
+
+                    const activeReductions = getActiveTemporaryReductions(
+                      pool,
+                      actualDate
+                    );
+                    const reductionDisplay =
+                      activeReductions.length > 0
+                        ? ` 🎁 -${(activeReductions.reduce((acc, r) => acc + r.percent, 0) * 100).toFixed(0)}%`
+                        : "";
+
                     return {
                       value: `${
                         pool.name
-                      } (CLOSED since ${pool.closed.toLocaleDateString()})`,
-                      type: "circle",
+                      } (${feeDisplay})${reductionDisplay} (Mean: ${poolInfo.mean.toLocaleString(
+                        undefined,
+                        {
+                          maximumFractionDigits: 8,
+                        }
+                      )})`,
+                      type: "circle" as const,
                       color: pool.color,
                     };
-                  }
+                  });
 
-                  const { min, max } = getFeeRange(
-                    pool,
-                    actualDate,
-                    poolInfo.last_gross_rewards,
-                    satoriPrice,
-                    fullStakeAmount
-                  );
-
-                  const feeDisplay =
-                    min !== max
-                      ? `${(min * 100).toFixed(2)}% - ${(max * 100).toFixed(
-                          2
-                        )}%`
-                      : `${(min * 100).toFixed(2)}%`;
-
-                  return {
-                    value: `${
-                      pool.name
-                    } (${feeDisplay}) (Mean: ${poolInfo.mean.toLocaleString(
-                      undefined,
-                      {
-                        maximumFractionDigits: 8,
-                      }
-                    )})`,
-                    type: "circle",
-                    color: pool.color,
-                  };
-                })}
+                return <DefaultLegendContent {...props} payload={customPayload} />;
+              }}
             />
 
             {pools
