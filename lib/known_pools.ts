@@ -91,7 +91,7 @@ export const KNOWN_POOLS: Pool[] = [
         until: new Date("2025-09-15T15:00:00Z"),
       },
       {
-        percent: 0.05,
+        percent: 0.10,
         reason: "2025 Christmas Bonus",
         from: new Date("2025-12-05T00:00:00Z"),
         until: new Date("2026-01-05T15:00:00Z"),
