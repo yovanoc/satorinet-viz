@@ -132,6 +132,10 @@ export const KNOWN_ADDRESSES = [
   {
     name: "New Association",
     address: "ERDJmNCumVpB2TEURZShQYKN4yw2zftfYQ"
+  },
+  {
+    name: "Association Membership",
+    address: "EJyiL6aQH9ETzjxLFcL5j8kuu98HnQkaej"
   }
 ];
 
