@@ -2,7 +2,7 @@ import ky from "ky";
 import { cacheLife } from "next/cache";
 import * as z from "zod/mini";
 
-const BASE_URL = "https://stage.satorinet.io";
+const BASE_URL = "http://137.184.38.13:8000/api/v1";
 
 const client = ky.create({
   prefixUrl: BASE_URL,
@@ -29,36 +29,38 @@ export async function getWorkerReward(address: string) {
   "use cache";
   cacheLife("hours");
 
-  try {
-    const res = await ky
-      .get(`${BASE_URL}/pool/worker/reward/get/${address}`, { retry: 3 })
-      .json<[WorkerReward]>();
-    return res[0];
-  } catch (e) {
-    console.error("Error fetching worker reward for", address, e);
-    return { offer: 0 };
-  }
+  // try {
+  //   const res = await ky
+  //     .get(`${BASE_URL}/pool/worker/reward/get/${address}`, { retry: 3 })
+  //     .json<[WorkerReward]>();
+  //   return res[0];
+  // } catch (e) {
+  //   console.error("Error fetching worker reward for", address, e);
+  //   return { offer: 0 };
+  // }
+  return { offer: 0 };
 }
 
-export async function getMiningMode(address: string): Promise<boolean> {
-  "use cache";
-  cacheLife("hours");
+// export async function getMiningMode(address: string): Promise<boolean> {
+//   "use cache";
+//   cacheLife("hours");
 
-  const res = await ky
-    .get(`${BASE_URL}/worker/mining/mode/get/${address}`, { retry: 3 })
-    .text();
-  return res === "True";
-}
+//   const res = await ky
+//     .get(`${BASE_URL}/worker/mining/mode/get/${address}`, { retry: 3 })
+//     .text();
+//   return res === "True";
+// }
 
 export async function getAvailablePublicWorkersCount(): Promise<number> {
   "use cache";
   cacheLife("hours");
 
-  const res = await ky
-    .get(`${BASE_URL}/api/v0/get/worker/public/available/count`, { retry: 3 })
-    .text();
-  const num = parseInt(res);
-  return Number.isNaN(num) ? -1 : num;
+  // const res = await ky
+  //   .get(`${BASE_URL}/api/v0/get/worker/public/available/count`, { retry: 3 })
+  //   .text();
+  // const num = parseInt(res);
+  // return Number.isNaN(num) ? -1 : num;
+  return -1;
 }
 
 const dailyCountsSchema = z.object({
@@ -72,26 +74,31 @@ export async function getDailyCounts(): Promise<DailyCounts> {
   "use cache";
   cacheLife("days");
 
-  try {
-    const res = await client.get(`daily/counts`).json();
-    const parsed = dailyCountsSchema.safeParse(res);
-    if (!parsed.success) {
-      console.error("Failed to parse daily counts", parsed.error);
-      return {
-        neuronCount: "0",
-        oracleCount: "0",
-        predictionCount: "0",
-      };
-    }
-    return parsed.data;
-  } catch (e) {
-    console.error("Error fetching daily counts", e);
-    return {
-      neuronCount: "0",
-      oracleCount: "0",
-      predictionCount: "0",
-    };
-  }
+  // try {
+  //   const res = await client.get(`daily/counts`).json();
+  //   const parsed = dailyCountsSchema.safeParse(res);
+  //   if (!parsed.success) {
+  //     console.error("Failed to parse daily counts", parsed.error);
+  //     return {
+  //       neuronCount: "0",
+  //       oracleCount: "0",
+  //       predictionCount: "0",
+  //     };
+  //   }
+  //   return parsed.data;
+  // } catch (e) {
+  //   console.error("Error fetching daily counts", e);
+  //   return {
+  //     neuronCount: "0",
+  //     oracleCount: "0",
+  //     predictionCount: "0",
+  //   };
+  // }
+  return {
+    neuronCount: "0",
+    oracleCount: "0",
+    predictionCount: "0",
+  };
 }
 
 const dailyPredictorStatsSchema = z.object({

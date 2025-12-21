@@ -78,7 +78,7 @@ export const KNOWN_POOLS: Pool[] = [
       {
         fees: {
           type: "percent",
-          percent: [0.40, 0.46],
+          percent: [0.4, 0.46],
         },
         until: null,
       },
@@ -91,12 +91,18 @@ export const KNOWN_POOLS: Pool[] = [
         until: new Date("2025-09-15T15:00:00Z"),
       },
       {
-        percent: 0.10,
+        percent: 0.1,
         reason: "2025 Christmas Bonus",
         from: new Date("2025-12-05T00:00:00Z"),
-        until: new Date("2026-01-05T15:00:00Z"),
-      }
-    ]
+        until: new Date("2025-12-20T15:00:00Z"),
+      },
+      {
+        percent: 0.5,
+        reason: "2025 Christmas FULL Bonus",
+        from: new Date("2025-12-21T00:00:00Z"),
+        until: new Date("2026-01-01T15:00:00Z"),
+      },
+    ],
   },
   {
     name: "Cortex",
@@ -237,6 +243,14 @@ export const KNOWN_POOLS: Pool[] = [
           percent: 0.4,
         },
         until: null,
+      },
+    ],
+    temporary_fee_reductions: [
+      {
+        percent: 0.5,
+        reason: "2025 Christmas FULL Bonus",
+        from: new Date("2025-12-21T00:00:00Z"),
+        until: new Date("2026-01-01T15:00:00Z"),
       },
     ],
   },
