@@ -18,7 +18,7 @@ export function getAddressName(address: string): string | null {
 
 export const KNOWN_ADDRESSES = [
   {
-    name: "DISTRIBUTION",
+    name: "(old) DISTRIBUTION",
     address: "Ec4v5F3EwGyy9Hf6uMGBwhMwtvieoLT1Ew",
   },
   {
@@ -136,6 +136,10 @@ export const KNOWN_ADDRESSES = [
   {
     name: "Association Membership",
     address: "EJyiL6aQH9ETzjxLFcL5j8kuu98HnQkaej"
+  },
+  {
+    name: "DISTRIBUTION",
+    address: "EVWYTYq1xMhCpDQBwNzdNgBCruDv4u49ZQ"
   }
 ];
 
