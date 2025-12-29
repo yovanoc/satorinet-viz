@@ -21,7 +21,7 @@ export async function getPoolWorkerStats(
       total_miner_earned: sql<number>`sum(${dailyPredictorAddress.miner_earned})`,
       total_delegated_stake: sql<number>`sum(${dailyPredictorAddress.delegated_stake})`,
       total_balance: sql<number>`sum(${dailyPredictorAddress.balance})`,
-      avg_score: sql<number>`avg(${dailyPredictorAddress.score}) filter (where ${dailyPredictorAddress.score} > 0)`,
+      avg_distance: sql<number>`avg(${dailyPredictorAddress.score}) filter (where ${dailyPredictorAddress.score} > 0)`,
       pool_miner_percent: sql<number>`avg(${dailyPredictorAddress.pool_miner_percent}) filter (where ${dailyPredictorAddress.miner_earned} > 0)`,
     })
     .from(dailyPredictorAddress)

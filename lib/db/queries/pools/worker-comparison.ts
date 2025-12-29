@@ -49,12 +49,14 @@ function findPoolDataForDate(
     date: string;
     max_delegated_stake: number;
     earnings_per_staking_power: number;
+    avg_distance: number;
   }>,
   targetDate: Date
 ): {
   date: string;
   max_delegated_stake: number;
   earnings_per_staking_power: number;
+  avg_distance: number;
 } | null {
   return (
     poolData.find((entry) => isSameUTCDate(new Date(entry.date), targetDate)) ??
@@ -72,6 +74,7 @@ function getStakeForDate(
       date: string;
       max_delegated_stake: number;
       earnings_per_staking_power: number;
+      avg_distance: number;
     }>;
   }>,
   targetDate: Date
@@ -123,6 +126,7 @@ type EarningsData = {
 type PoolEarningsData = {
   poolAddress: string;
   pool?: Pool;
+  avg_distance: number;
   min: EarningsData;
   max?: EarningsData;
 };
@@ -132,6 +136,7 @@ type SelfWorkerRewardsData = {
   daily_rewards: number;
   total_rewards: number;
   current_amount: number;
+  avg_distance: number;
 };
 
 export type PoolsVSWorkerData = {
@@ -259,6 +264,7 @@ export async function getPoolVsWorkerComparison(
       stake,
       pools: {},
       worker: {
+        avg_distance: workerRewardData.avg_distance,
         reward_avg: rewardAvg,
         daily_rewards: newRewards,
         total_rewards: selfEarnings,
@@ -355,6 +361,7 @@ export async function getPoolVsWorkerComparison(
         data.pools[pool.address] = {
           poolAddress: pool.address,
           pool: knownPool,
+          avg_distance: entry.avg_distance,
           min: {
             total_earnings: poolTracking.min.total_earnings,
             full_stake_earnings: netPerFullStake,
@@ -407,6 +414,7 @@ export async function getPoolVsWorkerComparison(
         data.pools[pool.address] = {
           poolAddress: pool.address,
           pool: knownPool,
+          avg_distance: entry.avg_distance,
           min: {
             total_earnings: poolTracking.min.total_earnings,
             full_stake_earnings: minNetPerFullStake,

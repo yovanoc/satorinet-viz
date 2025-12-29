@@ -39,6 +39,9 @@ export async function getPoolHistoricalData(
         sql<number>`SUM(${dailyPredictorAddress.miner_earned})`.as(
           "total_miner_earned"
         ),
+      avg_distance: sql<number>`AVG(${dailyPredictorAddress.score})`.as(
+        "avg_distance"
+      ),
       total_delegated_stake:
         sql<number>`SUM(${dailyPredictorAddress.delegated_stake})`.as(
           "total_delegated_stake"
@@ -81,6 +84,7 @@ export async function getPoolHistoricalData(
       date: dailyContributorAddress.date,
       total_staking_power: sql<number>`SUM(${dailyContributorAddress.staking_power_contribution})`,
       max_delegated_stake: sql<number>`MAX(${predictorAgg.max_delegated_stake})`,
+      avg_distance: sql<number>`AVG(${predictorAgg.avg_distance})`,
       contributor_count: sql<number>`COUNT(DISTINCT ${dailyContributorAddress.contributor})`,
       pools_own_staking_power: sql<number>`AVG(${dailyContributorAddress.pools_own_staking_power})`,
       pool_balance: sql<number>`${predictorAgg.pool_balance}`,

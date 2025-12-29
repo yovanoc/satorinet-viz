@@ -33,7 +33,7 @@ interface WorkerStats {
   worker_count: number;
   total_reward: number;
   total_miner_earned: number;
-  avg_score: number;
+  avg_distance: number;
   worker_count_with_earnings: number;
 }
 

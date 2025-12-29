@@ -24,7 +24,7 @@ export interface PoolData {
   total_delegated_stake?: number;
   total_balance?: number;
   pool_balance?: number;
-  avg_score?: number;
+  avg_distance?: number;
   pools_own_staking_power?: number;
   earnings_per_staking_power?: number;
   pool_miner_percent?: number;
@@ -171,8 +171,8 @@ const DailyContributorAddressCard: FC<DailyContributorAddressCardProps> = ({
             ) : null}
           </p>
           <p className="text-xs md:text-sm font-bold">
-            Avg Score:{" "}
-            {poolData.avg_score?.toLocaleString(undefined, {
+            Avg Distance:{" "}
+            {poolData.avg_distance?.toLocaleString(undefined, {
               maximumFractionDigits: 8,
             }) ?? 0}
           </p>

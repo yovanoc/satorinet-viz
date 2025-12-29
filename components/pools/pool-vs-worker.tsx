@@ -1,11 +1,13 @@
 "use client";
 
 import { formatCurrency, formatSatori } from "@/lib/format";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, Legend } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, Legend, LineChart, Line } from "recharts";
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
 import type { PoolsVSWorkerData } from "@/lib/db/queries/pools/worker-comparison";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const SELF_COLOR = "#388E3C";
+const MIN_AVG_DISTANCE_DATE = new Date("2025-12-28T00:00:00Z");
 
 function getRandomHexColor(): string {
   const hex = Math.floor(Math.random() * 0xffffff).toString(16);
@@ -268,88 +270,189 @@ export function PoolComparisonChart({ data }: PoolComparisonChartProps) {
     return d;
   });
 
-  return (
-    <ChartContainer config={chartConfig} className="aspect-auto h-full w-full">
-      <AreaChart
-        data={formattedData}
-        margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-      >
-        <XAxis
-          dataKey="date"
-          tickFormatter={(date) => new Date(date).toLocaleDateString()}
-          angle={-45}
-          textAnchor="end"
-          padding={{ left: 20, right: 20 }}
-        />
-        <YAxis
-          domain={([dataMin, dataMax]) => {
-            const range = dataMax - dataMin;
-            if (!isFinite(range) || range === 0)
-              return [dataMin - 1, dataMax + 1];
-            return [dataMin - range * 0.05, dataMax + range * 0.05];
-          }}
-          tick={{ fontSize: 12, fill: "#888" }}
-          width={70}
-          tickFormatter={(value) =>
-            value?.toLocaleString?.(undefined, { maximumFractionDigits: 2 }) ??
-            value
-          }
-          allowDecimals={true}
-          axisLine={true}
-          tickLine={true}
-        />
-        <Tooltip content={<CustomTooltip poolColors={poolColors} />} />
-        <Legend verticalAlign="top" height={36} iconType="circle" />
+  const avgDistanceData = data
+    .filter((entry) => entry.date >= MIN_AVG_DISTANCE_DATE)
+    .map((entry) => entry);
 
-        {/* Render Self Earnings line AFTER areas to ensure it is drawn on top */}
-        {poolKeys.map((key) => {
-          const color = poolColors[key];
-          const pool = pools.find((pool) =>
-            typeof pool === "string" ? pool === key : pool.address === key
-          );
-          return (
+  return (
+    <Tabs defaultValue="earnings" className="h-full w-full flex flex-col">
+      <TabsList className="grid w-full grid-cols-2 mb-2">
+        <TabsTrigger value="earnings">Earnings</TabsTrigger>
+        <TabsTrigger value="avg_distance">Avg distance</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="earnings" className="flex-1 min-h-0">
+        <ChartContainer
+          config={chartConfig}
+          className="aspect-auto h-full w-full min-h-[500px]"
+        >
+          <AreaChart
+            data={formattedData}
+            margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+          >
+            <XAxis
+              dataKey="date"
+              tickFormatter={(date) => new Date(date).toLocaleDateString()}
+              angle={-45}
+              textAnchor="end"
+              padding={{ left: 20, right: 20 }}
+            />
+            <YAxis
+              domain={([dataMin, dataMax]) => {
+                const range = dataMax - dataMin;
+                if (!isFinite(range) || range === 0)
+                  return [dataMin - 1, dataMax + 1];
+                return [dataMin - range * 0.05, dataMax + range * 0.05];
+              }}
+              tick={{ fontSize: 12, fill: "#888" }}
+              width={70}
+              tickFormatter={(value) =>
+                value?.toLocaleString?.(undefined, {
+                  maximumFractionDigits: 2,
+                }) ?? value
+              }
+              allowDecimals={true}
+              axisLine={true}
+              tickLine={true}
+            />
+            <Tooltip content={<CustomTooltip poolColors={poolColors} />} />
+            <Legend verticalAlign="top" height={36} iconType="circle" />
+
+            {poolKeys.map((key) => {
+              const color = poolColors[key];
+              const pool = pools.find((pool) =>
+                typeof pool === "string" ? pool === key : pool.address === key
+              );
+              return (
+                <Area
+                  key={key}
+                  type="monotone"
+                  dataKey={(entry: Data) => {
+                    const min = entry[`pool_${key}_min`];
+                    const max = entry[`pool_${key}_max`];
+                    if (min && max) return [min, max];
+                    if (min) return [min, min];
+                    return null;
+                  }}
+                  isRange
+                  name={`Pool: ${
+                    pool ? (typeof pool === "string" ? pool : pool.name) : key
+                  }`}
+                  stroke={color}
+                  fill={color}
+                  fillOpacity={0.4}
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 5 }}
+                  isAnimationActive={false}
+                  connectNulls={false}
+                />
+              );
+            })}
+
             <Area
-              key={key}
               type="monotone"
               dataKey={(entry: Data) => {
-                const min = entry[`pool_${key}_min`];
-                const max = entry[`pool_${key}_max`];
-                if (min && max) return [min, max];
-                if (min) return [min, min];
-                return null;
+                const v = entry.worker.total_rewards;
+                return [v, v];
               }}
               isRange
-              name={`Pool: ${
-                pool ? (typeof pool === "string" ? pool : pool.name) : key
-              }`}
-              stroke={color}
-              fill={color}
-              fillOpacity={0.4}
-              strokeWidth={2}
+              name="Self Earnings"
+              stroke={SELF_COLOR}
+              fill={SELF_COLOR}
+              fillOpacity={0.7}
+              strokeWidth={3}
               dot={false}
-              activeDot={{ r: 5 }}
+              activeDot={{ r: 6, stroke: SELF_COLOR, strokeWidth: 2 }}
+            />
+          </AreaChart>
+        </ChartContainer>
+      </TabsContent>
+
+      <TabsContent value="avg_distance" className="flex-1 min-h-0">
+        <ChartContainer
+          config={{}}
+          className="aspect-auto h-full w-full min-h-[500px]"
+        >
+          <LineChart
+            data={avgDistanceData}
+            margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+          >
+            <XAxis
+              dataKey="date"
+              tickFormatter={(date) => new Date(date).toLocaleDateString()}
+              angle={-45}
+              textAnchor="end"
+              padding={{ left: 20, right: 20 }}
+            />
+            <YAxis
+              reversed
+              tick={{ fontSize: 12, fill: "#888" }}
+              width={70}
+              tickFormatter={(value) =>
+                value?.toLocaleString?.(undefined, {
+                  maximumFractionDigits: 4,
+                }) ?? value
+              }
+              allowDecimals={true}
+              axisLine={true}
+              tickLine={true}
+              domain={["auto", "auto"]}
+            />
+            <Tooltip
+              contentStyle={{ backgroundColor: "var(--background)" }}
+              labelFormatter={(value) => new Date(value).toLocaleDateString()}
+              formatter={(value, name) => {
+                if (typeof value !== "number") return [];
+                return [
+                  value.toLocaleString(undefined, { maximumFractionDigits: 4 }),
+                  name,
+                ];
+              }}
+            />
+            <Legend verticalAlign="top" height={36} iconType="circle" />
+
+            {poolKeys.map((key) => {
+              const color = poolColors[key];
+              const pool = pools.find((pool) =>
+                typeof pool === "string" ? pool === key : pool.address === key
+              );
+              const name = pool ? (typeof pool === "string" ? pool : pool.name) : key;
+
+              return (
+                <Line
+                  key={`${key}-avg_distance`}
+                  type="monotone"
+                  dataKey={(entry: PoolsVSWorkerData) => {
+                    const v = entry.pools[key]?.avg_distance;
+                    return typeof v === "number" && v > 0 ? v : null;
+                  }}
+                  name={`Pool: ${name}`}
+                  stroke={color}
+                  strokeWidth={3}
+                  dot={false}
+                  isAnimationActive={false}
+                  connectNulls={false}
+                />
+              );
+            })}
+
+            <Line
+              type="monotone"
+              dataKey={(entry: PoolsVSWorkerData) => {
+                const v = entry.worker.avg_distance;
+                return typeof v === "number" && v > 0 ? v : null;
+              }}
+              name="Self Workers"
+              stroke={SELF_COLOR}
+              strokeWidth={3}
+              dot={false}
               isAnimationActive={false}
               connectNulls={false}
             />
-          );
-        })}
-        {/* Self worker as degenerate area (line) */}
-        <Area
-          type="monotone"
-          dataKey={(entry: Data) => {
-            const v = entry.worker.total_rewards;
-            return [v, v];
-          }}
-          isRange
-          name="Self Earnings"
-          stroke={SELF_COLOR}
-          fill={SELF_COLOR}
-          fillOpacity={0.7}
-          strokeWidth={3}
-          dot={false}
-          activeDot={{ r: 6, stroke: SELF_COLOR, strokeWidth: 2 }}
-        />
-      </AreaChart>
-    </ChartContainer>
+          </LineChart>
+        </ChartContainer>
+      </TabsContent>
+    </Tabs>
   );
 }

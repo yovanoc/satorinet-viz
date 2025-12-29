@@ -27,7 +27,7 @@ export default function MultiPoolWorkerComparison({
     mostWantedTop(topPools)
   );
   const [days, setDays] = useState(30);
-  const [startingAmount, setStartingAmount] = useState(15);
+  const [startingAmount, setStartingAmount] = useState(50);
   const [data, formAction, isPending] = useActionState(() => {
     if (!selectedPools.length) return [];
     return getPoolVsWorkerComparisonData(

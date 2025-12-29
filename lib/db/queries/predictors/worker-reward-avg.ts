@@ -11,6 +11,7 @@ export async function getWorkerRewardAverage(date: Date) {
     .select({
       reward_avg: sql<number>`avg(${dailyPredictorAddress.reward})`,
       sum_rewards: sql<number>`sum(${dailyPredictorAddress.reward})`,
+      avg_distance: sql<number>`avg(${dailyPredictorAddress.score})`,
     })
     .from(dailyPredictorAddress)
     .where(sql`${dailyPredictorAddress.date} = ${date}`)

@@ -11,7 +11,15 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import type { Pool } from "@/lib/known_pools";
-import { ComposedChart, Area, XAxis, YAxis, Tooltip, Legend, DefaultLegendContent } from "recharts";
+import {
+  ComposedChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  DefaultLegendContent,
+} from "recharts";
 import {
   applyFeePercent,
   applyFees,
@@ -164,7 +172,11 @@ export function PoolsStakingComparisonChart({
               labelFormatter={(value) => {
                 return value.toLocaleDateString();
               }}
-              formatter={(value, _name, item: { payload?: Entry; color?: string }) => {
+              formatter={(
+                value,
+                _name,
+                item: { payload?: Entry; color?: string }
+              ) => {
                 if (!item.payload) {
                   return [];
                 }
@@ -236,7 +248,9 @@ export function PoolsStakingComparisonChart({
                   const reasons = activeReductions
                     .map((r) => r.reason)
                     .join(", ");
-                  finalName += ` 🎁 -${(totalReduction * 100).toFixed(0)}% (${reasons})`;
+                  finalName += ` 🎁 -${(totalReduction * 100).toFixed(
+                    0
+                  )}% (${reasons})`;
                 }
 
                 return [valueStr, finalName];
@@ -291,7 +305,12 @@ export function PoolsStakingComparisonChart({
                     );
                     const reductionDisplay =
                       activeReductions.length > 0
-                        ? ` 🎁 -${(activeReductions.reduce((acc, r) => acc + r.percent, 0) * 100).toFixed(0)}%`
+                        ? ` 🎁 -${(
+                            activeReductions.reduce(
+                              (acc, r) => acc + r.percent,
+                              0
+                            ) * 100
+                          ).toFixed(0)}%`
                         : "";
 
                     return {
@@ -308,7 +327,12 @@ export function PoolsStakingComparisonChart({
                     };
                   });
 
-                return <DefaultLegendContent {...legendProps} payload={customPayload} />;
+                return (
+                  <DefaultLegendContent
+                    {...legendProps}
+                    payload={customPayload}
+                  />
+                );
               }}
             />
 

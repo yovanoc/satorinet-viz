@@ -112,7 +112,7 @@ async function PoolDataSection({ date, pool }: { date: Date; pool: TopPoolWithNa
       worker_count_with_earnings: dateWorkerStats?.worker_count_with_earnings,
       total_reward: dateWorkerStats?.total_reward,
       total_miner_earned: dateWorkerStats?.total_miner_earned,
-      avg_score: dateWorkerStats?.avg_score,
+      avg_distance: dateWorkerStats?.avg_distance,
       contributor_count: dateHistoricalData?.contributor_count,
       contributor_count_with_staking_power:
         dateHistoricalData?.contributor_count_with_staking_power,

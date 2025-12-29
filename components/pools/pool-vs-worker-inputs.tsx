@@ -18,7 +18,7 @@ export default function PoolWorkerInputs({
   onDaysChange,
   onStartingAmountChange,
   initialDays = 30,
-  initialStartingAmount = 15,
+  initialStartingAmount = 50,
   disableInputs,
 }: Props) {
   const [days, setDays] = useState(initialDays);
