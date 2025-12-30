@@ -10,7 +10,23 @@ export type PoolAndDate = {
   selectedPool: TopPoolWithName;
   selectedDate: Date;
   topPoolsWithNames: TopPoolWithName[];
+  requestedDate: Date;
+  hasData: boolean;
+  didFallback: boolean;
 };
+
+function addUtcDays(date: Date, days: number) {
+  return new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate() + days,
+      0,
+      0,
+      0
+    )
+  );
+}
 
 export async function getPoolAndDate({
   pool,
@@ -43,9 +59,54 @@ export async function getPoolAndDate({
     }
   }
 
-  const topPools = await getTopPools(selectedDate);
+  const requestedDate = selectedDate;
 
-  const first = KNOWN_POOLS[0]!.address;
+  // If today's (or requested) data isn't available yet, fall back to the most
+  // recent previous day that has pool data.
+  const maxLookbackDays = 14;
+
+  let didFallback = false;
+  let topPools = await getTopPools(selectedDate);
+
+  for (
+    let lookback = 0;
+    lookback < maxLookbackDays && topPools.length === 0;
+    lookback++
+  ) {
+    selectedDate = addUtcDays(selectedDate, -1);
+    topPools = await getTopPools(selectedDate);
+    didFallback = true;
+  }
+
+  const hasData = topPools.length > 0;
+
+  // If there's no data at all (even after lookback), return a non-throwing
+  // placeholder so routes can render an empty-state instead of crashing.
+  if (!hasData) {
+    const topPoolsWithNames: TopPoolWithName[] = KNOWN_POOLS.map((p) => ({
+      name: p.name,
+      address: p.address,
+      vault_address: p.vault_address,
+    }));
+
+    const fallbackSelectedPoolAddress =
+      pool && isValidAddress(pool) ? pool : KNOWN_POOLS[0]!.address;
+
+    const selectedPool =
+      topPoolsWithNames.find((p) => p.address === fallbackSelectedPoolAddress) ??
+      topPoolsWithNames[0]!;
+
+    return {
+      selectedPool,
+      selectedDate: requestedDate,
+      requestedDate,
+      topPoolsWithNames,
+      hasData: false,
+      didFallback: false,
+    };
+  }
+
+  const first = topPools[0]!.pool_address;
 
   const selectedPoolAddress =
     pool && isValidAddress(pool)
@@ -80,13 +141,14 @@ export async function getPoolAndDate({
     (pool) => pool.address === selectedPoolAddress
   );
 
-  if (!selectedPool) {
-    throw new Error("Selected pool not found");
-  }
+  const safeSelectedPool = selectedPool ?? topPoolsWithNames[0]!;
 
   return {
-    selectedPool,
+    selectedPool: safeSelectedPool,
     selectedDate,
+    requestedDate,
     topPoolsWithNames,
+    hasData: true,
+    didFallback,
   };
 }

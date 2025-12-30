@@ -4,7 +4,7 @@ import DatePickerWrapper from "@/components/date-picker-wrapper";
 import PoolHistoricalData from "@/components/pools/pool-historical-data";
 import PoolSelectorWrapper from "@/components/pools/pool-selector-wrapper";
 import PoolWorkerComparison from "@/components/pools/pool-vs-worker-comparison";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getPoolHistoricalData } from "@/lib/db/queries/pools/historical-data";
 import { getPoolWorkerStats } from "@/lib/db/queries/predictors/worker-stats";
@@ -15,6 +15,10 @@ import { Suspense } from "react";
 import { getContributors } from "@/lib/db/queries/contributors";
 import { getPredictors } from "@/lib/db/queries/predictors";
 import { Address } from "@/components/address";
+
+function ymd(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
 
 // TODO show the different % fees staged ?
 
@@ -172,7 +176,45 @@ export default async function PoolsSingle({
   const params = await searchParams;
   const poolAndDate = await getPoolAndDate(params);
 
-  const { selectedPool, selectedDate, topPoolsWithNames } = poolAndDate;
+  const {
+    selectedPool,
+    selectedDate,
+    topPoolsWithNames,
+    requestedDate,
+    hasData,
+    didFallback,
+  } = poolAndDate;
+
+  if (!hasData) {
+    return (
+      <div className="flex flex-col flex-1 gap-4 py-4 md:gap-6 md:py-6">
+        <div className="flex items-center justify-between px-4 lg:px-6 h-16 relative">
+          <span className="text-xl font-bold lg:hidden">
+            {selectedDate.toLocaleDateString()}
+          </span>
+
+          <span className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 text-2xl font-bold">
+            {selectedDate.toLocaleDateString()}
+          </span>
+
+          <div className="ml-auto">
+            <DatePickerWrapper selectedDate={selectedDate} />
+          </div>
+        </div>
+
+        <div className="px-4 lg:px-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl font-bold">No pool data for this day</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              We don’t have pool snapshots for {ymd(selectedDate)} yet. Try selecting the previous day, or check back later.
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col flex-1 gap-4 py-4 md:gap-6 md:py-6">
@@ -189,6 +231,16 @@ export default async function PoolsSingle({
           <DatePickerWrapper selectedDate={selectedDate} />
         </div>
       </div>
+
+      {didFallback ? (
+        <div className="px-4 lg:px-6">
+          <Card>
+            <CardContent className="py-4 text-sm text-muted-foreground">
+              No data for {ymd(requestedDate)} yet — showing the most recent day with data ({ymd(selectedDate)}).
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
       <div className="flex flex-col gap-4 px-4 lg:px-6 flex-1">
         <PoolSelectorWrapper
           pools={topPoolsWithNames}

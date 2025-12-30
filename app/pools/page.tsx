@@ -8,6 +8,10 @@ import { SectionCardsPools } from "@/components/section-cards-pools";
 import { getPoolAndDate } from "@/lib/get-pool-and-date-params";
 import { getTopPools } from "@/lib/db/queries/contributors";
 
+function ymd(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
 async function TopPoolsCard({ date }: { date: Date }) {
   const topPools = await getTopPools(date);
   return (
@@ -30,7 +34,38 @@ export default async function PoolsPage({
   const params = await searchParams;
   const poolAndDate = await getPoolAndDate(params);
 
-  const { selectedDate, topPoolsWithNames } = poolAndDate;
+  const { selectedDate, topPoolsWithNames, requestedDate, hasData, didFallback } = poolAndDate;
+
+  if (!hasData) {
+    return (
+      <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+        <div className="flex items-center justify-between px-4 lg:px-6 h-16 relative">
+          <span className="text-xl font-bold lg:hidden">
+            {selectedDate.toLocaleDateString()}
+          </span>
+
+          <span className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 text-2xl font-bold">
+            {selectedDate.toLocaleDateString()}
+          </span>
+
+          <div className="ml-auto">
+            <DatePickerWrapper selectedDate={selectedDate} />
+          </div>
+        </div>
+
+        <div className="px-4 lg:px-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl font-bold">No pool data for this day</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              We don’t have pool snapshots for {ymd(selectedDate)} yet. Try selecting the previous day, or check back later.
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -48,6 +83,16 @@ export default async function PoolsPage({
           <DatePickerWrapper selectedDate={selectedDate} />
         </div>
       </div>
+
+      {didFallback ? (
+        <div className="px-4 lg:px-6">
+          <Card>
+            <CardContent className="py-4 text-sm text-muted-foreground">
+              No data for {ymd(requestedDate)} yet — showing the most recent day with data ({ymd(selectedDate)}).
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
       <Suspense
         fallback={
           <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-6">
