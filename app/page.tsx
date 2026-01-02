@@ -44,9 +44,6 @@ async function DailyManifestCard() {
 }
 
 async function CustomDataTable() {
-  'use cache';
-  cacheLife('hours');
-
   const satoriHolders = await getSatoriHolders();
 
   if (!satoriHolders) {
