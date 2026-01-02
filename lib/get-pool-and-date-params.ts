@@ -36,7 +36,7 @@ export async function getPoolAndDate({
   date?: string;
 }): Promise<PoolAndDate> {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
 
   const now = new Date();
 

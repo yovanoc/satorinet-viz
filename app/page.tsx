@@ -17,9 +17,11 @@ import { getManifest } from "@/lib/manifest";
 import { StackedAreaManifest } from "@/components/stacked-area-manifest";
 import { getDailyWorkerCounts } from "@/lib/db/queries/predictors/worker-count";
 import { getManifests } from "@/lib/db/queries/manifest";
+import { cacheLife } from "next/cache";
 
 async function DailyWorkerCountsCard() {
   'use cache';
+  cacheLife('hours');
 
   const date = new Date();
   const dailyCounts = await getDailyWorkerCounts(date, 90);
@@ -28,6 +30,7 @@ async function DailyWorkerCountsCard() {
 
 async function DailyManifestCard() {
   'use cache';
+  cacheLife('hours');
 
   const date = new Date();
   const all = await getManifests(date, 90);
@@ -41,6 +44,9 @@ async function DailyManifestCard() {
 }
 
 async function CustomDataTable() {
+  'use cache';
+  cacheLife('hours');
+
   const satoriHolders = await getSatoriHolders();
 
   if (!satoriHolders) {
