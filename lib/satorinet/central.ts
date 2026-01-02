@@ -2,7 +2,7 @@ import ky from "ky";
 import { cacheLife } from "next/cache";
 import * as z from "zod/mini";
 
-const BASE_URL = "http://137.184.38.13:8000/api/v1";
+const BASE_URL = "https://network.satorinet.io/api/v1";
 
 const client = ky.create({
   prefixUrl: BASE_URL,
@@ -215,32 +215,35 @@ export async function streamsSearch(): Promise<Stream[]> {
   "use cache";
   cacheLife("minutes");
 
-  let res: string;
+  // TODO no streams for now
+  return [];
 
-  try {
-    res = await client.post(`streams/search`).text();
-  } catch (e) {
-    console.error("Error fetching streams search", e);
-    return [];
-  }
+  // let res: string;
 
-  const parsed = safeParseAndSanitize(res);
+  // try {
+  //   res = await client.post(`streams/search`).text();
+  // } catch (e) {
+  //   console.error("Error fetching streams search", e);
+  //   return [];
+  // }
 
-  const parsedArray = streamsArraySchema.safeParse(parsed);
-  if (!parsedArray.success) {
-    // console.dir(parsed, { depth: 5 });
-    console.error("Failed to parse streams");
-    console.dir(parsedArray.error, { depth: 5 });
-    return [];
-  }
+  // const parsed = safeParseAndSanitize(res);
 
-  const sortedStreams = parsedArray.data.toSorted(
-    (a, b) => a.total_vote - b.total_vote
-  );
+  // const parsedArray = streamsArraySchema.safeParse(parsed);
+  // if (!parsedArray.success) {
+  //   // console.dir(parsed, { depth: 5 });
+  //   console.error("Failed to parse streams");
+  //   console.dir(parsedArray.error, { depth: 5 });
+  //   return [];
+  // }
 
-  console.log(`Fetched and parsed ${sortedStreams.length} streams`);
+  // const sortedStreams = parsedArray.data.toSorted(
+  //   (a, b) => a.total_vote - b.total_vote
+  // );
 
-  return sortedStreams;
+  // console.log(`Fetched and parsed ${sortedStreams.length} streams`);
+
+  // return sortedStreams;
 }
 
 export function safeParseAndSanitize(raw: string): unknown {
