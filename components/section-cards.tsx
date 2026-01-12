@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  getDailyCounts,
+  getStatsPredictions,
 } from "@/lib/satorinet/central";
 import { getSatoriHolders } from "@/lib/get-satori-holders";
 import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
@@ -14,10 +14,10 @@ import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
 export async function SectionCards() {
   'use cache';
 
-  const [price, dailyCounts, satoriHolders] =
+  const [price, statsPredictions, satoriHolders] =
     await Promise.all([
       getSatoriPriceForDate(new Date()),
-      getDailyCounts(),
+      getStatsPredictions(),
       getSatoriHolders(),
     ]);
 
@@ -31,7 +31,7 @@ export async function SectionCards() {
   );
 
   return (
-    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-6">
+    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-5">
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Price</CardDescription>
@@ -83,14 +83,14 @@ export async function SectionCards() {
         <CardHeader>
           <CardDescription>Neurons</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {dailyCounts.neuronCount}
+            {statsPredictions.unique_neurons}
           </CardTitle>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="text-muted-foreground">Total number of neurons</div>
         </CardFooter>
       </Card>
-      <Card className="@container/card">
+      {/* <Card className="@container/card">
         <CardHeader>
           <CardDescription>Oracles</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
@@ -100,12 +100,12 @@ export async function SectionCards() {
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="text-muted-foreground">Total oracle count</div>
         </CardFooter>
-      </Card>
+      </Card> */}
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Predictions</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {dailyCounts.predictionCount}
+            {statsPredictions.total_predictions}
           </CardTitle>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">

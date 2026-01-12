@@ -1,6 +1,7 @@
 "use client";
 
 import { type FC } from "react";
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -22,7 +23,6 @@ import {
   type Row,
 } from "@tanstack/react-table";
 import { formatSatori } from "@/lib/format";
-import { Address } from "./address";
 
 interface Pool {
   pool_address: string;
@@ -38,28 +38,39 @@ interface TopPoolsProps {
 
 const dataColumns: ColumnDef<Pool>[] = [
   {
-    accessorKey: "address",
-    header: "Address",
-    cell: ({ row }) => (
-      <div className="w-auto flex items-center">
-        <Address address={row.original.pool_address} />
-      </div>
-    ),
+    accessorKey: "pool",
+    header: "Pool",
+    cell: ({ row }) => {
+      const name = row.original.pool_name ?? "Unknown Pool";
+      return (
+        <Link
+          href={`/address/${row.original.pool_address}`}
+          className="block min-w-0"
+        >
+          <div className="min-w-0 text-sm font-bold text-primary truncate">
+            {name}
+          </div>
+          <div className="min-w-0 text-xs text-muted-foreground truncate">
+            {row.original.pool_address}
+          </div>
+        </Link>
+      );
+    },
   },
   {
     accessorKey: "balance",
-    header: "Total Staking Power",
+    header: () => <div className="text-right">Total Staking Power</div>,
     cell: ({ row }) => (
-      <div className="items-center">
+      <div className="text-right tabular-nums">
         {formatSatori(row.original.total_staking_power)}
       </div>
     ),
   },
   {
     accessorKey: "contributor_count",
-    header: "Contributor Count",
+    header: () => <div className="text-right">Contributor Count</div>,
     cell: ({ row }) => (
-      <div className="items-center">{row.original.contributor_count}</div>
+      <div className="text-right tabular-nums">{row.original.contributor_count}</div>
     ),
   },
 ];
@@ -102,7 +113,7 @@ const TopPools: FC<TopPoolsProps> = ({ pools }) => {
   });
 
   return (
-    <div className="overflow-hidden rounded-lg border">
+    <div className="w-full">
       <Table>
         <TableHeader className="bg-muted sticky top-0 z-10">
           {table.getHeaderGroups().map((headerGroup) => (
@@ -122,7 +133,7 @@ const TopPools: FC<TopPoolsProps> = ({ pools }) => {
             </TableRow>
           ))}
         </TableHeader>
-        <TableBody className="**:data-[slot=table-cell]:first:w-8">
+        <TableBody>
           {table.getRowModel().rows?.length ? (
             table
               .getRowModel()

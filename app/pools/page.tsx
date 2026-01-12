@@ -19,8 +19,10 @@ async function TopPoolsCard({ date }: { date: Date }) {
         <CardHeader>
           <CardTitle className="font-bold text-2xl">Top {topPools.length} Pools</CardTitle>
         </CardHeader>
-        <CardContent>
-          <TopPools key={date.toISOString()} pools={topPools} date={date} />
+        <CardContent className="pt-0">
+          <div className="-mx-6">
+            <TopPools key={date.toISOString()} pools={topPools} date={date} />
+          </div>
         </CardContent>
       </Card>
   );
@@ -104,7 +106,7 @@ export default async function PoolsPage({
       >
         <SectionCardsPools date={selectedDate} />
       </Suspense>
-      <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @7xl/main:grid-cols-[2fr_3fr]">
+      <div className="grid grid-cols-1 items-start gap-4 px-4 lg:px-6 @7xl/main:grid-cols-[2fr_3fr]">
         <Suspense
           fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}
         >

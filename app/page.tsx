@@ -13,10 +13,10 @@ import { getAddressName, KNOWN_ADDRESSES } from "@/lib/known_addresses";
 import { formatSatori } from "@/lib/format";
 import { getSatoriHolders } from "@/lib/get-satori-holders";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getManifest } from "@/lib/manifest";
-import { StackedAreaManifest } from "@/components/stacked-area-manifest";
 import { getDailyWorkerCounts } from "@/lib/db/queries/predictors/worker-count";
-import { getManifests } from "@/lib/db/queries/manifest";
+// import { getManifest } from "@/lib/manifest";
+// import { StackedAreaManifest } from "@/components/stacked-area-manifest";
+// import { getManifests } from "@/lib/db/queries/manifest";
 import { cacheLife } from "next/cache";
 
 async function DailyWorkerCountsCard() {
@@ -28,6 +28,7 @@ async function DailyWorkerCountsCard() {
   return <ChartAreaInteractive dailyCounts={dailyCounts} />;
 }
 
+/*
 async function DailyManifestCard() {
   'use cache';
   cacheLife('hours');
@@ -42,6 +43,7 @@ async function DailyManifestCard() {
 
   return <StackedAreaManifest manifests={data} />;
 }
+*/
 
 async function CustomDataTable() {
   const satoriHolders = await getSatoriHolders();
@@ -99,7 +101,10 @@ async function CustomDataTable() {
   );
 }
 
-export default function Page() {
+export default async function Page() {
+  'use cache';
+  cacheLife('hours');
+
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
       <Suspense
@@ -124,6 +129,11 @@ export default function Page() {
         </div>
       </div>
       <div className="px-4 lg:px-6">
+        <Suspense fallback={<Skeleton className="h-[350px] w-full rounded-xl" />}>
+          <CustomDataTable />
+        </Suspense>
+
+        {/*
         <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
           <Suspense fallback={<Skeleton className="h-[350px] w-full rounded-xl" />}>
             <CustomDataTable />
@@ -132,6 +142,7 @@ export default function Page() {
             <DailyManifestCard />
           </Suspense>
         </div>
+        */}
       </div>
     </div>
   );

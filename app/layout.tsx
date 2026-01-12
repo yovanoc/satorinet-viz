@@ -5,13 +5,19 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Montserrat, Fira_Code } from "next/font/google";
+import { Geist, Lora, Fira_Code } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import { Suspense } from "react";
 
-const sans = Montserrat({
+const sans = Geist({
   variable: "--font-sans",
   subsets: ["latin"],
+});
+
+const serif = Lora({
+  variable: "--font-serif",
+  subsets: ["latin"],
+  weight: ["400", "700"],
 });
 
 const mono = Fira_Code({
@@ -31,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${sans.variable} ${mono.variable} antialiased`}>
+      <body className={`${sans.variable} ${serif.variable} ${mono.variable} antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

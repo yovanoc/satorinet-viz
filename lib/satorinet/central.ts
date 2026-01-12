@@ -63,122 +63,156 @@ export async function getAvailablePublicWorkersCount(): Promise<number> {
   return -1;
 }
 
+// const dailyCountsSchema = z.object({
+//   neuronCount: z.string(),
+//   oracleCount: z.string(),
+//   predictionCount: z.string(),
+// });
+// export type DailyCounts = z.infer<typeof dailyCountsSchema>;
+
+// export async function getDailyCounts(): Promise<DailyCounts> {
+//   "use cache";
+//   cacheLife("days");
+
+//   try {
+//     const res = await client.get(`daily/counts`).json();
+//     const parsed = dailyCountsSchema.safeParse(res);
+//     if (!parsed.success) {
+//       console.error("Failed to parse daily counts", parsed.error);
+//       return {
+//         neuronCount: "0",
+//         oracleCount: "0",
+//         predictionCount: "0",
+//       };
+//     }
+//     return parsed.data;
+//   } catch (e) {
+//     console.error("Error fetching daily counts", e);
+//     return {
+//       neuronCount: "0",
+//       oracleCount: "0",
+//       predictionCount: "0",
+//     };
+//   }
+// }
+
 const dailyCountsSchema = z.object({
-  neuronCount: z.string(),
-  oracleCount: z.string(),
-  predictionCount: z.string(),
+  total_predictions: z.int(),
+  unique_neurons: z.int(),
+  last_distribution: z.string(),
+  previous_distribution: z.string(),
+  cache_updated_at: z.string(),
 });
 export type DailyCounts = z.infer<typeof dailyCountsSchema>;
 
-export async function getDailyCounts(): Promise<DailyCounts> {
-  "use cache";
-  cacheLife("days");
-
-  // try {
-  //   const res = await client.get(`daily/counts`).json();
-  //   const parsed = dailyCountsSchema.safeParse(res);
-  //   if (!parsed.success) {
-  //     console.error("Failed to parse daily counts", parsed.error);
-  //     return {
-  //       neuronCount: "0",
-  //       oracleCount: "0",
-  //       predictionCount: "0",
-  //     };
-  //   }
-  //   return parsed.data;
-  // } catch (e) {
-  //   console.error("Error fetching daily counts", e);
-  //   return {
-  //     neuronCount: "0",
-  //     oracleCount: "0",
-  //     predictionCount: "0",
-  //   };
-  // }
-  return {
-    neuronCount: "0",
-    oracleCount: "0",
-    predictionCount: "0",
-  };
-}
-
-const dailyPredictorStatsSchema = z.object({
-  "Average Score of Delegated-staked Neurons": z.number(),
-  "Average Score of Self-staked Neurons": z.number(),
-  "Competing Neurons": z.number(),
-  "Current Neuron Version": z.string(),
-  "Current Staking Requirement": z.number(),
-  Date: z.string(),
-  "Delegated-staked Neurons": z.number(),
-  "Self-staked Neurons": z.number(),
-});
-
-export type DailyPredictorStats = z.infer<typeof dailyPredictorStatsSchema>;
-
-export async function getDailyPredictorStats(
-  date?: Date
-): Promise<DailyPredictorStats> {
+export async function getStatsPredictions(): Promise<DailyCounts> {
   "use cache";
   cacheLife("hours");
 
-  if (date) {
-    try {
-      const res = await ky
-        .get(
-          `${BASE_URL}/reports/daily/stats/predictors/${
-            date.toISOString().split("T")[0]
-          }`,
-          { retry: 3 }
-        )
-        .json();
-      const parsed = dailyPredictorStatsSchema.safeParse(res);
-      if (!parsed.success) {
-        console.error("Failed to parse daily predictor stats", parsed.error);
-        return {
-          "Average Score of Delegated-staked Neurons": 0,
-          "Average Score of Self-staked Neurons": 0,
-          "Competing Neurons": 0,
-          "Current Neuron Version": "",
-          "Current Staking Requirement": 0,
-          Date: "",
-          "Delegated-staked Neurons": 0,
-          "Self-staked Neurons": 0,
-        };
-      }
-      return parsed.data;
-    } catch (e) {
-      console.error("Error fetching daily predictor stats", e);
+  try {
+    const res = await client.get(`stats/predictions`).json();
+    const parsed = dailyCountsSchema.safeParse(res);
+    if (!parsed.success) {
+      console.error("Failed to parse stats predictions", parsed.error);
       return {
-        "Average Score of Delegated-staked Neurons": 0,
-        "Average Score of Self-staked Neurons": 0,
-        "Competing Neurons": 0,
-        "Current Neuron Version": "",
-        "Current Staking Requirement": 0,
-        Date: "",
-        "Delegated-staked Neurons": 0,
-        "Self-staked Neurons": 0,
+        total_predictions: 0,
+        unique_neurons: 0,
+        last_distribution: "",
+        previous_distribution: "",
+        cache_updated_at: "",
       };
     }
-  }
-
-  const res = await ky
-    .get(`${BASE_URL}/reports/daily/stats/predictors/latest`, { retry: 3 })
-    .json();
-  const parsed = dailyPredictorStatsSchema.safeParse(res);
-  if (!parsed.success) {
-    console.error("Failed to parse daily predictor stats", parsed.error);
+    return parsed.data;
+  } catch (e) {
+    console.error("Error fetching stats predictions", e);
     return {
-      "Average Score of Delegated-staked Neurons": 0,
-      "Average Score of Self-staked Neurons": 0,
-      "Competing Neurons": 0,
-      "Current Neuron Version": "",
-      "Current Staking Requirement": 0,
-      Date: "",
-      "Delegated-staked Neurons": 0,
-      "Self-staked Neurons": 0,
+      total_predictions: 0,
+        unique_neurons: 0,
+        last_distribution: "",
+        previous_distribution: "",
+        cache_updated_at: "",
     };
   }
-  return parsed.data;
 }
+
+// const dailyPredictorStatsSchema = z.object({
+//   "Average Score of Delegated-staked Neurons": z.number(),
+//   "Average Score of Self-staked Neurons": z.number(),
+//   "Competing Neurons": z.number(),
+//   "Current Neuron Version": z.string(),
+//   "Current Staking Requirement": z.number(),
+//   Date: z.string(),
+//   "Delegated-staked Neurons": z.number(),
+//   "Self-staked Neurons": z.number(),
+// });
+
+// export type DailyPredictorStats = z.infer<typeof dailyPredictorStatsSchema>;
+
+// export async function getDailyPredictorStats(
+//   date?: Date
+// ): Promise<DailyPredictorStats> {
+//   "use cache";
+//   cacheLife("hours");
+
+//   if (date) {
+//     try {
+//       const res = await ky
+//         .get(
+//           `${BASE_URL}/reports/daily/stats/predictors/${
+//             date.toISOString().split("T")[0]
+//           }`,
+//           { retry: 3 }
+//         )
+//         .json();
+//       const parsed = dailyPredictorStatsSchema.safeParse(res);
+//       if (!parsed.success) {
+//         console.error("Failed to parse daily predictor stats", parsed.error);
+//         return {
+//           "Average Score of Delegated-staked Neurons": 0,
+//           "Average Score of Self-staked Neurons": 0,
+//           "Competing Neurons": 0,
+//           "Current Neuron Version": "",
+//           "Current Staking Requirement": 0,
+//           Date: "",
+//           "Delegated-staked Neurons": 0,
+//           "Self-staked Neurons": 0,
+//         };
+//       }
+//       return parsed.data;
+//     } catch (e) {
+//       console.error("Error fetching daily predictor stats", e);
+//       return {
+//         "Average Score of Delegated-staked Neurons": 0,
+//         "Average Score of Self-staked Neurons": 0,
+//         "Competing Neurons": 0,
+//         "Current Neuron Version": "",
+//         "Current Staking Requirement": 0,
+//         Date: "",
+//         "Delegated-staked Neurons": 0,
+//         "Self-staked Neurons": 0,
+//       };
+//     }
+//   }
+
+//   const res = await ky
+//     .get(`${BASE_URL}/reports/daily/stats/predictors/latest`, { retry: 3 })
+//     .json();
+//   const parsed = dailyPredictorStatsSchema.safeParse(res);
+//   if (!parsed.success) {
+//     console.error("Failed to parse daily predictor stats", parsed.error);
+//     return {
+//       "Average Score of Delegated-staked Neurons": 0,
+//       "Average Score of Self-staked Neurons": 0,
+//       "Competing Neurons": 0,
+//       "Current Neuron Version": "",
+//       "Current Staking Requirement": 0,
+//       Date: "",
+//       "Delegated-staked Neurons": 0,
+//       "Self-staked Neurons": 0,
+//     };
+//   }
+//   return parsed.data;
+// }
 
 const streamSchema = z.object({
   author: z.int32(),
