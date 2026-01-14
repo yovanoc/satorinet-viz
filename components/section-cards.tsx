@@ -10,9 +10,11 @@ import {
 } from "@/lib/satorinet/central";
 import { getSatoriHolders } from "@/lib/get-satori-holders";
 import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
+import { cacheLife } from "next/cache";
 
 export async function SectionCards() {
   'use cache';
+  cacheLife('hours');
 
   const [price, statsPredictions, satoriHolders] =
     await Promise.all([

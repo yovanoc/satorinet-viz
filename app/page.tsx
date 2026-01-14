@@ -18,6 +18,7 @@ import { getDailyWorkerCounts } from "@/lib/db/queries/predictors/worker-count";
 // import { StackedAreaManifest } from "@/components/stacked-area-manifest";
 // import { getManifests } from "@/lib/db/queries/manifest";
 import { cacheLife } from "next/cache";
+import { connection } from "next/server";
 
 async function DailyWorkerCountsCard() {
   'use cache';
@@ -101,7 +102,7 @@ async function CustomDataTable() {
   );
 }
 
-export default async function Page() {
+async function HomeContent() {
   'use cache';
   cacheLife('hours');
 
@@ -111,7 +112,7 @@ export default async function Page() {
         fallback={
           <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-6">
             {[...Array(6)].map((_, i) => (
-              <Skeleton key={i} className="h-[125px] w-full rounded-xl" />
+              <Skeleton key={i} className="h-31.25 w-full rounded-xl" />
             ))}
           </div>
         }
@@ -120,7 +121,7 @@ export default async function Page() {
       </Suspense>
       <div className="px-4 lg:px-6">
         <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
-          <Suspense fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}>
+          <Suspense fallback={<Skeleton className="h-75 w-full rounded-xl" />}>
             <DailyWorkerCountsCard />
           </Suspense>
           <div className="flex flex-col gap-2">
@@ -129,7 +130,7 @@ export default async function Page() {
         </div>
       </div>
       <div className="px-4 lg:px-6">
-        <Suspense fallback={<Skeleton className="h-[350px] w-full rounded-xl" />}>
+        <Suspense fallback={<Skeleton className="h-87.5 w-full rounded-xl" />}>
           <CustomDataTable />
         </Suspense>
 
@@ -146,4 +147,12 @@ export default async function Page() {
       </div>
     </div>
   );
+}
+
+export default async function Page() {
+  // This route uses non-Next fetches/DB calls; force runtime rendering so it
+  // doesn't get stuck with a fully pre-rendered static shell.
+  await connection();
+
+  return <HomeContent />;
 }
