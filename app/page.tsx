@@ -18,7 +18,6 @@ import { getDailyWorkerCounts } from "@/lib/db/queries/predictors/worker-count";
 // import { StackedAreaManifest } from "@/components/stacked-area-manifest";
 // import { getManifests } from "@/lib/db/queries/manifest";
 import { cacheLife } from "next/cache";
-import { connection } from "next/server";
 
 async function DailyWorkerCountsCard() {
   'use cache';
@@ -150,9 +149,5 @@ async function HomeContent() {
 }
 
 export default async function Page() {
-  // This route uses non-Next fetches/DB calls; force runtime rendering so it
-  // doesn't get stuck with a fully pre-rendered static shell.
-  await connection();
-
   return <HomeContent />;
 }
