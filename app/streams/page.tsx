@@ -24,7 +24,7 @@ async function getTopStreams(query?: string) {
     );
   }
   return {
-    filtered: filtered.sort((a, b) => b.total_vote - a.total_vote).slice(0, 10),
+    filtered: filtered.toSorted((a, b) => b.total_vote - a.total_vote).slice(0, 10),
     total: streams.length,
   };
 }

@@ -54,12 +54,14 @@ async function CustomDataTable() {
 
   const { tiers, assetHolders } = satoriHolders;
 
+  const holderByAddress = new Map(assetHolders.map((h) => [h.address, h] as const));
+
   const knownAddresses = KNOWN_ADDRESSES.map(({ address, name }) => {
-    const holder = assetHolders.find((holder) => holder.address === address);
+    const holder = holderByAddress.get(address);
     const balance = holder?.balance ?? 0;
     const rank = balance > 0 && holder ? holder.rank : 'N/A' as const;
     return { address, name, balance, rank };
-  }).sort((a, b) => b.balance - a.balance);
+  }).toSorted((a, b) => b.balance - a.balance);
 
   const breakdown: HoldersSummaryData[] = Object.entries(tiers).map(
     ([tierName, tierData]) => {
@@ -84,7 +86,7 @@ async function CustomDataTable() {
   const topHolders: SingleHolderData[] =
     Object.entries(tiers)
       .find(([tierName]) => tierName === "🔱 Aquaman")?.[1]
-      ?.wallets.sort((a, b) => b.balance - a.balance)
+      ?.wallets.toSorted((a, b) => b.balance - a.balance)
       .map((holder) => ({
         address: holder.address,
         name: getAddressName(holder.address) ?? "Unknown",

@@ -50,9 +50,9 @@ export type AssetHolderWithRank = AssetHolder & {
 };
 
 export const classifyAssetHolders = (assetHolders: AssetHolder[]) => {
-  assetHolders.sort((a, b) => b.balance - a.balance);
-  const totalBalance = assetHolders.reduce((acc, holder) => acc + holder.balance, 0);
-  const assetHoldersWithRank: AssetHolderWithRank[] = assetHolders.map((holder, idx) => ({
+  const sortedAssetHolders = assetHolders.toSorted((a, b) => b.balance - a.balance);
+  const totalBalance = sortedAssetHolders.reduce((acc, holder) => acc + holder.balance, 0);
+  const assetHoldersWithRank: AssetHolderWithRank[] = sortedAssetHolders.map((holder, idx) => ({
       ...holder,
       rank: idx + 1,
       percent: (holder.balance / totalBalance) * 100,

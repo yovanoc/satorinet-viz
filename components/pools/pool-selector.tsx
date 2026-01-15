@@ -25,8 +25,12 @@ interface PoolSelectorProps {
 
 export const SimplePoolSelector: React.FC<PoolSelectorProps> = ({ pools, selectedPool, onPoolChange }) => {
 
+  const poolByAddress = React.useMemo(() => {
+    return new Map(pools.map((p) => [p.address, p] as const));
+  }, [pools]);
+
   const onPoolChangeInner = (poolAddress: string) => {
-    const pool = pools.find((p) => p.address === poolAddress);
+    const pool = poolByAddress.get(poolAddress);
     if (pool) {
       onPoolChange(pool);
     }
@@ -71,6 +75,10 @@ export const MultiplePoolSelector: React.FC<MultiplePoolSelectorProps> = ({
 }) => {
   const [value, setValue] = React.useState<TopPoolWithName[]>(selectedPools);
 
+  const poolByAddress = React.useMemo(() => {
+    return new Map(pools.map((p) => [p.address, p] as const));
+  }, [pools]);
+
   React.useEffect(() => {
     setValue(selectedPools);
   }, [selectedPools]);
@@ -80,7 +88,11 @@ export const MultiplePoolSelector: React.FC<MultiplePoolSelectorProps> = ({
   }, [value, onPoolsChange]);
 
   const onChangeInner = (addresses: string[]) => {
-    const selected = pools.filter((p) => addresses.includes(p.address));
+    const selected: TopPoolWithName[] = [];
+    for (const address of addresses) {
+      const pool = poolByAddress.get(address);
+      if (pool) selected.push(pool);
+    }
     setValue(selected);
   }
 
@@ -88,7 +100,7 @@ export const MultiplePoolSelector: React.FC<MultiplePoolSelectorProps> = ({
     <Combobox
       value={value.map((p) => p.address)}
       onValueChange={onChangeInner}
-      className="w-[400px]"
+      className="w-100"
       multiple
       autoHighlight
     >
@@ -96,7 +108,7 @@ export const MultiplePoolSelector: React.FC<MultiplePoolSelectorProps> = ({
       <ComboboxAnchor className="h-full min-h-10 flex-wrap px-3 py-2">
         <ComboboxBadgeList>
           {value.map((item) => {
-            const option = pools.find((p) => p.address === item.address);
+            const option = poolByAddress.get(item.address);
             if (!option) return null;
 
             return (
