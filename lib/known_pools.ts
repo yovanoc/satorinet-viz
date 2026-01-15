@@ -277,8 +277,8 @@ export function mostWantedTop(pools: TopPoolWithName[]) {
   return pools
     .filter(
       (pool) =>
-        pool.name &&
-        !["Managers/Dev", "Dev", "Reserves", "Lightning"].includes(pool.name)
+        pool.name
+      // && !["Managers/Dev", "Dev", "Reserves", "Lightning"].includes(pool.name)
     )
-    .slice(0, 3);
+    .slice(0, 2);
 }

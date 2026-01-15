@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/card";
 import { Address } from "./address";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 const schema = z.object({
   tier: z.string(),
   minMax: z.string(),
@@ -54,7 +54,7 @@ const schema = z.object({
 
 export type HoldersSummaryData = z.infer<typeof schema>;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 const holderSchema = z.object({
   address: z.string(),
   name: z.string(),
