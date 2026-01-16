@@ -122,6 +122,13 @@ export const KNOWN_POOLS: Pool[] = [
           type: "percent",
           percent: 0.5,
         },
+        until: new Date("2025-12-20T00:00:00Z"),
+      },
+      {
+        fees: {
+          type: "percent",
+          percent: 0.4,
+        },
         until: null,
       },
     ],
@@ -287,5 +294,5 @@ export function mostWantedTop(pools: TopPoolWithName[]) {
         pool.name
       // && !["Managers/Dev", "Dev", "Reserves", "Lightning"].includes(pool.name)
     )
-    .slice(0, 2);
+    .slice(0, 3);
 }
