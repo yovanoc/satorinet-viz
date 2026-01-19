@@ -5,7 +5,7 @@ import { dailyPredictorAddress } from "../../schema";
 
 export async function getDailyWorkerCounts(date: Date, days = 30) {
   "use cache";
-  cacheLife("days");
+  cacheLife("hours");
 
   return db
     .select({

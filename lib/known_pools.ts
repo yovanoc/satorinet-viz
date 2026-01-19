@@ -109,6 +109,12 @@ export const KNOWN_POOLS: Pool[] = [
         from: new Date("2025-12-21T00:00:00Z"),
         until: new Date("2026-01-01T15:00:00Z"),
       },
+      {
+        percent: 0.2,
+        reason: "January 2026 Incident Compensation",
+        from: new Date("2026-01-20T00:00:00Z"),
+        until: new Date("2026-02-05T15:00:00Z"),
+      }
     ],
   },
   {

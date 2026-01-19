@@ -20,9 +20,6 @@ import { getDailyWorkerCounts } from "@/lib/db/queries/predictors/worker-count";
 import { cacheLife } from "next/cache";
 
 async function DailyWorkerCountsCard() {
-  'use cache';
-  cacheLife('hours');
-
   const date = new Date();
   const dailyCounts = await getDailyWorkerCounts(date, 90);
   return <ChartAreaInteractive dailyCounts={dailyCounts} />;
@@ -104,9 +101,6 @@ async function CustomDataTable() {
 }
 
 async function HomeContent() {
-  'use cache';
-  cacheLife('hours');
-
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
       <Suspense
@@ -151,5 +145,7 @@ async function HomeContent() {
 }
 
 export default async function Page() {
+  'use cache';
+  cacheLife('hours');
   return <HomeContent />;
 }
