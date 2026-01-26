@@ -4,9 +4,8 @@ import { setTimeout } from "timers/promises";
 import { getScriptHash } from "../evr";
 
 const EVRMORE_ELECTRUMX_SERVERS_WITHOUT_SSL = [
-  "electrumx1.satorinet.io:50001",
-  "electrumx2.satorinet.io:50001",
-  "electrumx3.satorinet.io:50001",
+  "167.71.11.203:50001",
+  "evrx-1.satoriog.com:5000",
 ];
 
 export type TxHistory = {
