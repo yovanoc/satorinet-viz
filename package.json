@@ -41,34 +41,34 @@
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
     "emittery": "^1.2.0",
-    "ioredis": "^5.9.1",
-    "ky": "^1.14.2",
-    "lucide-react": "^0.562.0",
-    "next": "16.1.2",
+    "ioredis": "^5.9.2",
+    "ky": "^1.14.3",
+    "lucide-react": "^0.563.0",
+    "next": "16.1.6",
     "next-themes": "^0.4.6",
     "p-limit": "^7.2.0",
-    "pg": "^8.17.1",
-    "react": "19.2.3",
+    "pg": "^8.18.0",
+    "react": "19.2.4",
     "react-day-picker": "9.13.0",
-    "react-dom": "19.2.3",
+    "react-dom": "19.2.4",
     "recharts": "2.15.4",
-    "simple-icons": "^16.5.0",
+    "simple-icons": "^16.7.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
     "usehooks-ts": "^3.1.1",
     "vaul": "^1.1.2",
-    "zod": "^4.3.5"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
-    "@types/node": "^25.0.8",
+    "@types/node": "^25.2.0",
     "@types/pg": "^8.16.0",
-    "@types/react": "19.2.8",
+    "@types/react": "19.2.10",
     "@types/react-dom": "19.2.3",
     "drizzle-kit": "^0.31.8",
     "eslint": "^9.39.2",
-    "eslint-config-next": "16.1.2",
+    "eslint-config-next": "16.1.6",
     "tailwindcss": "^4.1.18",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
@@ -76,7 +76,7 @@
   "packageManager": "pnpm@10.27.0",
   "pnpm": {
     "overrides": {
-      "@types/react": "19.2.8",
+      "@types/react": "19.2.10",
       "@types/react-dom": "19.2.3"
     }
   }
