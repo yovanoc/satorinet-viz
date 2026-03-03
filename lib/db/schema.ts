@@ -1,15 +1,20 @@
-import { integer, pgTable, varchar, date, doublePrecision, smallint } from "drizzle-orm/pg-core";
+import { integer, pgTable, varchar, date, doublePrecision, smallint, timestamp } from "drizzle-orm/pg-core";
 
 export const dailyPredictorAddress = pgTable("daily_predictor_address", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   date: date().notNull(),
+  observation_ts: timestamp({ withTimezone: true }).notNull(),
   worker_address: varchar({ length: 255 }).notNull(),
   worker_vault_address: varchar({ length: 255 }),
   reward_address: varchar({ length: 255 }).notNull(),
+  pool_wallet: varchar({ length: 255 }).notNull(),
+  pool_vault: varchar({ length: 255 }),
   score: doublePrecision().notNull(),
   reward: doublePrecision().notNull(),
+  distributed_reward: doublePrecision().notNull(),
   balance: doublePrecision().notNull(),
   delegated_stake: doublePrecision().notNull(),
+  worker_reward_calculated: doublePrecision().notNull(),
   pool_miner_percent: doublePrecision().notNull(),
   miner_earned: doublePrecision().notNull(),
 });
@@ -17,11 +22,16 @@ export const dailyPredictorAddress = pgTable("daily_predictor_address", {
 export const dailyContributorAddress = pgTable("daily_contributor_address", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   date: date().notNull(),
+  observation_ts: timestamp({ withTimezone: true }).notNull(),
   contributor: varchar({ length: 255 }).notNull(),
   pool_address: varchar({ length: 255 }).notNull(),
+  pool_vault: varchar({ length: 255 }),
   staking_power_contribution: doublePrecision().notNull(),
   contributor_vault: varchar({ length: 255 }),
   pools_own_staking_power: doublePrecision(),
+  share: doublePrecision().notNull(),
+  reward_calculated: doublePrecision().notNull(),
+  distributed_reward: doublePrecision().notNull(),
 });
 
 export const dailyInviterAddress = pgTable("daily_inviter_address", {

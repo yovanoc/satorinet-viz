@@ -41,6 +41,40 @@ export async function getWorkerReward(address: string) {
   return { offer: 0 };
 }
 
+export type PoolOpen = {
+  address: string;
+  alias: string | null;
+  commission: number;
+};
+
+const poolOpenSchema = z.object({
+  address: z.string(),
+  alias: z.nullable(z.string()),
+  commission: z.number(),
+});
+
+const poolOpenResponseSchema = z.object({
+  pools: z.array(poolOpenSchema),
+});
+
+export async function getPoolOpen() {
+  "use cache";
+  cacheLife("minutes");
+
+  try {
+    const res = await client.get("pool/open").json();
+    const parsed = poolOpenResponseSchema.safeParse(res);
+    if (!parsed.success) {
+      console.error("Failed to parse open pools", parsed.error);
+      return [] as PoolOpen[];
+    }
+    return parsed.data.pools;
+  } catch (e) {
+    console.error("Error fetching open pools", e);
+    return [] as PoolOpen[];
+  }
+}
+
 // export async function getMiningMode(address: string): Promise<boolean> {
 //   "use cache";
 //   cacheLife("hours");
