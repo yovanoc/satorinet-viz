@@ -140,138 +140,355 @@ export function decodeEvrmoreHeader(
   };
 }
 
+interface PoolConnection {
+  client: Socket;
+  buffer: string;
+  isConnected: boolean;
+  server: string;
+  lastUsed: number;
+  pendingRequests: Map<
+    number,
+    {
+      resolve: (value: any) => void;
+      reject: (error: Error) => void;
+    }
+  >;
+}
+
 class ElectrumxClient extends Emittery<{
   connected: undefined;
   disconnected: undefined;
   error: Error;
   message: string;
 }> {
-  private client: Socket | null = null;
-  private buffer: string = "";
-  private isConnected: boolean = false;
+  private connections: Map<string, PoolConnection> = new Map();
+  private maxConnections: number;
+  private connectionTimeout: number = 5000;
+  private requestTimeout: number = 30000;
 
-  async connectToServer(attempt: number = 0): Promise<void> {
-    if (this.client) {
-      await this.disconnect();
-    }
+  constructor(maxConnections: number = 3) {
+    super();
+    this.maxConnections = Math.min(
+      maxConnections,
+      EVRMORE_ELECTRUMX_SERVERS_WITHOUT_SSL.length
+    );
+  }
+  async initialize(): Promise<void> {
+    console.log(
+      `Initializing ElectrumX pool with ${this.maxConnections} connections...`
+    );
+    const servers = this.getRandomServers(this.maxConnections);
+    console.log(`Selected servers: ${servers.join(", ")}`);
 
-    const randomServer = this.getRandomServer();
-    if (!randomServer) throw new Error("No electrum server available");
-
-    const [host, port] = randomServer.split(":");
-    if (!port) throw new Error("Invalid server address");
-
-    const maxRetries = 5;
+    const connectionPromises = servers.map((server: string) =>
+      this.createConnectionWithWait(server)
+    );
 
     try {
-      this.client = connect({
-        host,
-        port: parseInt(port),
-        timeout: 5000,
-      });
-      console.log(`Connected successfully to ${randomServer}`);
-    } catch (error) {
-      console.error(error);
-      if (attempt < maxRetries) {
-        console.warn(
-          `Connection attempt ${
-            attempt + 1
-          } to ${randomServer} failed. Retrying with a new server...`
-        );
-        return this.connectToServer(attempt + 1);
-      }
-      throw new Error(
-        `Connection to ${randomServer} failed. Max retry attempts reached. Could not connect.`
+      const results = await Promise.allSettled(connectionPromises);
+      const successfulConnections = results.filter(
+        (result) => result.status === "fulfilled"
+      ).length;
+      const failedConnections = results.filter(
+        (result) => result.status === "rejected"
       );
-    }
 
-    this.client.on("connect", () => {
-      this.isConnected = true;
+      if (failedConnections.length > 0) {
+        console.warn(
+          `Failed to connect to ${failedConnections.length} servers:`
+        );
+        failedConnections.forEach((result, index) => {
+          console.warn(
+            `  ${servers[results.indexOf(result)]}: ${
+              (result as PromiseRejectedResult).reason
+            }`
+          );
+        });
+      }
+
+      if (successfulConnections === 0) {
+        const errors = results
+          .filter((result) => result.status === "rejected")
+          .map((result) => (result as PromiseRejectedResult).reason)
+          .join(", ");
+        throw new Error(
+          `Failed to establish any connections to ElectrumX servers. Errors: ${errors}`
+        );
+      }
+
+      console.log(
+        `ElectrumX pool initialized with ${successfulConnections}/${this.maxConnections} connections`
+      );
       this.emit("connected");
-    });
+    } catch (error) {
+      console.error("Failed to initialize ElectrumX pool:", error);
+      throw error;
+    }
+  }
 
-    this.client.on("close", () => {
-      this.isConnected = false;
-      this.client = null;
-      this.emit("disconnected");
-    });
+  private async createConnectionWithWait(server: string): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      const [host, port] = server.split(":");
+      if (!port) {
+        reject(new Error(`Invalid server address: ${server}`));
+        return;
+      }
 
-    this.client.on("error", (err) => this.emit("error", err));
+      let isResolved = false;
+      const timeoutId = globalThis.setTimeout(() => {
+        if (!isResolved) {
+          isResolved = true;
+          reject(new Error(`Connection timeout to ${server}`));
+        }
+      }, this.connectionTimeout);
 
-    this.client.on("data", async (data) => {
-      this.buffer += data.toString("utf8");
-      while (true) {
-        const result = this.splitMessage(this.buffer);
-        if (!result) break;
+      try {
+        const client = connect({
+          host,
+          port: parseInt(port),
+          timeout: this.connectionTimeout,
+        });
 
-        const [message, remainder] = result;
-        this.buffer = remainder;
+        const connection: PoolConnection = {
+          client,
+          buffer: "",
+          isConnected: false,
+          server,
+          lastUsed: Date.now(),
+          pendingRequests: new Map(),
+        };
 
-        const trimmedMessage = message.trimEnd();
-        if (trimmedMessage) {
-          // console.debug("Received message:", trimmedMessage);
-          this.emit("message", trimmedMessage);
+        client.on("connect", () => {
+          connection.isConnected = true;
+          console.log(`Connected to ElectrumX server: ${server}`);
+          if (!isResolved) {
+            isResolved = true;
+            globalThis.clearTimeout(timeoutId);
+            resolve();
+          }
+        });
+
+        client.on("close", () => {
+          connection.isConnected = false;
+          console.log(`Disconnected from ElectrumX server: ${server}`);
+          this.connections.delete(server);
+
+          // Reject all pending requests for this connection
+          connection.pendingRequests.forEach(({ reject }) => {
+            reject(new Error(`Connection to ${server} closed`));
+          });
+          connection.pendingRequests.clear();
+        });
+
+        client.on("error", (err) => {
+          console.error(`Error on ElectrumX server ${server}:`, err);
+          connection.isConnected = false;
+          if (!isResolved) {
+            isResolved = true;
+            globalThis.clearTimeout(timeoutId);
+            reject(err);
+          }
+        });
+
+        client.on("data", (data) => {
+          connection.buffer += data.toString("utf8");
+          this.processMessages(connection);
+        });
+
+        this.connections.set(server, connection);
+      } catch (error) {
+        console.error(`Failed to connect to ${server}:`, error);
+        if (!isResolved) {
+          isResolved = true;
+          globalThis.clearTimeout(timeoutId);
+          reject(error);
         }
       }
     });
   }
 
-  async disconnect(): Promise<void> {
-    return new Promise((resolve) => {
-      this.once("disconnected").then(() => {
-        resolve();
+  private async createConnection(server: string): Promise<void> {
+    const [host, port] = server.split(":");
+    if (!port) throw new Error(`Invalid server address: ${server}`);
+
+    try {
+      const client = connect({
+        host,
+        port: parseInt(port),
+        timeout: this.connectionTimeout,
       });
-      if (this.client) {
-        this.client.destroy();
-      } else {
-        resolve();
+
+      const connection: PoolConnection = {
+        client,
+        buffer: "",
+        isConnected: false,
+        server,
+        lastUsed: Date.now(),
+        pendingRequests: new Map(),
+      };
+
+      client.on("connect", () => {
+        connection.isConnected = true;
+        console.log(`Connected to ElectrumX server: ${server}`);
+      });
+
+      client.on("close", () => {
+        connection.isConnected = false;
+        console.log(`Disconnected from ElectrumX server: ${server}`);
+        this.connections.delete(server);
+
+        // Reject all pending requests for this connection
+        connection.pendingRequests.forEach(({ reject }) => {
+          reject(new Error(`Connection to ${server} closed`));
+        });
+        connection.pendingRequests.clear();
+      });
+
+      client.on("error", (err) => {
+        console.error(`Error on ElectrumX server ${server}:`, err);
+        connection.isConnected = false;
+      });
+
+      client.on("data", (data) => {
+        connection.buffer += data.toString("utf8");
+        this.processMessages(connection);
+      });
+
+      this.connections.set(server, connection);
+    } catch (error) {
+      console.error(`Failed to connect to ${server}:`, error);
+      throw error;
+    }
+  }
+
+  private processMessages(connection: PoolConnection): void {
+    while (true) {
+      const result = this.splitMessage(connection.buffer);
+      if (!result) break;
+
+      const [message, remainder] = result;
+      connection.buffer = remainder;
+
+      const trimmedMessage = message.trimEnd();
+      if (trimmedMessage) {
+        try {
+          const parsedMessage: {
+            id: number;
+            result?: any;
+            error?: { code: number; message: string };
+          } = JSON.parse(trimmedMessage);
+
+          const pendingRequest = connection.pendingRequests.get(
+            parsedMessage.id
+          );
+          if (pendingRequest) {
+            connection.pendingRequests.delete(parsedMessage.id);
+
+            if (parsedMessage.error) {
+              const error = parsedMessage.error;
+              pendingRequest.reject(
+                new Error(`Error ${error.code}: ${error.message}`)
+              );
+            } else if (parsedMessage.result !== undefined) {
+              pendingRequest.resolve(parsedMessage.result);
+            } else {
+              pendingRequest.reject(new Error("Invalid response from server"));
+            }
+          }
+        } catch (error) {
+          console.error("Failed to parse message:", error);
+        }
       }
-    });
+    }
+  }
+
+  async disconnect(): Promise<void> {
+    const disconnectionPromises = Array.from(this.connections.values()).map(
+      (connection) => {
+        return new Promise<void>((resolve) => {
+          if (connection.client) {
+            connection.client.once("close", () => resolve());
+            connection.client.destroy();
+          } else {
+            resolve();
+          }
+        });
+      }
+    );
+
+    await Promise.all(disconnectionPromises);
+    this.connections.clear();
+    this.emit("disconnected");
+  }
+
+  private getAvailableConnection(): PoolConnection | null {
+    const availableConnections = Array.from(this.connections.values())
+      .filter((conn) => conn.isConnected)
+      .sort((a, b) => a.lastUsed - b.lastUsed);
+
+    return availableConnections.length > 0 ? availableConnections[0]! : null;
   }
 
   private async handleRPC<T>(
     method: string,
     params: unknown[],
-    callId: number | null = null
+    retryCount: number = 0
   ): Promise<T> {
-    return new Promise((resolve, reject) => {
-      const id = callId ?? Date.now() + Math.floor(Math.random() * 1000000);
+    const maxRetries = 3;
+    const connection = this.getAvailableConnection();
 
-      // console.log(
-      //   `Sending RPC request: ${method} with params: ${JSON.stringify(
-      //     params
-      //   )} and id: ${id}, isConnected: ${this.isConnected}`
-      // );
-
-      if (this.isConnected) {
-        this.sendRPC(method, params, id);
-      } else {
-        this.once("connected").then(() => {
-          this.sendRPC(method, params, id);
-        });
+    if (!connection) {
+      if (retryCount < maxRetries) {
+        console.warn(
+          `No available connections, retrying... (${
+            retryCount + 1
+          }/${maxRetries})`
+        );
+        await setTimeout(1000);
+        return this.handleRPC<T>(method, params, retryCount + 1);
       }
+      throw new Error("No available ElectrumX connections");
+    }
 
-      const onMessage = (message: string) => {
-        const parsedMessage: {
-          id: number;
-          result?: T;
-          error?: { code: number; message: string };
-        } = JSON.parse(message);
-        if (parsedMessage.id !== id) return;
+    const id = Date.now() + Math.floor(Math.random() * 1000000);
+    connection.lastUsed = Date.now();
 
-        if (parsedMessage.error) {
-          const error = parsedMessage.error;
-          return reject(new Error(`Error ${error.code}: ${error.message}`));
+    return new Promise((resolve, reject) => {
+      const timeoutId = globalThis.setTimeout(() => {
+        connection.pendingRequests.delete(id);
+        reject(new Error(`Request timeout for method: ${method}`));
+      }, this.requestTimeout);
+
+      connection.pendingRequests.set(id, {
+        resolve: (value: T) => {
+          globalThis.clearTimeout(timeoutId);
+          resolve(value);
+        },
+        reject: (error: Error) => {
+          globalThis.clearTimeout(timeoutId);
+          reject(error);
+        },
+      });
+
+      try {
+        this.sendRPC(connection, method, params, id);
+      } catch (error) {
+        connection.pendingRequests.delete(id);
+        globalThis.clearTimeout(timeoutId);
+
+        if (retryCount < maxRetries) {
+          console.warn(
+            `RPC call failed, retrying... (${retryCount + 1}/${maxRetries})`
+          );
+          globalThis.setTimeout(() => {
+            this.handleRPC<T>(method, params, retryCount + 1)
+              .then(resolve)
+              .catch(reject);
+          }, 1000);
+        } else {
+          reject(error);
         }
-
-        const response = parsedMessage.result;
-        if (!response) return reject(new Error("Invalid response from server"));
-        this.off("message", onMessage);
-        resolve(response);
-      };
-
-      this.on("message", onMessage);
-      this.once("error").then(reject);
+      }
     });
   }
 
@@ -381,27 +598,24 @@ class ElectrumxClient extends Emittery<{
   }
 
   private sendRPC(
+    connection: PoolConnection,
     method: string,
     params: unknown[],
-    callId: number | null = null
-  ) {
-    if (!this.client) {
-      throw new Error("Client is not initialized");
-    }
-
-    if (!this.isConnected) {
-      throw new Error("Client is not connected");
+    callId: number
+  ): void {
+    if (!connection.client || !connection.isConnected) {
+      throw new Error("Connection is not available");
     }
 
     const payload =
       JSON.stringify({
         jsonrpc: "2.0",
-        id: callId ?? Math.round(Date.now() / 1000),
+        id: callId,
         method,
         params,
       }) + "\n";
 
-    this.client.write(payload);
+    connection.client.write(payload);
   }
 
   private splitMessage(buffer: string): [string, string] | null {
@@ -414,11 +628,58 @@ class ElectrumxClient extends Emittery<{
     return null;
   }
 
+  private getRandomServers(count: number): string[] {
+    const shuffled = [...EVRMORE_ELECTRUMX_SERVERS_WITHOUT_SSL].sort(
+      () => 0.5 - Math.random()
+    );
+    return shuffled.slice(0, count);
+  }
+
   private getRandomServer(): string | undefined {
     return EVRMORE_ELECTRUMX_SERVERS_WITHOUT_SSL[
       Math.floor(Math.random() * EVRMORE_ELECTRUMX_SERVERS_WITHOUT_SSL.length)
     ];
   }
+
+  getPoolStatus(): {
+    totalConnections: number;
+    activeConnections: number;
+    servers: { server: string; isConnected: boolean; lastUsed: number }[];
+  } {
+    const servers = Array.from(this.connections.values()).map((conn) => ({
+      server: conn.server,
+      isConnected: conn.isConnected,
+      lastUsed: conn.lastUsed,
+    }));
+
+    return {
+      totalConnections: this.connections.size,
+      activeConnections: servers.filter((s) => s.isConnected).length,
+      servers,
+    };
+  }
 }
 
-export const electrumxClient = new ElectrumxClient();
+const electrumxClient = new ElectrumxClient(4);
+
+export async function getElectrumxClient(): Promise<ElectrumxClient> {
+  const activeConnections = Array.from(
+    electrumxClient["connections"]?.values() || []
+  ).filter((conn) => conn.isConnected);
+
+  if (activeConnections.length > 0) {
+    return electrumxClient;
+  }
+
+  try {
+    await electrumxClient.initialize();
+    return electrumxClient;
+  } catch (error) {
+    console.error("Failed to initialize ElectrumX client:", error);
+    throw new Error(
+      `ElectrumX initialization failed: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
+}

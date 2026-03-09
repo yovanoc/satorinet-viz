@@ -1,6 +1,6 @@
 import { cacheLife } from "next/cache";
 import {
-  electrumxClient,
+  getElectrumxClient,
   type Transaction,
   type TransactionInput,
   type TxHistory,
@@ -11,13 +11,14 @@ import { redis } from "../redis";
 import type { TierName } from "../satorinet/holders";
 
 const limiter = new Bottleneck({
-  reservoir: 15,
-  reservoirIncreaseAmount: 1,
-  reservoirIncreaseInterval: 1000, // must be divisible by 250
-  reservoirIncreaseMaximum: 20,
+  reservoir: 40,
+  reservoirIncreaseAmount: 10,
+   // ! must be divisible by 250
+  reservoirIncreaseInterval: 250,
+  reservoirIncreaseMaximum: 40,
 
-  maxConcurrent: 2,
-  minTime: 250,
+  maxConcurrent: 8,
+  minTime: 125,
 });
 
 export async function getEVRTransaction(
@@ -36,6 +37,8 @@ export async function getEVRTransaction(
     return t;
   }
   try {
+    const electrumxClient = await getElectrumxClient();
+
     const tx = await limiter.schedule(() =>
       electrumxClient.getTransaction(tx_hash)
     );
@@ -176,9 +179,9 @@ export async function getAddressDataOnElectrumx(
   "use cache";
   cacheLife("hours");
 
-  try {
-    await electrumxClient.connectToServer();
+  const electrumxClient = await getElectrumxClient();
 
+  try {
 
     const [utxos, holder] = await Promise.all([
       electrumxClient.getAddressUtxos(address, "SATORI"),
