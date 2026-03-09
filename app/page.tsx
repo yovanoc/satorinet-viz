@@ -14,12 +14,14 @@ import { formatSatori } from "@/lib/format";
 import { getSatoriHolders } from "@/lib/get-satori-holders";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getDailyWorkerCounts } from "@/lib/db/queries/predictors/worker-count";
+import { connection } from "next/server";
 // import { getManifest } from "@/lib/manifest";
 // import { StackedAreaManifest } from "@/components/stacked-area-manifest";
 // import { getManifests } from "@/lib/db/queries/manifest";
-import { cacheLife } from "next/cache";
 
 async function DailyWorkerCountsCard() {
+  await connection();
+
   const date = new Date();
   const dailyCounts = await getDailyWorkerCounts(date, 90);
   return <ChartAreaInteractive dailyCounts={dailyCounts} />;
@@ -145,7 +147,5 @@ async function HomeContent() {
 }
 
 export default async function Page() {
-  'use cache';
-  cacheLife('hours');
   return <HomeContent />;
 }
