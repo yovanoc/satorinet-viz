@@ -22,7 +22,7 @@ export async function getPredictors(
   }[]
 > {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
 
   return db
     .select({

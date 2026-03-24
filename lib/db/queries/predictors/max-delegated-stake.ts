@@ -5,7 +5,7 @@ import { dailyPredictorAddress } from "../../schema";
 
 export async function getMaxDelegatedStake(date: Date) {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
 
   const res = await db
     .select({

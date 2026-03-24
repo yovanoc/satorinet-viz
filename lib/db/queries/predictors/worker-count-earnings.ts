@@ -5,7 +5,7 @@ import { dailyPredictorAddress } from "../../schema";
 
 export async function getWorkerCountWithEarnings(date: Date): Promise<number> {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
 
   const result = await db
     .select({

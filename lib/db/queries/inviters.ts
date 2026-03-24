@@ -4,7 +4,7 @@ import { db } from "..";
 
 export async function getInvitersForDate(date: Date) {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
 
   const res = await db.query.dailyInviterAddress
     .findMany({

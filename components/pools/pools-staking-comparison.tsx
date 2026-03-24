@@ -128,7 +128,7 @@ export async function PoolsStakingComparison({
   topPools,
 }: PoolsStakingComparisonProps) {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
 
   const [satoriPrice, fullStakeAmount] = await Promise.all([
     getSatoriPriceForDate(date),

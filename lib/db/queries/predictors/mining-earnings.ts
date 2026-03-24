@@ -5,7 +5,7 @@ import { dailyPredictorAddress } from "../../schema";
 
 export async function getDailyMiningEarnings(date: Date) {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
 
   const result = await db
     .select({

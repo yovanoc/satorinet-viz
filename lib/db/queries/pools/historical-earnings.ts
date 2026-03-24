@@ -8,7 +8,7 @@ export async function getPoolsHistoricalEarnings(
   days = 30
 ) {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
 
   // TODO use a proper query
 

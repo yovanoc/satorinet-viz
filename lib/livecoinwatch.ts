@@ -51,7 +51,7 @@ function getClosestPrice(
 
 async function getSatoriPriceForDateLocal(date: Date): Promise<number> {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     const windowSize = DELAY * Math.pow(2, attempt);
     const end = date.getTime() + windowSize;
@@ -84,7 +84,7 @@ export async function getSatoriPriceLivecoinwatch(
   end: number
 ): Promise<LiveCoinWatchResult> {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
 
   return await limiter.schedule(() =>
     ky

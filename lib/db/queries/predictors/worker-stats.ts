@@ -10,7 +10,7 @@ export async function getPoolWorkerStats(
   days = 30
 ) {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
 
   return db
     .select({

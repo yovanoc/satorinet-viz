@@ -5,7 +5,7 @@ import { dailyManifestAddress } from "../schema";
 
 export async function getManifestForDate(date: Date) {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
 
   const res = await db
     .select({
@@ -26,7 +26,7 @@ export async function getManifestForDate(date: Date) {
 
 export async function getManifests(date: Date, days = 30) {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
 
   const res = await db
     .select({
@@ -56,7 +56,7 @@ export async function getManifests(date: Date, days = 30) {
 
 export async function getManifestsForAddress(date: Date, address: string, days = 30) {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
 
   const res = await db
     .select({

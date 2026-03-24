@@ -5,7 +5,7 @@ import { dailyContributorAddress } from "../schema";
 
 export async function getTopPools(date: Date) {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
 
   return db
     .select({
@@ -37,7 +37,7 @@ export async function hasContributionsToPool(
   date: Date
 ): Promise<boolean> {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
 
   const result = await db
     .select({ count: sql<number>`count(*)` })
@@ -67,7 +67,7 @@ export async function getContributors(
   staking_power_contribution: number;
 }[]> {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
 
   return db
     .select({

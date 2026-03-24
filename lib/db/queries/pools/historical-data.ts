@@ -12,7 +12,7 @@ export async function getPoolHistoricalData(
   days = 30
 ) {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
 
   const knownPool = KNOWN_POOLS.find((p) => p.address === pool.address);
 

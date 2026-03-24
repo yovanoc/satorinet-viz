@@ -154,7 +154,7 @@ export async function getPoolVsWorkerComparison(
   startingAmount: number = 0
 ): Promise<PoolsVSWorkerData[]> {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
 
   const poolsData = await Promise.all(
     pools.map(async (pool) => ({
