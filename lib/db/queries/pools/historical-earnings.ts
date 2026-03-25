@@ -1,6 +1,6 @@
 import type { Pool } from "@/lib/known_pools";
-import { cacheLife } from "next/cache";
 import { getPoolHistoricalData } from "./historical-data";
+import { cacheLifeForDate } from "../../cache-utils";
 
 export async function getPoolsHistoricalEarnings(
   pools: Pool[],
@@ -8,7 +8,7 @@ export async function getPoolsHistoricalEarnings(
   days = 30
 ) {
   "use cache";
-  cacheLife("hours");
+  cacheLifeForDate(date);
 
   // TODO use a proper query
 

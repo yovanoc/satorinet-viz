@@ -149,7 +149,7 @@ export async function getItemFromTransaction(
   tx: Transaction
 ): Promise<TxItem | null> {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
 
   const { transfers, memo, senderAddress } = await extractTransfersFromVout(tx);
 

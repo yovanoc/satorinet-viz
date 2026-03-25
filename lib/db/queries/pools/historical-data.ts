@@ -1,7 +1,7 @@
 import { sql, and, or, eq, gte, lte } from "drizzle-orm";
-import { cacheLife } from "next/cache";
 import { db } from "../..";
 import { dailyPredictorAddress, dailyContributorAddress } from "../../schema";
+import { cacheLifeForDate } from "../../cache-utils";
 import { KNOWN_POOLS, type TopPool } from "@/lib/known_pools";
 import { getPoolFeesForDate } from "@/lib/pool-utils";
 import { getVaultsForWallet } from "@/lib/evr/wallet-vault";
@@ -12,7 +12,7 @@ export async function getPoolHistoricalData(
   days = 30
 ) {
   "use cache";
-  cacheLife("hours");
+  cacheLifeForDate(date);
 
   const knownPool = KNOWN_POOLS.find((p) => p.address === pool.address);
 

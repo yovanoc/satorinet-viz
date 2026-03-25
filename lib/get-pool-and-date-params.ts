@@ -2,7 +2,7 @@ import { KNOWN_POOLS, type TopPool } from "@/lib/known_pools";
 import { isValidAddress } from "./evr";
 import { getTopPools } from "./db/queries/contributors";
 import { getVaultsForWallet } from "./evr/wallet-vault";
-import { cacheLife } from "next/cache";
+import { cacheLifeForDate } from "./db/cache-utils";
 
 export type TopPoolWithName = TopPool & { name?: string };
 
@@ -36,7 +36,7 @@ export async function getPoolAndDate({
   date?: string;
 }): Promise<PoolAndDate> {
   "use cache";
-  cacheLife("hours");
+  cacheLifeForDate(new Date());
 
   const now = new Date();
 

@@ -7,7 +7,7 @@ import {
 import type { Entry } from "./pools-staking-comparison-chart";
 import type { DistanceEntry } from "./pools-avg-distance-comparison-chart";
 import { PoolsComparisonTabs } from "./pools-comparison-tabs";
-import { cacheLife } from "next/cache";
+import { cacheLifeForDate } from "@/lib/db/cache-utils";
 import { getPoolFeesForDate } from "@/lib/pool-utils";
 import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
 import { getPoolsHistoricalEarnings } from "@/lib/db/queries/pools/historical-earnings";
@@ -128,7 +128,7 @@ export async function PoolsStakingComparison({
   topPools,
 }: PoolsStakingComparisonProps) {
   "use cache";
-  cacheLife("hours");
+  cacheLifeForDate(date);
 
   const [satoriPrice, fullStakeAmount] = await Promise.all([
     getSatoriPriceForDate(date),

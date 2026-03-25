@@ -1,5 +1,5 @@
-import { cacheLife } from "next/cache";
 import { KNOWN_POOLS, type Pool, type TopPool } from "@/lib/known_pools";
+import { cacheLifeForDate } from "../../cache-utils";
 import { getPoolHistoricalData } from "./historical-data";
 import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
 import { applyFees, FeeResult, type AppliedFees } from "@/lib/pool-utils";
@@ -154,7 +154,7 @@ export async function getPoolVsWorkerComparison(
   startingAmount: number = 0
 ): Promise<PoolsVSWorkerData[]> {
   "use cache";
-  cacheLife("hours");
+  cacheLifeForDate(date);
 
   const poolsData = await Promise.all(
     pools.map(async (pool) => ({

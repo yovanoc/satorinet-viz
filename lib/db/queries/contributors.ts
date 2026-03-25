@@ -1,11 +1,11 @@
 import { sql, desc, and } from "drizzle-orm";
-import { cacheLife } from "next/cache";
 import { db } from "..";
 import { dailyContributorAddress } from "../schema";
+import { cacheLifeForDate } from "../cache-utils";
 
 export async function getTopPools(date: Date) {
   "use cache";
-  cacheLife("hours");
+  cacheLifeForDate(date);
 
   return db
     .select({
@@ -37,7 +37,7 @@ export async function hasContributionsToPool(
   date: Date
 ): Promise<boolean> {
   "use cache";
-  cacheLife("hours");
+  cacheLifeForDate(date);
 
   const result = await db
     .select({ count: sql<number>`count(*)` })
@@ -67,7 +67,7 @@ export async function getContributors(
   staking_power_contribution: number;
 }[]> {
   "use cache";
-  cacheLife("hours");
+  cacheLifeForDate(date);
 
   return db
     .select({
