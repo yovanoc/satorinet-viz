@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { sql, desc, and } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { dailyContributorAddress, dailyPredictorAddress } from "@/lib/db/schema";
-
-export const dynamic = "force-dynamic";
+import { connection } from "next/server";
 
 export async function GET(request: Request) {
+  await connection();
   const { searchParams } = new URL(request.url);
   const dateParam = searchParams.get("date");
 
