@@ -6,6 +6,8 @@ import { getScriptHash } from "../evr";
 const EVRMORE_ELECTRUMX_SERVERS_WITHOUT_SSL = [
   "167.71.11.203:50001",
   "evrx-1.satoriog.com:50001",
+  "electrum1-mainnet.evrmorecoin.org:50001",
+  "electrum2-mainnet.evrmorecoin.org:50001",
 ];
 
 export type TxHistory = {
@@ -42,8 +44,7 @@ export interface TransactionAsset {
   expire_time?: number;
 }
 
-export interface TransactionScriptPubKeyTransferAsset
-  extends TransactionScriptPubKeyHash {
+export interface TransactionScriptPubKeyTransferAsset extends TransactionScriptPubKeyHash {
   asset: TransactionAsset;
 }
 
@@ -116,12 +117,12 @@ export type EvrmoreHeader = {
 
 export function decodeEvrmoreHeader(
   hex: string,
-  height: number
+  height: number,
 ): EvrmoreHeader {
   const buf = Buffer.from(hex, "hex");
   if (buf.length !== 120) {
     throw new Error(
-      `Invalid Evrmore block header length: got ${buf.length} bytes`
+      `Invalid Evrmore block header length: got ${buf.length} bytes`,
     );
   }
 
@@ -170,38 +171,38 @@ class ElectrumxClient extends Emittery<{
     super();
     this.maxConnections = Math.min(
       maxConnections,
-      EVRMORE_ELECTRUMX_SERVERS_WITHOUT_SSL.length
+      EVRMORE_ELECTRUMX_SERVERS_WITHOUT_SSL.length,
     );
   }
   async initialize(): Promise<void> {
     console.log(
-      `Initializing ElectrumX pool with ${this.maxConnections} connections...`
+      `Initializing ElectrumX pool with ${this.maxConnections} connections...`,
     );
     const servers = this.getRandomServers(this.maxConnections);
     console.log(`Selected servers: ${servers.join(", ")}`);
 
     const connectionPromises = servers.map((server: string) =>
-      this.createConnectionWithWait(server)
+      this.createConnectionWithWait(server),
     );
 
     try {
       const results = await Promise.allSettled(connectionPromises);
       const successfulConnections = results.filter(
-        (result) => result.status === "fulfilled"
+        (result) => result.status === "fulfilled",
       ).length;
       const failedConnections = results.filter(
-        (result) => result.status === "rejected"
+        (result) => result.status === "rejected",
       );
 
       if (failedConnections.length > 0) {
         console.warn(
-          `Failed to connect to ${failedConnections.length} servers:`
+          `Failed to connect to ${failedConnections.length} servers:`,
         );
         failedConnections.forEach((result, index) => {
           console.warn(
             `  ${servers[results.indexOf(result)]}: ${
               (result as PromiseRejectedResult).reason
-            }`
+            }`,
           );
         });
       }
@@ -212,12 +213,12 @@ class ElectrumxClient extends Emittery<{
           .map((result) => (result as PromiseRejectedResult).reason)
           .join(", ");
         throw new Error(
-          `Failed to establish any connections to ElectrumX servers. Errors: ${errors}`
+          `Failed to establish any connections to ElectrumX servers. Errors: ${errors}`,
         );
       }
 
       console.log(
-        `ElectrumX pool initialized with ${successfulConnections}/${this.maxConnections} connections`
+        `ElectrumX pool initialized with ${successfulConnections}/${this.maxConnections} connections`,
       );
       this.emit("connected");
     } catch (error) {
@@ -379,7 +380,7 @@ class ElectrumxClient extends Emittery<{
           } = JSON.parse(trimmedMessage);
 
           const pendingRequest = connection.pendingRequests.get(
-            parsedMessage.id
+            parsedMessage.id,
           );
           if (pendingRequest) {
             connection.pendingRequests.delete(parsedMessage.id);
@@ -387,7 +388,7 @@ class ElectrumxClient extends Emittery<{
             if (parsedMessage.error) {
               const error = parsedMessage.error;
               pendingRequest.reject(
-                new Error(`Error ${error.code}: ${error.message}`)
+                new Error(`Error ${error.code}: ${error.message}`),
               );
             } else if (parsedMessage.result !== undefined) {
               pendingRequest.resolve(parsedMessage.result);
@@ -413,7 +414,7 @@ class ElectrumxClient extends Emittery<{
             resolve();
           }
         });
-      }
+      },
     );
 
     await Promise.all(disconnectionPromises);
@@ -432,7 +433,7 @@ class ElectrumxClient extends Emittery<{
   private async handleRPC<T>(
     method: string,
     params: unknown[],
-    retryCount: number = 0
+    retryCount: number = 0,
   ): Promise<T> {
     const maxRetries = 3;
     const connection = this.getAvailableConnection();
@@ -442,7 +443,7 @@ class ElectrumxClient extends Emittery<{
         console.warn(
           `No available connections, retrying... (${
             retryCount + 1
-          }/${maxRetries})`
+          }/${maxRetries})`,
         );
         await setTimeout(1000);
         return this.handleRPC<T>(method, params, retryCount + 1);
@@ -478,7 +479,7 @@ class ElectrumxClient extends Emittery<{
 
         if (retryCount < maxRetries) {
           console.warn(
-            `RPC call failed, retrying... (${retryCount + 1}/${maxRetries})`
+            `RPC call failed, retrying... (${retryCount + 1}/${maxRetries})`,
           );
           globalThis.setTimeout(() => {
             this.handleRPC<T>(method, params, retryCount + 1)
@@ -501,7 +502,7 @@ class ElectrumxClient extends Emittery<{
 
   async getAddressBalance(
     targetAddress: string,
-    asset?: string
+    asset?: string,
   ): Promise<number> {
     const scriptHash = getScriptHash(targetAddress);
     const balance = await this.handleRPC<{
@@ -509,19 +510,19 @@ class ElectrumxClient extends Emittery<{
       unconfirmed: number;
     }>(
       "blockchain.scripthash.get_balance",
-      asset ? [scriptHash, asset] : [scriptHash]
+      asset ? [scriptHash, asset] : [scriptHash],
     );
     return (balance.confirmed + balance.unconfirmed) / 1e8;
   }
 
   async getAddressUtxos(
     targetAddress: string,
-    asset?: string
+    asset?: string,
   ): Promise<TxHistory[]> {
     const scriptHash = getScriptHash(targetAddress);
     return this.handleRPC<TxHistory[]>(
       "blockchain.scripthash.listunspent",
-      asset ? [scriptHash, asset] : [scriptHash]
+      asset ? [scriptHash, asset] : [scriptHash],
     );
   }
 
@@ -534,7 +535,7 @@ class ElectrumxClient extends Emittery<{
 
   async getTransactionMerkle(
     tx_hash: string,
-    height: number
+    height: number,
   ): Promise<{ block_height: number; pos: number; merkle: string[] }> {
     return this.handleRPC<{
       block_height: number;
@@ -553,14 +554,14 @@ class ElectrumxClient extends Emittery<{
   async headersSubscribe() {
     const data = await this.handleRPC<{ hex: string; height: number }>(
       "blockchain.headers.subscribe",
-      []
+      [],
     );
     return decodeEvrmoreHeader(data.hex, data.height);
   }
 
   async getAssetHolders(
     targetAddress: string | null,
-    targetAsset: string
+    targetAsset: string,
   ): Promise<AssetHolder[]> {
     const addresses: Record<string, number> = {};
     let lastAddresses: Record<string, number> | null = null;
@@ -569,7 +570,7 @@ class ElectrumxClient extends Emittery<{
     const fetchAddresses = async (): Promise<AssetHolder[]> => {
       const response = await this.handleRPC<Record<string, number>>(
         "blockchain.asset.list_addresses_by_asset",
-        [targetAsset, false, 1000, i]
+        [targetAsset, false, 1000, i],
       );
 
       lastAddresses = { ...addresses };
@@ -601,7 +602,7 @@ class ElectrumxClient extends Emittery<{
     connection: PoolConnection,
     method: string,
     params: unknown[],
-    callId: number
+    callId: number,
   ): void {
     if (!connection.client || !connection.isConnected) {
       throw new Error("Connection is not available");
@@ -630,7 +631,7 @@ class ElectrumxClient extends Emittery<{
 
   private getRandomServers(count: number): string[] {
     const shuffled = [...EVRMORE_ELECTRUMX_SERVERS_WITHOUT_SSL].sort(
-      () => 0.5 - Math.random()
+      () => 0.5 - Math.random(),
     );
     return shuffled.slice(0, count);
   }
@@ -664,7 +665,7 @@ const electrumxClient = new ElectrumxClient(4);
 
 export async function getElectrumxClient(): Promise<ElectrumxClient> {
   const activeConnections = Array.from(
-    electrumxClient["connections"]?.values() || []
+    electrumxClient["connections"]?.values() || [],
   ).filter((conn) => conn.isConnected);
 
   if (activeConnections.length > 0) {
@@ -679,7 +680,7 @@ export async function getElectrumxClient(): Promise<ElectrumxClient> {
     throw new Error(
       `ElectrumX initialization failed: ${
         error instanceof Error ? error.message : "Unknown error"
-      }`
+      }`,
     );
   }
 }
