@@ -11,6 +11,7 @@ import {
 import { getSatoriHolders } from "@/lib/get-satori-holders";
 import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
 import { connection } from "next/server";
+import { formatCurrency, formatSatori, formatUsd } from "@/lib/format";
 
 export async function SectionCards() {
   await connection();
@@ -37,11 +38,7 @@ export async function SectionCards() {
         <CardHeader>
           <CardDescription>Price</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {price.toLocaleString(undefined, {
-              currency: "USD",
-              style: "currency",
-              maximumFractionDigits: 2,
-            })}
+            {formatUsd(price)}
           </CardTitle>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
@@ -54,9 +51,7 @@ export async function SectionCards() {
         <CardHeader>
           <CardDescription>Circulating Supply</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[400px]/card:text-3xl">
-            {satoriHolders.totalSatori.toLocaleString(undefined, {
-              maximumFractionDigits: 8,
-            })}
+            {formatSatori(satoriHolders.totalSatori)}
           </CardTitle>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
@@ -69,9 +64,7 @@ export async function SectionCards() {
         <CardHeader>
           <CardDescription>Holders</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {holders.toLocaleString(undefined, {
-              maximumFractionDigits: 0,
-            })}
+            {formatCurrency(holders, 0)}
           </CardTitle>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">

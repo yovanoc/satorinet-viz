@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { formatSatori } from "@/lib/format";
+import { formatSatori, formatUtcDateTime } from "@/lib/format";
 import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import type { TxItem } from "@/lib/evr/tx";
 import { Address } from "@/components/address";
@@ -16,7 +16,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
   tx,
   currentAddress,
 }) => {
-  const formattedTime = tx.time ? tx.time.toLocaleString() : "N/A";
+  const formattedTime = formatUtcDateTime(tx.time);
 
   const satoriTransfers = tx.transfers.filter((t) => t.asset === "SATORI");
   const totalSatori = satoriTransfers.reduce((sum, t) => sum + t.amount, 0);

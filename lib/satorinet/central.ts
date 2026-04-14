@@ -5,7 +5,7 @@ import * as z from "zod/mini";
 const BASE_URL = "https://network.satorinet.io/api/v1";
 
 const client = ky.create({
-  prefixUrl: BASE_URL,
+  prefix: BASE_URL,
   retry: { limit: 5, methods: ["get", "post"] },
   timeout: 10_000,
   keepalive: true,

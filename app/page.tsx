@@ -10,7 +10,7 @@ import { Suspense } from "react";
 import { PriceHistoryChart } from "@/components/price-history-chart";
 import { tiers as tiersInfo } from "@/lib/satorinet/holders";
 import { getAddressName, KNOWN_ADDRESSES } from "@/lib/known_addresses";
-import { formatSatori } from "@/lib/format";
+import { formatCurrency, formatSatori } from "@/lib/format";
 import { getSatoriHolders } from "@/lib/get-satori-holders";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getDailyWorkerCounts } from "@/lib/db/queries/predictors/worker-count";
@@ -72,12 +72,8 @@ async function CustomDataTable() {
         minMax: `${formatSatori(tier.min)} - ${formatSatori(tier.max)}`,
         totalSatori: formatSatori(total),
         holdersCount: count,
-        percentOfTotalAmount: `${percentAmount.toLocaleString(undefined, {
-          maximumFractionDigits: 2,
-        })}%`,
-        percentOfTotalCount: `${percentCount.toLocaleString(undefined, {
-          maximumFractionDigits: 2,
-        })}%`,
+        percentOfTotalAmount: `${formatCurrency(percentAmount, 2)}%`,
+        percentOfTotalCount: `${formatCurrency(percentCount, 2)}%`,
       };
     }
   );
