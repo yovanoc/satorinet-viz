@@ -31,3 +31,27 @@ export async function getSatoriHolder(address: string): Promise<AssetHolderDataW
   }
   return null;
 }
+
+export async function getAllSatoriEvrHolders(): Promise<AssetHolderWithRank[] | null> {
+  const all = await redis.hgetall(redisKey);
+  const entries = Object.entries(all);
+  if (entries.length === 0) return null;
+
+  const holders: AssetHolderWithRank[] = [];
+  for (const [address, json] of entries) {
+    try {
+      const parsed = JSON.parse(json) as AssetHolderDataWithRankAndTotal;
+      holders.push({
+        address,
+        balance: parsed.balance,
+        rank: parsed.rank,
+        percent: parsed.percent,
+        tier: parsed.tier,
+      });
+    } catch {
+      // Ignore malformed cache entries.
+    }
+  }
+
+  return holders.length > 0 ? holders : null;
+}

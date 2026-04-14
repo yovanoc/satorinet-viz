@@ -164,8 +164,9 @@ class ElectrumxClient extends Emittery<{
 }> {
   private connections: Map<string, PoolConnection> = new Map();
   private maxConnections: number;
-  private connectionTimeout: number = 5000;
-  private requestTimeout: number = 30000;
+  private connectionTimeout: number;
+  private requestTimeout: number;
+  private requestTimeoutOverrides: Partial<Record<string, number>>;
 
   constructor(maxConnections: number = 3) {
     super();
@@ -173,7 +174,30 @@ class ElectrumxClient extends Emittery<{
       maxConnections,
       EVRMORE_ELECTRUMX_SERVERS_WITHOUT_SSL.length,
     );
+
+    const parseEnvInt = (key: string): number | null => {
+      const raw = process.env[key];
+      if (!raw) return null;
+      const parsed = Number.parseInt(raw, 10);
+      return Number.isFinite(parsed) ? parsed : null;
+    };
+
+    this.connectionTimeout =
+      parseEnvInt("ELECTRUMX_CONNECTION_TIMEOUT_MS") ?? 5000;
+    this.requestTimeout = parseEnvInt("ELECTRUMX_REQUEST_TIMEOUT_MS") ?? 30000;
+
+    // Some RPC methods can legitimately take longer (large payloads / server load).
+    // Keep this list small and surgical; prefer env overrides when tuning.
+    this.requestTimeoutOverrides = {
+      "blockchain.asset.list_addresses_by_asset":
+        parseEnvInt("ELECTRUMX_LIST_ADDRESSES_TIMEOUT_MS") ?? 120000,
+    };
   }
+
+  private getRequestTimeoutForMethod(method: string): number {
+    return this.requestTimeoutOverrides[method] ?? this.requestTimeout;
+  }
+
   async initialize(): Promise<void> {
     console.log(
       `Initializing ElectrumX pool with ${this.maxConnections} connections...`,
@@ -455,10 +479,36 @@ class ElectrumxClient extends Emittery<{
     connection.lastUsed = Date.now();
 
     return new Promise((resolve, reject) => {
+      const timeoutMs = this.getRequestTimeoutForMethod(method);
+      const isRetryableError = (error: unknown): boolean => {
+        if (!(error instanceof Error)) return false;
+        const msg = error.message.toLowerCase();
+        return (
+          msg.includes("server busy") ||
+          msg.includes("connection is not available") ||
+          msg.includes("connection to") && msg.includes("closed")
+        );
+      };
+
       const timeoutId = globalThis.setTimeout(() => {
         connection.pendingRequests.delete(id);
+
+        if (retryCount < maxRetries) {
+          console.warn(
+            `RPC call timed out, retrying... (${retryCount + 1}/${maxRetries}) method=${method}`,
+          );
+          // Nudge pool selection away from this connection.
+          connection.lastUsed = Date.now();
+          globalThis.setTimeout(() => {
+            this.handleRPC<T>(method, params, retryCount + 1)
+              .then(resolve)
+              .catch(reject);
+          }, 1000);
+          return;
+        }
+
         reject(new Error(`Request timeout for method: ${method}`));
-      }, this.requestTimeout);
+      }, timeoutMs);
 
       connection.pendingRequests.set(id, {
         resolve: (value: T) => {
@@ -467,6 +517,20 @@ class ElectrumxClient extends Emittery<{
         },
         reject: (error: Error) => {
           globalThis.clearTimeout(timeoutId);
+
+          if (retryCount < maxRetries && isRetryableError(error)) {
+            console.warn(
+              `RPC call failed with retryable error, retrying... (${retryCount + 1}/${maxRetries}) method=${method} error=${error.message}`,
+            );
+            connection.lastUsed = Date.now();
+            globalThis.setTimeout(() => {
+              this.handleRPC<T>(method, params, retryCount + 1)
+                .then(resolve)
+                .catch(reject);
+            }, 1000);
+            return;
+          }
+
           reject(error);
         },
       });

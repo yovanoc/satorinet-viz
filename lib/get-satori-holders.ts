@@ -1,12 +1,76 @@
-import { classifyAssetHolders, getAllSatoriHolders } from "@/lib/satorinet/holders";
+import {
+  tiers as tierDefs,
+  type TierName,
+  classifyAssetHolders,
+  getAllSatoriHolders,
+} from "@/lib/satorinet/holders";
 import { cacheLife } from "next/cache";
-import { saveSatoriEvrHolders } from "./satorinet/holders_cache";
+import { PHASE_PRODUCTION_BUILD } from "next/constants";
+import {
+  getAllSatoriEvrHolders,
+  saveSatoriEvrHolders,
+} from "./satorinet/holders_cache";
 
 export async function getSatoriHolders() {
   "use cache";
-  cacheLife("hours");
+  const isBuild = process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD;
+  cacheLife({ revalidate: isBuild ? 60 : 3600 });
 
   console.log("Fetching Satori holders..." + new Date().toISOString());
+
+  // Prefer Redis cache (fast, deterministic). This also prevents Next prerender
+  // cache-fill timeouts when ElectrumX is slow.
+  const cached = await getAllSatoriEvrHolders();
+  if (cached && cached.length > 0) {
+    // Ensure stable ordering.
+    const assetHolders = cached.toSorted((a, b) => a.rank - b.rank);
+
+    const tiers = Object.fromEntries(
+      tierDefs.map((t) => [
+        t.name,
+        { total: 0, count: 0, percentAmount: 0, percentCount: 0, wallets: [] },
+      ]),
+    ) as unknown as Record<
+      TierName,
+      {
+        total: number;
+        count: number;
+        percentAmount: number;
+        percentCount: number;
+        wallets: { address: string; balance: number; rank: number }[];
+      }
+    >;
+
+    let totalSatori = 0;
+    for (const holder of assetHolders) {
+      totalSatori += holder.balance;
+      if (holder.tier) {
+        const tier = tiers[holder.tier];
+        tier.total += holder.balance;
+        tier.count += 1;
+        tier.wallets.push({
+          address: holder.address,
+          balance: holder.balance,
+          rank: holder.rank,
+        });
+      }
+    }
+
+    const totalCount = assetHolders.length;
+    for (const tierName of Object.keys(tiers) as TierName[]) {
+      const tier = tiers[tierName];
+      tier.percentAmount = totalSatori > 0 ? (tier.total / totalSatori) * 100 : 0;
+      tier.percentCount = totalCount > 0 ? (tier.count / totalCount) * 100 : 0;
+    }
+
+    return { totalSatori, tiers, assetHolders };
+  }
+
+  // During `next build`, avoid slow external calls that can trip
+  // USE_CACHE_TIMEOUT while prerendering.
+  if (isBuild) {
+    return null;
+  }
 
   const holders = await getAllSatoriHolders();
 
@@ -16,7 +80,10 @@ export async function getSatoriHolders() {
 
   const summary = classifyAssetHolders(holders);
 
-  await saveSatoriEvrHolders(summary.assetHolders);
+  // Best-effort cache update; don't block the response path.
+  void saveSatoriEvrHolders(summary.assetHolders).catch((e) => {
+    console.error("Failed to save Satori holders cache:", e);
+  });
 
   return summary;
 }
