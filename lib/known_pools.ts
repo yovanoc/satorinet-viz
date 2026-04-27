@@ -288,6 +288,11 @@ export const KNOWN_POOLS: Pool[] = [
       },
     ],
   },
+  {
+    name: 'Namaste Club',
+    address: 'ENMZZpm63EHLvVZbzQyAr9NJRYWiwiFE3S',
+    color: '#ff4d00',
+  }
   // {
   //   name: 'Unknown',
   //   address: 'ETU972nu9naUffZuUkVFoHGpq2AZJdBjFi',
