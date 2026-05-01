@@ -18,10 +18,12 @@ export async function getSatoriHolders() {
 
   console.log("Fetching Satori holders..." + new Date().toISOString());
 
-  // Prefer Redis cache (fast, deterministic). This also prevents Next prerender
-  // cache-fill timeouts when ElectrumX is slow.
-  const cached = await getAllSatoriEvrHolders();
-  if (cached && cached.length > 0) {
+  const fromCachedHolders = async () => {
+    const cached = await getAllSatoriEvrHolders();
+    if (!cached || cached.length === 0) {
+      return null;
+    }
+
     // Ensure stable ordering.
     const assetHolders = cached.toSorted((a, b) => a.rank - b.rank);
 
@@ -64,26 +66,28 @@ export async function getSatoriHolders() {
     }
 
     return { totalSatori, tiers, assetHolders };
-  }
+  };
 
   // During `next build`, avoid slow external calls that can trip
   // USE_CACHE_TIMEOUT while prerendering.
   if (isBuild) {
-    return null;
+    return fromCachedHolders();
   }
 
+  // In runtime, prefer a fresh ElectrumX fetch. If that fails, gracefully
+  // fall back to Redis so the dashboard still renders.
   const holders = await getAllSatoriHolders();
 
-  if (!holders) {
-    return null;
+  if (holders) {
+    const summary = classifyAssetHolders(holders);
+
+    // Best-effort cache update; don't block the response path.
+    void saveSatoriEvrHolders(summary.assetHolders).catch((e) => {
+      console.error("Failed to save Satori holders cache:", e);
+    });
+
+    return summary;
   }
 
-  const summary = classifyAssetHolders(holders);
-
-  // Best-effort cache update; don't block the response path.
-  void saveSatoriEvrHolders(summary.assetHolders).catch((e) => {
-    console.error("Failed to save Satori holders cache:", e);
-  });
-
-  return summary;
+  return fromCachedHolders();
 }
