@@ -305,6 +305,7 @@ export const KNOWN_POOLS: Pool[] = [
   {
     name: 'Namaste Club',
     address: 'ENMZZpm63EHLvVZbzQyAr9NJRYWiwiFE3S',
+    vault_address: 'EHvCe7xYYkonEFNyCYyeHhGn9aGw2dXj63',
     color: '#ff4d00',
   }
   // {
