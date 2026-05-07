@@ -9,7 +9,7 @@ import { getVaultsForWallet } from "@/lib/evr/wallet-vault";
 export async function getPoolHistoricalData(
   pool: TopPool,
   date: Date,
-  days = 30
+  days = 30,
 ) {
   "use cache";
   cacheLifeForDate(date);
@@ -30,32 +30,32 @@ export async function getPoolHistoricalData(
       date: dailyPredictorAddress.date,
       max_delegated_stake:
         sql<number>`MAX(${dailyPredictorAddress.delegated_stake})`.as(
-          "max_delegated_stake"
+          "max_delegated_stake",
         ),
       total_reward: sql<number>`SUM(${dailyPredictorAddress.reward})`.as(
-        "total_reward"
+        "total_reward",
       ),
       total_miner_earned:
         sql<number>`SUM(${dailyPredictorAddress.miner_earned})`.as(
-          "total_miner_earned"
+          "total_miner_earned",
         ),
       avg_distance: sql<number>`AVG(${dailyPredictorAddress.score})`.as(
-        "avg_distance"
+        "avg_distance",
       ),
       total_delegated_stake:
         sql<number>`SUM(${dailyPredictorAddress.delegated_stake})`.as(
-          "total_delegated_stake"
+          "total_delegated_stake",
         ),
       total_balance: sql<number>`SUM(${dailyPredictorAddress.balance})`.as(
-        "total_balance"
+        "total_balance",
       ),
       pool_balance: sql<number>`
         SUM(
           CASE
             WHEN ${dailyPredictorAddress.reward_address} = ${dailyPredictorAddress.worker_address}
             OR ${dailyPredictorAddress.reward_address} = ${dailyPredictorAddress.worker_vault_address}
-            -- OR ${dailyPredictorAddress.reward_address} = ${dailyPredictorAddress.pool_vault}
-            -- OR ${dailyPredictorAddress.reward_address} = ${dailyPredictorAddress.pool_wallet}
+            OR ${dailyPredictorAddress.pool_wallet} = ${pool.address}
+            OR ${dailyPredictorAddress.pool_vault} = ${vaultAddress}
             THEN ${dailyPredictorAddress.balance}
             ELSE 0
           END
@@ -79,9 +79,9 @@ export async function getPoolHistoricalData(
           eq(dailyPredictorAddress.pool_wallet, pool.address),
           vaultAddress
             ? eq(dailyPredictorAddress.pool_vault, vaultAddress)
-            : undefined
-        )
-      )
+            : undefined,
+        ),
+      ),
     )
     .groupBy(dailyPredictorAddress.date)
     .as("predictor_agg");
@@ -99,16 +99,16 @@ export async function getPoolHistoricalData(
       contributor_count_with_staking_power: sql<number>`COUNT(DISTINCT ${dailyContributorAddress.contributor}) FILTER (WHERE ${dailyContributorAddress.staking_power_contribution} > 0)`,
       earnings_per_staking_power: sql<number>`COALESCE(
             ((${predictorAgg.total_reward} - ${
-        predictorAgg.total_miner_earned
-      }) * (1 - ${sql`${workerGivenPercent}::double precision`})) /
+              predictorAgg.total_miner_earned
+            }) * (1 - ${sql`${workerGivenPercent}::double precision`})) /
             -- NULLIF(SUM(${
               dailyContributorAddress.staking_power_contribution
             }), 0),
             NULLIF(SUM(${
               dailyContributorAddress.staking_power_contribution
             }) + AVG(COALESCE(${
-        dailyContributorAddress.pools_own_staking_power
-      }, 0)), 0),
+              dailyContributorAddress.pools_own_staking_power
+            }, 0)), 0),
             -- NULLIF(${predictorAgg.total_delegated_stake}, 0),
           0)`,
     })
@@ -120,21 +120,21 @@ export async function getPoolHistoricalData(
           eq(dailyContributorAddress.pool_address, pool.address),
           vaultAddress
             ? eq(dailyContributorAddress.pool_address, vaultAddress)
-            : undefined
+            : undefined,
         ),
         gte(
           dailyContributorAddress.date,
-          sql`${date}::timestamp - ${days} * interval '1 day'`
+          sql`${date}::timestamp - ${days} * interval '1 day'`,
         ),
-        lte(dailyContributorAddress.date, sql`${date}`)
-      )
+        lte(dailyContributorAddress.date, sql`${date}`),
+      ),
     )
     .groupBy(
       dailyContributorAddress.date,
       predictorAgg.total_reward,
       predictorAgg.total_miner_earned,
       predictorAgg.total_delegated_stake,
-      predictorAgg.pool_balance
+      predictorAgg.pool_balance,
     )
     .orderBy(dailyContributorAddress.date);
 
