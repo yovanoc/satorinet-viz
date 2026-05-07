@@ -54,6 +54,8 @@ export async function getPoolHistoricalData(
           CASE
             WHEN ${dailyPredictorAddress.reward_address} = ${dailyPredictorAddress.worker_address}
             OR ${dailyPredictorAddress.reward_address} = ${dailyPredictorAddress.worker_vault_address}
+            OR ${dailyPredictorAddress.reward_address} = ${dailyPredictorAddress.pool_vault}
+            OR ${dailyPredictorAddress.reward_address} = ${dailyPredictorAddress.pool_wallet}
             THEN ${dailyPredictorAddress.balance}
             ELSE 0
           END

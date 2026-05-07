@@ -135,14 +135,14 @@ export async function PoolsStakingComparison({
     getMaxDelegatedStake(date),
   ]);
 
-  const top3 = mostWantedTop(topPools)
+  const topOnes = mostWantedTop(topPools)
     .map((pool) => KNOWN_POOLS.find((p) => p.address === pool.address))
     .filter((pool) => !!pool);
 
   const [earningsRaw, avgDistanceRaw] = await Promise.all([
-    getPoolsHistoricalEarnings(top3, date),
+    getPoolsHistoricalEarnings(topOnes, date),
     Promise.all(
-      top3.map(async (pool) => ({
+      topOnes.map(async (pool) => ({
         pool,
         data: await getPoolHistoricalData(
           { address: pool.address, vault_address: pool.vault_address },
@@ -160,7 +160,7 @@ export async function PoolsStakingComparison({
 
   return (
     <PoolsComparisonTabs
-      pools={top3}
+      pools={topOnes}
       earningsData={earningsData}
       avgDistanceData={avgDistanceData}
       fullStakeAmount={fullStakeAmount ?? 0}
