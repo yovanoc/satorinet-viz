@@ -283,6 +283,13 @@ export const KNOWN_POOLS: Pool[] = [
           type: "percent",
           percent: 0.35,
         },
+        until: new Date("2026-05-07T00:00:00Z"),
+      },
+      {
+        fees: {
+          type: "percent",
+          percent: 0.2,
+        },
         until: null,
       },
     ],
