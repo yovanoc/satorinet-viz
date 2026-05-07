@@ -1,4 +1,4 @@
-import { sql, desc, and } from "drizzle-orm";
+import { sql, desc, and, or, eq } from "drizzle-orm";
 import { db } from "..";
 import { dailyContributorAddress } from "../schema";
 import { cacheLifeForDate } from "../cache-utils";
@@ -34,6 +34,7 @@ export async function getTopPools(date: Date) {
  */
 export async function hasContributionsToPool(
   poolAddress: string,
+  poolVaultAddress: string | undefined,
   date: Date
 ): Promise<boolean> {
   "use cache";
@@ -44,7 +45,12 @@ export async function hasContributionsToPool(
     .from(dailyContributorAddress)
     .where(
       and(
-        sql`${dailyContributorAddress.pool_address} = ${poolAddress}`,
+        or(
+          eq(dailyContributorAddress.pool_address, poolAddress),
+          poolVaultAddress
+            ? eq(dailyContributorAddress.pool_address, poolVaultAddress)
+            : undefined
+        ),
         sql`${dailyContributorAddress.date} = ${date}`,
         sql`${dailyContributorAddress.staking_power_contribution} > 0`
       )
@@ -57,6 +63,7 @@ export async function hasContributionsToPool(
 
 export async function getContributors(
   poolAddress: string,
+  poolVaultAddress: string | undefined,
   date: Date,
   limit = 200
 ): Promise<{
@@ -81,7 +88,12 @@ export async function getContributors(
     .from(dailyContributorAddress)
     .where(
       and(
-        sql`${dailyContributorAddress.pool_address} = ${poolAddress}`,
+        or(
+          eq(dailyContributorAddress.pool_address, poolAddress),
+          poolVaultAddress
+            ? eq(dailyContributorAddress.pool_address, poolVaultAddress)
+            : undefined
+        ),
         sql`${dailyContributorAddress.date} = ${date}`,
         sql`${dailyContributorAddress.staking_power_contribution} > 0`
       )

@@ -7,7 +7,7 @@ export async function getPoolWorkerStats(
   poolAddress: string,
   poolVaultAddress: string | undefined,
   date: Date,
-  days = 30
+  days = 30,
 ) {
   "use cache";
   cacheLife("hours");
@@ -33,15 +33,23 @@ export async function getPoolWorkerStats(
         //   ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_vault_address),
         // ),
         or(
+          // ! for before auto distribution
           eq(dailyPredictorAddress.reward_address, poolAddress),
-          poolVaultAddress ? eq(dailyPredictorAddress.reward_address, poolVaultAddress) : undefined,
+          poolVaultAddress
+            ? eq(dailyPredictorAddress.reward_address, poolVaultAddress)
+            : undefined,
+          // ! after auto distribution
+          eq(dailyPredictorAddress.pool_wallet, poolAddress),
+          poolVaultAddress
+            ? eq(dailyPredictorAddress.pool_vault, poolVaultAddress)
+            : undefined,
         ),
         gte(
           dailyPredictorAddress.date,
-          sql`${date}::timestamp - ${days} * interval '1 day'`
+          sql`${date}::timestamp - ${days} * interval '1 day'`,
         ),
-        lte(dailyPredictorAddress.date, sql`${date}`)
-      )
+        lte(dailyPredictorAddress.date, sql`${date}`),
+      ),
     )
     .groupBy(dailyPredictorAddress.date)
     .orderBy(dailyPredictorAddress.date)

@@ -68,9 +68,15 @@ export async function getPoolHistoricalData(
         //   ne(dailyPredictorAddress.reward_address, dailyPredictorAddress.worker_vault_address),
         // ),
         or(
+          // ! for before auto distribution
           eq(dailyPredictorAddress.reward_address, pool.address),
           vaultAddress
             ? eq(dailyPredictorAddress.reward_address, vaultAddress)
+            : undefined,
+          // ! after auto distribution
+          eq(dailyPredictorAddress.pool_wallet, pool.address),
+          vaultAddress
+            ? eq(dailyPredictorAddress.pool_vault, vaultAddress)
             : undefined
         )
       )

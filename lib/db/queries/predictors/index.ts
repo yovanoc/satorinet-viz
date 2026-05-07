@@ -41,8 +41,16 @@ export async function getPredictors(
       and(
         sql`${dailyPredictorAddress.date} = ${date}`,
         or(
+          // ! for before auto distribution
           eq(dailyPredictorAddress.reward_address, poolAddress),
-          poolVaultAddress ? eq(dailyPredictorAddress.reward_address, poolVaultAddress) : undefined,
+          poolVaultAddress
+            ? eq(dailyPredictorAddress.reward_address, poolVaultAddress)
+            : undefined,
+          // ! after auto distribution
+          eq(dailyPredictorAddress.pool_wallet, poolAddress),
+          poolVaultAddress
+            ? eq(dailyPredictorAddress.pool_vault, poolVaultAddress)
+            : undefined
         )
       )
     )

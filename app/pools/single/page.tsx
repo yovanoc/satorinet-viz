@@ -42,7 +42,7 @@ async function ContributorsAndPredictors({
   pool: TopPoolWithName;
 }) {
   const [contributors, predictors] = await Promise.all([
-    getContributors(pool.address, date),
+    getContributors(pool.address, pool.vault_address, date),
     getPredictors(pool.address, pool.vault_address, date),
   ]);
 
