@@ -316,7 +316,22 @@ export const KNOWN_POOLS: Pool[] = [
         until: null,
       },
     ]
-  }
+  },
+  {
+    name: 'Axon',
+    address: 'EbUKWCKxicTR7dqLkEuZu1Pmc9qLGHYbrk',
+    vault_address: 'ERXZWwYtrAEDxR7TwEWskBLbmfzTfFxVQU',
+    color: '#31d610ff',
+    staking_fees: [
+      {
+        fees: {
+          type: "percent",
+          percent: 0.2,
+        },
+        until: null,
+      },
+    ]
+  },
   // {
   //   name: 'Unknown',
   //   address: 'ETU972nu9naUffZuUkVFoHGpq2AZJdBjFi',
