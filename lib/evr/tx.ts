@@ -66,7 +66,7 @@ type AssetTransfer = {
 
 export async function extractTransfersFromVout(
   tx: Transaction,
-  assetName: string = "SATORI"
+  assetName: string = "SATORIEVR"
 ): Promise<{
   tx: Transaction;
   memo?: string;
@@ -184,7 +184,7 @@ export async function getAddressDataOnElectrumx(
   try {
 
     const [utxos, holder] = await Promise.all([
-      electrumxClient.getAddressUtxos(address, "SATORI"),
+      electrumxClient.getAddressUtxos(address, "SATORIEVR"),
       getSatoriHolder(address),
     ]);
 

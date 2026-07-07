@@ -18,7 +18,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
 }) => {
   const formattedTime = formatUtcDateTime(tx.time);
 
-  const satoriTransfers = tx.transfers.filter((t) => t.asset === "SATORI");
+  const satoriTransfers = tx.transfers.filter((t) => t.asset === "SATORIEVR");
   const totalSatori = satoriTransfers.reduce((sum, t) => sum + t.amount, 0);
   if (totalSatori === 0) return null;
 
