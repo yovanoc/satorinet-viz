@@ -26,8 +26,12 @@ const mono = Fira_Code({
 });
 
 export const metadata: Metadata = {
-  title: "Satori DataViz",
-  description: "Satori DataViz",
+  title: {
+    default: "Satori Viz",
+    template: "%s — Satori Viz",
+  },
+  description:
+    "Historical data, rewards, pools, and participant analytics for the Satori network",
 };
 
 export default function RootLayout({

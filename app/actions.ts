@@ -26,8 +26,11 @@ export async function getPriceRange(
     start.setDate(end.getDate() - 365);
   }
 
-  return getSatoriPriceLivecoinwatch(
-    start.getTime(),
-    end.getTime()
-  );
+  try {
+    return await getSatoriPriceLivecoinwatch(start.getTime(), end.getTime());
+  } catch (error) {
+    // The USD price is nice-to-have — degrade to an empty chart, never crash.
+    console.error(`Price history unavailable (${period})`, error);
+    return { history: [] };
+  }
 }

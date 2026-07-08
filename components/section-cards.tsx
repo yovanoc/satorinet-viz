@@ -9,7 +9,7 @@ import {
   getStatsPredictions,
 } from "@/lib/satorinet/central";
 import { getSatoriHolders } from "@/lib/get-satori-holders";
-import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
+import { getSatoriPriceForDateSafe } from "@/lib/livecoinwatch";
 import { connection } from "next/server";
 import { formatCurrency, formatSatori, formatUsd } from "@/lib/format";
 
@@ -18,7 +18,7 @@ export async function SectionCards() {
 
   const [price, statsPredictions, satoriHolders] =
     await Promise.all([
-      getSatoriPriceForDate(new Date()),
+      getSatoriPriceForDateSafe(new Date()),
       getStatsPredictions(),
       getSatoriHolders(),
     ]);

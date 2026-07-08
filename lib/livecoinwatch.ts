@@ -18,6 +18,26 @@ export async function getSatoriPriceForDate(date: Date): Promise<number> {
   return price;
 }
 
+/**
+ * Like getSatoriPriceForDate but returns null instead of throwing — the USD
+ * price is nice-to-have and must never take a whole page down.
+ *
+ * After a failure, price lookups short-circuit for a few minutes so an API
+ * outage (or bad key) doesn't stall pages with dozens of doomed requests.
+ */
+let priceUnavailableUntil = 0;
+
+export async function getSatoriPriceForDateSafe(date: Date): Promise<number | null> {
+  if (Date.now() < priceUnavailableUntil) return null;
+  try {
+    return await getSatoriPriceForDate(date);
+  } catch (error) {
+    priceUnavailableUntil = Date.now() + 5 * 60 * 1000;
+    console.error(`Satori price unavailable for ${date.toISOString()}`, error);
+    return null;
+  }
+}
+
 interface LiveCoinWatchResult {
   history: { date: number; rate: number }[];
 }

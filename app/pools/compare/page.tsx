@@ -1,7 +1,13 @@
 import MultiPoolWorkerComparison from "@/components/pools/multi-pool-worker-comparison";
+import { PageHeader } from "@/components/page-header";
 import { getPoolAndDate } from "@/lib/get-pool-and-date-params";
 import { cacheLife } from "next/cache";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+export const metadata = {
+  title: "Pool Comparison",
+  description: "Simulated staking earnings across the most wanted Satori pools, fees included",
+};
 
 function ymd(date: Date) {
   return date.toISOString().slice(0, 10);
@@ -29,7 +35,12 @@ export default async function PoolsCompare() {
     );
   }
   return (
-    <div className="flex flex-col py-4 gap-4 px-4 lg:px-6 h-full">
+    <div className="flex flex-col py-4 gap-4 h-full md:py-6">
+      <PageHeader
+        title="Pool Comparison"
+        subtitle="Simulated earnings across the most wanted pools, fees included"
+      />
+      <div className="flex flex-col gap-4 px-4 lg:px-6">
       {didFallback ? (
         <Card>
           <CardContent className="py-4 text-sm text-muted-foreground">
@@ -38,6 +49,7 @@ export default async function PoolsCompare() {
         </Card>
       ) : null}
       <MultiPoolWorkerComparison date={selectedDate} topPools={topPoolsWithNames} />
+      </div>
     </div>
   );
 }

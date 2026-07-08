@@ -1,6 +1,7 @@
 import type { PoolData } from "@/components/pools/daily-contributor-address-card";
 import DailyContributorAddressCard from "@/components/pools/daily-contributor-address-card";
 import DatePickerWrapper from "@/components/date-picker-wrapper";
+import { PageHeader } from "@/components/page-header";
 import PoolHistoricalData from "@/components/pools/pool-historical-data";
 import PoolSelectorWrapper from "@/components/pools/pool-selector-wrapper";
 import PoolWorkerComparison from "@/components/pools/pool-vs-worker-comparison";
@@ -15,6 +16,11 @@ import { Suspense } from "react";
 import { getContributors } from "@/lib/db/queries/contributors";
 import { getPredictors } from "@/lib/db/queries/predictors";
 import { Address } from "@/components/address";
+
+export const metadata = {
+  title: "Pool Deep-dive",
+  description: "Stats, history, and worker comparison for a single Satori pool",
+};
 
 function ymd(date: Date) {
   return date.toISOString().slice(0, 10);
@@ -188,19 +194,12 @@ export default async function PoolsSingle({
   if (!hasData) {
     return (
       <div className="flex flex-col flex-1 gap-4 py-4 md:gap-6 md:py-6">
-        <div className="flex items-center justify-between px-4 lg:px-6 h-16 relative">
-          <span className="text-xl font-bold lg:hidden">
-            {selectedDate.toLocaleDateString()}
-          </span>
-
-          <span className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 text-2xl font-bold">
-            {selectedDate.toLocaleDateString()}
-          </span>
-
-          <div className="ml-auto">
-            <DatePickerWrapper selectedDate={selectedDate} />
-          </div>
-        </div>
+        <PageHeader
+          title="Pool Deep-dive"
+          subtitle="Stats, history, and worker comparison for a single pool"
+        >
+          <DatePickerWrapper selectedDate={selectedDate} />
+        </PageHeader>
 
         <div className="px-4 lg:px-6">
           <Card>
@@ -218,19 +217,12 @@ export default async function PoolsSingle({
 
   return (
     <div className="flex flex-col flex-1 gap-4 py-4 md:gap-6 md:py-6">
-      <div className="flex items-center justify-between px-4 lg:px-6 h-16 relative">
-        <span className="text-xl font-bold lg:hidden">
-          {selectedDate.toLocaleDateString()}
-        </span>
-
-        <span className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 text-2xl font-bold">
-          {selectedDate.toLocaleDateString()}
-        </span>
-
-        <div className="ml-auto">
-          <DatePickerWrapper selectedDate={selectedDate} />
-        </div>
-      </div>
+      <PageHeader
+        title="Pool Deep-dive"
+        subtitle="Stats, history, and worker comparison for a single pool"
+      >
+        <DatePickerWrapper selectedDate={selectedDate} />
+      </PageHeader>
 
       {didFallback ? (
         <div className="px-4 lg:px-6">
