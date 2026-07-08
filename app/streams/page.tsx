@@ -61,6 +61,19 @@ export default async function StreamsPage({
           </div>
         </form>
       </div>
+      {streams.total === 0 ? (
+        <div className="px-2 sm:px-4 md:px-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Stream search is temporarily unavailable</CardTitle>
+              <CardDescription>
+                The upstream Satori API endpoint for streams is currently down. This page
+                will come back automatically once it responds again.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      ) : null}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-2 sm:px-4 md:px-8">
         {streams.filtered.map((stream) => (
           <Link key={stream.uuid} href={`/streams/${stream.uuid}`}>

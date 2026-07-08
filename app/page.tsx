@@ -7,17 +7,22 @@ import {
 import { SectionCards } from "@/components/section-cards";
 
 import { Suspense } from "react";
+import Link from "next/link";
+import { IconArrowRight } from "@tabler/icons-react";
+import { PageHeader } from "@/components/page-header";
 import { PriceHistoryChart } from "@/components/price-history-chart";
+import { MetricCard } from "@/components/network/metric-card";
 import { tiers as tiersInfo } from "@/lib/satorinet/holders";
 import { getAddressName, KNOWN_ADDRESSES } from "@/lib/known_addresses";
 import { formatCurrency, formatSatori } from "@/lib/format";
 import { getSatoriHolders } from "@/lib/get-satori-holders";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getDailyWorkerCounts } from "@/lib/db/queries/predictors/worker-count";
+import { getNetworkHistory } from "@/lib/db/queries/network";
 import { connection } from "next/server";
-// import { getManifest } from "@/lib/manifest";
-// import { StackedAreaManifest } from "@/components/stacked-area-manifest";
-// import { getManifests } from "@/lib/db/queries/manifest";
+
+const CARDS_GRID =
+  "*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4";
 
 async function DailyWorkerCountsCard() {
   await connection();
@@ -27,22 +32,57 @@ async function DailyWorkerCountsCard() {
   return <ChartAreaInteractive dailyCounts={dailyCounts} />;
 }
 
-/*
-async function DailyManifestCard() {
-  'use cache';
-  cacheLife('hours');
+async function NetworkPulse() {
+  const history = await getNetworkHistory();
+  if (history.length === 0) return null;
 
-  const date = new Date();
-  const all = await getManifests(date, 90);
-  const data: React.ComponentProps<typeof StackedAreaManifest>["manifests"] =
-    all.map((item) => ({
-      date: new Date(item.date),
-      ...getManifest(item, new Date(item.date)),
-    }));
+  const day = history[history.length - 1]!;
+  const prev = history.length > 1 ? history[history.length - 2] : undefined;
 
-  return <StackedAreaManifest manifests={data} />;
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between px-4 lg:px-6">
+        <h2 className="text-lg font-semibold">Network Pulse</h2>
+        <Link
+          href="/network"
+          className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+        >
+          Full network view <IconArrowRight className="size-4" />
+        </Link>
+      </div>
+      <div className={CARDS_GRID}>
+        <MetricCard
+          label="Active Workers"
+          value={formatCurrency(day.active_workers, 0)}
+          helper="Neurons predicting today"
+          current={day.active_workers}
+          previous={prev?.active_workers}
+        />
+        <MetricCard
+          label="Daily Rewards"
+          value={formatCurrency(day.total_rewards, 2)}
+          helper="SATORI distributed"
+          current={day.total_rewards}
+          previous={prev?.total_rewards}
+        />
+        <MetricCard
+          label="Total Stake"
+          value={formatCurrency(day.total_stake_power, 0)}
+          helper="SATORI backing workers"
+          current={day.total_stake_power}
+          previous={prev?.total_stake_power}
+        />
+        <MetricCard
+          label="Active Participants"
+          value={formatCurrency(day.active_participants, 0)}
+          helper="Lenders and operators"
+          current={day.active_participants}
+          previous={prev?.active_participants}
+        />
+      </div>
+    </div>
+  );
 }
-*/
 
 async function CustomDataTable() {
   const satoriHolders = await getSatoriHolders();
@@ -101,6 +141,10 @@ async function CustomDataTable() {
 async function HomeContent() {
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+      <PageHeader
+        title="Satori Network"
+        subtitle="Live market, holders, and network production at a glance"
+      />
       <Suspense
         fallback={
           <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-6">
@@ -111,6 +155,17 @@ async function HomeContent() {
         }
       >
         <SectionCards />
+      </Suspense>
+      <Suspense
+        fallback={
+          <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-31.25 w-full rounded-xl" />
+            ))}
+          </div>
+        }
+      >
+        <NetworkPulse />
       </Suspense>
       <div className="px-4 lg:px-6">
         <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
@@ -126,17 +181,6 @@ async function HomeContent() {
         <Suspense fallback={<Skeleton className="h-87.5 w-full rounded-xl" />}>
           <CustomDataTable />
         </Suspense>
-
-        {/*
-        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
-          <Suspense fallback={<Skeleton className="h-[350px] w-full rounded-xl" />}>
-            <CustomDataTable />
-          </Suspense>
-          <Suspense fallback={<Skeleton className="h-[350px] w-full rounded-xl" />}>
-            <DailyManifestCard />
-          </Suspense>
-        </div>
-        */}
       </div>
     </div>
   );

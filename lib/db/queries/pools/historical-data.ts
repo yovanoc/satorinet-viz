@@ -81,6 +81,12 @@ export async function getPoolHistoricalData(
             ? eq(dailyPredictorAddress.pool_vault, vaultAddress)
             : undefined,
         ),
+        // Without this the subquery aggregates the whole table history.
+        gte(
+          dailyPredictorAddress.date,
+          sql`${date}::timestamp - ${days} * interval '1 day'`,
+        ),
+        lte(dailyPredictorAddress.date, sql`${date}`),
       ),
     )
     .groupBy(dailyPredictorAddress.date)

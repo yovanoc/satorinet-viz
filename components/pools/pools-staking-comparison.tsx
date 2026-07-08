@@ -9,7 +9,7 @@ import type { DistanceEntry } from "./pools-avg-distance-comparison-chart";
 import { PoolsComparisonTabs } from "./pools-comparison-tabs";
 import { cacheLifeForDate } from "@/lib/db/cache-utils";
 import { getPoolFeesForDate } from "@/lib/pool-utils";
-import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
+import { getSatoriPriceForDateSafe } from "@/lib/livecoinwatch";
 import { getPoolsHistoricalEarnings } from "@/lib/db/queries/pools/historical-earnings";
 import { getMaxDelegatedStake } from "@/lib/db/queries/predictors/max-delegated-stake";
 import { getPoolHistoricalData } from "@/lib/db/queries/pools/historical-data";
@@ -46,12 +46,12 @@ async function transformData(
         if (!dateMap.has(date)) {
           const dateObj = new Date(date);
           const [satoriPrice, fullStakeAmount] = await Promise.all([
-            getSatoriPriceForDate(dateObj),
+            getSatoriPriceForDateSafe(dateObj),
             getMaxDelegatedStake(dateObj),
           ]);
 
           dateMap.set(date, {
-            satoriPrice,
+            satoriPrice: satoriPrice ?? 0,
             fullStakeAmount: fullStakeAmount ?? 0,
             pools: {},
           });
@@ -131,7 +131,7 @@ export async function PoolsStakingComparison({
   cacheLifeForDate(date);
 
   const [satoriPrice, fullStakeAmount] = await Promise.all([
-    getSatoriPriceForDate(date),
+    getSatoriPriceForDateSafe(date),
     getMaxDelegatedStake(date),
   ]);
 
@@ -164,7 +164,7 @@ export async function PoolsStakingComparison({
       earningsData={earningsData}
       avgDistanceData={avgDistanceData}
       fullStakeAmount={fullStakeAmount ?? 0}
-      satoriPrice={satoriPrice}
+      satoriPrice={satoriPrice ?? 0}
     />
   );
 }

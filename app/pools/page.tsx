@@ -1,12 +1,19 @@
 import { PoolsStakingComparison } from "@/components/pools/pools-staking-comparison";
+import { PoolReturns } from "@/components/pools/pool-returns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DatePickerWrapper from "@/components/date-picker-wrapper";
+import { PageHeader } from "@/components/page-header";
 import { Suspense } from "react";
 import TopPools from "@/components/top-pools";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SectionCardsPools } from "@/components/section-cards-pools";
 import { getPoolAndDate } from "@/lib/get-pool-and-date-params";
 import { getTopPools } from "@/lib/db/queries/contributors";
+
+export const metadata = {
+  title: "Pools",
+  description: "Satori staking pools — earnings, contributors, fees, and compounded returns",
+};
 
 function ymd(date: Date) {
   return date.toISOString().slice(0, 10);
@@ -41,19 +48,12 @@ export default async function PoolsPage({
   if (!hasData) {
     return (
       <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-        <div className="flex items-center justify-between px-4 lg:px-6 h-16 relative">
-          <span className="text-xl font-bold lg:hidden">
-            {selectedDate.toLocaleDateString()}
-          </span>
-
-          <span className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 text-2xl font-bold">
-            {selectedDate.toLocaleDateString()}
-          </span>
-
-          <div className="ml-auto">
-            <DatePickerWrapper selectedDate={selectedDate} />
-          </div>
-        </div>
+        <PageHeader
+          title="Pools"
+          subtitle="Daily staking pools overview — earnings, contributors, and comparisons"
+        >
+          <DatePickerWrapper selectedDate={selectedDate} />
+        </PageHeader>
 
         <div className="px-4 lg:px-6">
           <Card>
@@ -71,20 +71,12 @@ export default async function PoolsPage({
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-      <div className="flex items-center justify-between px-4 lg:px-6 h-16 relative">
-        {/* Mobile: left-aligned date */}
-        <span className="text-xl font-bold lg:hidden">
-          {selectedDate.toLocaleDateString()}
-        </span>
-
-        {/* Desktop: centered date */}
-        <span className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 text-2xl font-bold">
-          {selectedDate.toLocaleDateString()}
-        </span>
-        <div className="ml-auto">
-          <DatePickerWrapper selectedDate={selectedDate} />
-        </div>
-      </div>
+      <PageHeader
+        title="Pools"
+        subtitle="Daily staking pools overview — earnings, contributors, and comparisons"
+      >
+        <DatePickerWrapper selectedDate={selectedDate} />
+      </PageHeader>
 
       {didFallback ? (
         <div className="px-4 lg:px-6">
@@ -116,6 +108,13 @@ export default async function PoolsPage({
           fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}
         >
           <PoolsStakingComparison topPools={topPoolsWithNames} date={selectedDate} />
+        </Suspense>
+      </div>
+      <div className="px-4 lg:px-6">
+        <Suspense
+          fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}
+        >
+          <PoolReturns topPools={topPoolsWithNames} date={selectedDate} />
         </Suspense>
       </div>
     </div>

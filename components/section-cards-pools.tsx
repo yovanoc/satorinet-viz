@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
+import { getSatoriPriceForDateSafe } from "@/lib/livecoinwatch";
 import { formatSatori, formatUsd } from "@/lib/format";
 import Link from "next/link";
 import { getDailyMiningEarnings } from "@/lib/db/queries/predictors/mining-earnings";
@@ -16,7 +16,7 @@ import { getMaxDelegatedStake } from "@/lib/db/queries/predictors/max-delegated-
 export async function SectionCardsPools({ date }: { date: Date }) {
   const [price, earningsData, averageReward, workerCountWithEarnings, stakeRequired] =
     await Promise.all([
-      getSatoriPriceForDate(date),
+      getSatoriPriceForDateSafe(date),
       getDailyMiningEarnings(date),
       getWorkerRewardAverage(date),
       getWorkerCountWithEarnings(date),
@@ -24,8 +24,7 @@ export async function SectionCardsPools({ date }: { date: Date }) {
     ]);
 
   const { total_miner_earned, avg_miner_earned } = earningsData ? earningsData : { total_miner_earned: 0, avg_miner_earned: 0 };
-  const totalEarnedUSD = total_miner_earned * price;
-  const avgEarnedUSD = avg_miner_earned * price;
+  const usd = (satori: number) => (price != null ? formatUsd(satori * price) : "—");
 
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-6">
@@ -51,7 +50,7 @@ export async function SectionCardsPools({ date }: { date: Date }) {
             <CardHeader>
               <CardDescription>Average Neuron Rewards</CardDescription>
               <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                {formatUsd(price * averageReward.reward_avg)}
+                {usd(averageReward.reward_avg)}
                 <div className="text-sm font-normal">
                   {formatSatori(averageReward.reward_avg)}
                   <span className="text-muted-foreground"> SATORI</span>
@@ -69,7 +68,7 @@ export async function SectionCardsPools({ date }: { date: Date }) {
             <CardHeader>
               <CardDescription>Total Neuron Rewards</CardDescription>
               <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                {formatUsd(price * averageReward.sum_rewards)}
+                {usd(averageReward.sum_rewards)}
                 <div className="text-sm font-normal">
                   {formatSatori(averageReward.sum_rewards)}
                   <span className="text-muted-foreground"> SATORI</span>
@@ -88,7 +87,7 @@ export async function SectionCardsPools({ date }: { date: Date }) {
         <CardHeader>
           <CardDescription>Average Worker Earnings</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {formatUsd(avgEarnedUSD)}
+            {usd(avg_miner_earned)}
             <div className="text-sm font-normal">
               {formatSatori(avg_miner_earned)}
               <span className="text-muted-foreground"> SATORI</span>
@@ -105,7 +104,7 @@ export async function SectionCardsPools({ date }: { date: Date }) {
         <CardHeader>
           <CardDescription>Total Worker Earnings</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {formatUsd(totalEarnedUSD)}
+            {usd(total_miner_earned)}
             <div className="text-sm font-normal">
               {formatSatori(total_miner_earned)}
               <span className="text-muted-foreground"> SATORI</span>

@@ -34,6 +34,7 @@ interface WorkerStats {
   total_reward: number;
   total_miner_earned: number;
   avg_distance: number;
+  pool_miner_percent: number;
   worker_count_with_earnings: number;
 }
 
@@ -131,7 +132,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
                     yAxisId="left"
                     type="monotone"
                     dataKey="total_staking_power"
-                    stroke="#000000"
+                    stroke="var(--chart-1)"
                     strokeWidth={2}
                     name="Total Staking Power"
                     dot={false}
@@ -143,7 +144,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
                       yAxisId="left"
                       type="monotone"
                       dataKey="contributor_count"
-                      stroke="#FF0000"
+                      stroke="var(--chart-2)"
                       strokeWidth={2}
                       name="Total Contributors"
                       dot={false}
@@ -153,7 +154,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
                       yAxisId="left"
                       type="monotone"
                       dataKey="contributor_count_with_staking_power"
-                      stroke="#0000FF"
+                      stroke="var(--chart-5)"
                       strokeWidth={2}
                       name="Active Contributors"
                       dot={false}
@@ -164,7 +165,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
                     yAxisId="left"
                     type="monotone"
                     dataKey="earnings_per_staking_power"
-                    stroke="#000000"
+                    stroke="var(--chart-1)"
                     strokeWidth={2}
                     name="Earnings per Staking Power"
                     dot={false}
@@ -231,7 +232,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
                     yAxisId="left"
                     type="monotone"
                     dataKey="worker_count"
-                    stroke="#000000"
+                    stroke="var(--chart-1)"
                     strokeWidth={2}
                     name="Total Workers"
                     dot={false}
@@ -241,7 +242,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
                     yAxisId="right"
                     type="monotone"
                     dataKey="worker_count_with_earnings"
-                    stroke="#0000FF"
+                    stroke="var(--chart-5)"
                     strokeWidth={2}
                     name="Workers with Earnings"
                     dot={false}
@@ -253,7 +254,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
                     yAxisId="left"
                     type="monotone"
                     dataKey="total_reward"
-                    stroke="#FF0000"
+                    stroke="var(--chart-2)"
                     strokeWidth={2}
                     name="Total Rewards"
                     dot={false}
@@ -263,7 +264,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
                     yAxisId="left"
                     type="monotone"
                     dataKey="pool_miner_percent"
-                    stroke="#0000FF"
+                    stroke="var(--chart-5)"
                     strokeWidth={2}
                     name="Pool Miner Percent"
                     dot={false}
@@ -273,7 +274,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
                     yAxisId="right"
                     type="monotone"
                     dataKey="total_miner_earned"
-                    stroke="#00FF00"
+                    stroke="var(--chart-3)"
                     strokeWidth={2}
                     name="Total Miner Earnings"
                     dot={false}
@@ -283,10 +284,10 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
                   <Line
                     yAxisId="left"
                     type="monotone"
-                    dataKey="avg_score"
-                    stroke="#00FF00"
+                    dataKey="avg_distance"
+                    stroke="var(--chart-3)"
                     strokeWidth={2}
-                    name="Average Score"
+                    name="Average Distance"
                     dot={false}
                   />
                 )}
