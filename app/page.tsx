@@ -20,6 +20,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getDailyWorkerCounts } from "@/lib/db/queries/predictors/worker-count";
 import { getNetworkHistory } from "@/lib/db/queries/network";
 import { connection } from "next/server";
+import { getHolderAggregation } from "@/lib/satorinet/api";
+import { Card, CardHeader, CardDescription, CardTitle, CardFooter } from "@/components/ui/card";
 
 const CARDS_GRID =
   "*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4";
@@ -138,6 +140,36 @@ async function CustomDataTable() {
   );
 }
 
+
+async function HolderTierDistribution() {
+  const aggregation = await getHolderAggregation();
+  if (!aggregation || aggregation.tiers.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between px-4 lg:px-6">
+        <h2 className="text-lg font-semibold">Holder Distribution</h2>
+      </div>
+      <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-2 gap-4 px-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-3 @5xl/main:grid-cols-6">
+        {aggregation.tiers.map((tier) => (
+          <Card key={tier.name} className="@container/card">
+            <CardHeader className="pb-2">
+              <CardDescription>{tier.name}</CardDescription>
+              <CardTitle className="text-xl tabular-nums">
+                {formatCurrency(tier.holders, 0)}
+              </CardTitle>
+            </CardHeader>
+            <CardFooter className="flex-col items-start gap-1 text-xs text-muted-foreground mt-auto pb-4">
+              <div>{formatCurrency(tier.percentOfHolders, 1)}% of holders</div>
+              <div>{formatCurrency(tier.percentOfSupply, 1)}% of supply</div>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 async function HomeContent() {
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -182,6 +214,17 @@ async function HomeContent() {
           <CustomDataTable />
         </Suspense>
       </div>
+      <Suspense
+        fallback={
+          <div className="grid grid-cols-2 gap-4 px-4 lg:px-6 @xl/main:grid-cols-3 @5xl/main:grid-cols-6">
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} className="h-32 w-full rounded-xl" />
+            ))}
+          </div>
+        }
+      >
+        <HolderTierDistribution />
+      </Suspense>
     </div>
   );
 }

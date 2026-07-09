@@ -9,8 +9,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SectionCardsPools } from "@/components/section-cards-pools";
 import { getPoolAndDate } from "@/lib/get-pool-and-date-params";
 import { getTopPools } from "@/lib/db/queries/contributors";
+import { getLivePools } from "@/lib/satorinet/api";
+import { normalizeToUTCMidnight, getTodayMidnightUTC } from "@/lib/date";
+import type { Metadata } from "next";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Pools",
   description: "Satori staking pools — earnings, contributors, fees, and compounded returns",
 };
@@ -21,14 +24,18 @@ function ymd(date: Date) {
 
 async function TopPoolsCard({ date }: { date: Date }) {
   const topPools = await getTopPools(date);
+
+  const isToday = normalizeToUTCMidnight(date).getTime() === getTodayMidnightUTC().getTime();
+  const livePools = isToday ? await getLivePools() : [];
+
   return (
-      <Card className="@container/card">
+      <Card className="@container/card overflow-hidden">
         <CardHeader>
           <CardTitle className="font-bold text-2xl">Top {topPools.length} Pools</CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
           <div className="-mx-6">
-            <TopPools key={date.toISOString()} pools={topPools} date={date} />
+            <TopPools key={date.toISOString()} pools={topPools} date={date} livePools={livePools} />
           </div>
         </CardContent>
       </Card>
@@ -70,7 +77,7 @@ export default async function PoolsPage({
   }
 
   return (
-    <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+    <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 w-full max-w-[100vw] overflow-x-hidden">
       <PageHeader
         title="Pools"
         subtitle="Daily staking pools overview — earnings, contributors, and comparisons"

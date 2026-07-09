@@ -23,6 +23,7 @@ import {
   type Row,
 } from "@tanstack/react-table";
 import { formatSatori } from "@/lib/format";
+import type { LivePool } from "@/lib/satorinet/api";
 
 interface Pool {
   pool_address: string;
@@ -31,51 +32,125 @@ interface Pool {
   contributor_count: number;
 }
 
+interface PoolRow extends Pool {
+  active_workers?: number;
+  worker_count?: number;
+  lender_count?: number;
+  total_lent?: number;
+  avg_worker_earnings?: number;
+  commission?: number;
+  version?: string;
+}
+
 interface TopPoolsProps {
   pools: Pool[];
   date: Date;
+  livePools?: LivePool[];
 }
 
-const dataColumns: ColumnDef<Pool>[] = [
-  {
-    accessorKey: "pool",
-    header: "Pool",
-    cell: ({ row }) => {
-      const name = row.original.pool_name ?? "Unknown Pool";
-      return (
-        <Link
-          href={`/address/${row.original.pool_address}`}
-          className="block min-w-0"
-        >
-          <div className="min-w-0 text-sm font-bold text-primary truncate">
-            {name}
-          </div>
-          <div className="min-w-0 text-xs text-muted-foreground truncate">
-            {row.original.pool_address}
-          </div>
-        </Link>
-      );
+const getColumns = (isLive: boolean): ColumnDef<PoolRow>[] => {
+  const cols: ColumnDef<PoolRow>[] = [
+    {
+      accessorKey: "pool",
+      header: "Pool",
+      cell: ({ row }) => {
+        const name = row.original.pool_name ?? "Unknown Pool";
+        return (
+          <Link
+            href={`/address/${row.original.pool_address}`}
+            className="block min-w-0"
+          >
+            <div className="min-w-0 text-sm font-bold text-primary truncate">
+              {name}
+            </div>
+            <div className="min-w-0 text-xs text-muted-foreground truncate">
+              {row.original.pool_address}
+            </div>
+          </Link>
+        );
+      },
     },
-  },
-  {
-    accessorKey: "balance",
-    header: () => <div className="text-right">Total Staking Power</div>,
-    cell: ({ row }) => (
-      <div className="text-right tabular-nums">
-        {formatSatori(row.original.total_staking_power)}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "contributor_count",
-    header: () => <div className="text-right">Contributor Count</div>,
-    cell: ({ row }) => (
-      <div className="text-right tabular-nums">{row.original.contributor_count}</div>
-    ),
-  },
-];
+    {
+      accessorKey: "balance",
+      header: () => <div className="text-right">Total Staking Power</div>,
+      cell: ({ row }) => (
+        <div className="text-right tabular-nums">
+          {formatSatori(row.original.total_staking_power)}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "contributor_count",
+      header: () => <div className="text-right">Contributor Count</div>,
+      cell: ({ row }) => (
+        <div className="text-right tabular-nums">{row.original.contributor_count}</div>
+      ),
+    },
+  ];
 
-function MyRow({ row }: { row: Row<Pool> }) {
+  if (isLive) {
+    cols.push(
+      {
+        accessorKey: "workers",
+        header: () => <div className="text-right">Workers (Live)</div>,
+        cell: ({ row }) => (
+          <div className="text-right tabular-nums">
+            {row.original.active_workers ?? "-"} / {row.original.worker_count ?? "-"}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "lender_count",
+        header: () => <div className="text-right">Lenders (Live)</div>,
+        cell: ({ row }) => (
+          <div className="text-right tabular-nums">
+            {row.original.lender_count ?? "-"}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "total_lent",
+        header: () => <div className="text-right">Total Lent (Live)</div>,
+        cell: ({ row }) => (
+          <div className="text-right tabular-nums">
+            {row.original.total_lent != null ? formatSatori(row.original.total_lent) : "-"}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "avg_worker_earnings",
+        header: () => <div className="text-right whitespace-nowrap">Avg Earnings (Live)</div>,
+        cell: ({ row }) => (
+          <div className="text-right tabular-nums">
+            {row.original.avg_worker_earnings != null ? `${formatSatori(row.original.avg_worker_earnings)}/d` : "-"}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "commission",
+        header: () => <div className="text-right">Fee (Live)</div>,
+        cell: ({ row }) => (
+          <div className="text-right tabular-nums">
+            {row.original.commission != null ? `${(row.original.commission * 100).toFixed(1)}%` : "-"}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "version",
+        header: () => <div className="text-right">Version (Live)</div>,
+        cell: ({ row }) => (
+          <div className="text-right tabular-nums">
+            {row.original.version ?? "-"}
+          </div>
+        ),
+      }
+    );
+  }
+
+  return cols;
+};
+
+function MyRow({ row }: { row: Row<PoolRow> }) {
   return (
     <TableRow
       data-state={row.getIsSelected() && "selected"}
@@ -90,20 +165,31 @@ function MyRow({ row }: { row: Row<Pool> }) {
   );
 }
 
-const TopPools: FC<TopPoolsProps> = ({ pools }) => {
-  const data = pools.map((pool) => {
+const TopPools: FC<TopPoolsProps> = ({ pools, livePools }) => {
+  const data: PoolRow[] = pools.map((pool) => {
     const knownPool = KNOWN_POOLS.find((p) => p.address === pool.pool_address);
+    const livePool = livePools?.find((p) => p.address === pool.pool_address);
     return {
-      pool_name: knownPool?.name,
+      pool_name: knownPool?.name || livePool?.alias || undefined,
       pool_address: pool.pool_address,
       total_staking_power: pool.total_staking_power,
       contributor_count: pool.contributor_count,
+      active_workers: livePool?.active_workers,
+      worker_count: livePool?.worker_count,
+      lender_count: livePool?.lender_count,
+      total_lent: livePool?.total_lent,
+      avg_worker_earnings: livePool?.avg_worker_earnings,
+      commission: livePool?.commission,
+      version: livePool?.version,
     };
   });
 
+  const isLive = livePools != null && livePools.length > 0;
+  const columns = getColumns(isLive);
+
   const table = useReactTable({
     data,
-    columns: dataColumns,
+    columns,
     getRowId: (row) => row.pool_address,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -113,7 +199,7 @@ const TopPools: FC<TopPoolsProps> = ({ pools }) => {
   });
 
   return (
-    <div className="w-full">
+    <div className="w-full overflow-x-auto">
       <Table>
         <TableHeader className="bg-muted sticky top-0 z-10">
           {table.getHeaderGroups().map((headerGroup) => (
@@ -141,7 +227,7 @@ const TopPools: FC<TopPoolsProps> = ({ pools }) => {
           ) : (
             <TableRow>
               <TableCell
-                colSpan={dataColumns.length}
+                colSpan={columns.length}
                 className="h-24 text-center"
               >
                 No results.

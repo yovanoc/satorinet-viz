@@ -13,6 +13,7 @@ import {
   IconUsersGroup,
   IconUser,
   IconWaveSine,
+  IconListNumbers,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -38,6 +39,11 @@ const data = {
       title: "Network",
       url: "/network",
       icon: IconTopologyStar3,
+    },
+    {
+      title: "Leaderboard",
+      url: "/leaderboard",
+      icon: IconListNumbers,
     },
   ],
   entities: [

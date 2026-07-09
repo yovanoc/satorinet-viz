@@ -10,40 +10,55 @@ import {
 } from "@/lib/satorinet/central";
 import { getSatoriHolders } from "@/lib/get-satori-holders";
 import { getSatoriPriceForDateSafe } from "@/lib/livecoinwatch";
+import { getSatoriPriceLive, getWalletHoldersCount } from "@/lib/satorinet/api";
 import { connection } from "next/server";
 import { formatCurrency, formatSatori, formatUsd } from "@/lib/format";
 
 export async function SectionCards() {
   await connection();
 
-  const [price, statsPredictions, satoriHolders] =
+  const [fallbackPrice, statsPredictions, satoriHolders, livePriceData, liveHoldersCount] =
     await Promise.all([
       getSatoriPriceForDateSafe(new Date()),
       getStatsPredictions(),
       getSatoriHolders(),
+      getSatoriPriceLive(),
+      getWalletHoldersCount(),
     ]);
 
   if (!satoriHolders) {
     return <div className="px-4 lg:px-6">No data available</div>;
   }
 
-  const holders = Object.values(satoriHolders.tiers).reduce(
+  const price = livePriceData?.price ?? fallbackPrice;
+  const priceSource = livePriceData?.source ?? "LiveCoinWatch";
+  const priceChange = livePriceData?.change_percent;
+
+  const derivedHolders = Object.values(satoriHolders.tiers).reduce(
     (acc, tier) => acc + tier.count,
     0
   );
+  const holders = liveHoldersCount ?? derivedHolders;
 
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-5">
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Price</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {formatUsd(price)}
-          </CardTitle>
+          <div className="flex items-baseline gap-2">
+            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+              {formatUsd(price)}
+            </CardTitle>
+            {priceChange && (
+              <span className={`text-sm font-medium ${priceChange.startsWith('-') ? 'text-red-500' : 'text-green-500'}`}>
+                {priceChange.startsWith('-') ? '' : '+'}{priceChange}%
+              </span>
+            )}
+          </div>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="text-muted-foreground">
-            Satori Price in USD — <a href="https://www.livecoinwatch.com/price/SATORI-SATORI">LiveCoinWatch</a>
+            Satori Price in USD — {priceSource === "LiveCoinWatch" ? <a href="https://www.livecoinwatch.com/price/SATORI-SATORI" className="hover:underline">LiveCoinWatch</a> : priceSource}
           </div>
         </CardFooter>
       </Card>
@@ -84,17 +99,6 @@ export async function SectionCards() {
           <div className="text-muted-foreground">Total number of neurons</div>
         </CardFooter>
       </Card>
-      {/* <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Oracles</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {dailyCounts.oracleCount}
-          </CardTitle>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="text-muted-foreground">Total oracle count</div>
-        </CardFooter>
-      </Card> */}
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Predictions</CardDescription>

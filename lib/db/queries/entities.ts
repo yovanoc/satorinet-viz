@@ -2,6 +2,8 @@ import { sql } from "drizzle-orm";
 import { cacheLife } from "next/cache";
 import { db } from "..";
 import { cacheLifeForDate } from "../cache-utils";
+import { getAuditStakers, getAuditWorkers } from "../../satorinet/audit";
+import { lendersSnapshotFromAudit, workersSnapshotFromAudit } from "./audit-entities";
 
 export type ActivityState = "new" | "returned" | null;
 
@@ -57,6 +59,8 @@ export type WorkerRow = {
   operator_wallet: string;
   operator_vault: string | null;
   reward: number;
+  balance?: number;
+  distance?: number;
   prev_reward: number | null;
   reward_rank: number;
   rank_movement: number | null;
@@ -71,6 +75,12 @@ export type WorkersSnapshot = {
 };
 
 export async function getWorkersSnapshot(date: Date): Promise<WorkersSnapshot | null> {
+  const auditRows = await getAuditWorkers(date);
+  if (auditRows && auditRows.length > 0) return workersSnapshotFromAudit(date, auditRows);
+  return getWorkersSnapshotFromDb(date);
+}
+
+async function getWorkersSnapshotFromDb(date: Date): Promise<WorkersSnapshot | null> {
   "use cache";
   cacheLifeForDate(date);
 
@@ -285,6 +295,7 @@ export type LenderRow = {
   contribution: number;
   share: number;
   reward: number;
+  pool_commission?: number;
   is_operator: boolean;
   prev_contribution: number | null;
   prev_reward: number | null;
@@ -300,6 +311,12 @@ export type LendersSnapshot = {
 };
 
 export async function getLendersSnapshot(date: Date): Promise<LendersSnapshot | null> {
+  const auditRows = await getAuditStakers(date);
+  if (auditRows && auditRows.length > 0) return lendersSnapshotFromAudit(date, auditRows);
+  return getLendersSnapshotFromDb(date);
+}
+
+async function getLendersSnapshotFromDb(date: Date): Promise<LendersSnapshot | null> {
   "use cache";
   cacheLifeForDate(date);
 
