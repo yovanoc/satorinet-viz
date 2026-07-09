@@ -39,7 +39,7 @@ interface PoolRow extends Pool {
   total_lent?: number;
   avg_worker_earnings?: number;
   commission?: number;
-  version?: string;
+  version?: string | null;
 }
 
 interface TopPoolsProps {
