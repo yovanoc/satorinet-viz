@@ -60,6 +60,29 @@ async function fetchParsed<T>(
   return schema.parse(res);
 }
 
+/**
+ * Direct fetch first; on failure (e.g. Cloudflare blocks datacenter IPs on
+ * Vercel) fall back to the Redis copy written by the cache warmer
+ * (.github/workflows/warm-satori-cache.yml) or by a previous successful fetch.
+ */
+const RAW_TTL = 60 * 60 * 26; // survives a full day of warmer failures
+
+async function fetchParsedWithFallback<T>(
+  path: string,
+  schema: z.ZodMiniType<T>
+): Promise<T> {
+  const rawKey = `satorinet:raw:${path}`;
+  try {
+    const data = await fetchParsed(path, schema);
+    await redis.setex(rawKey, RAW_TTL, JSON.stringify(data));
+    return data;
+  } catch (err) {
+    const raw = await redis.get(rawKey);
+    if (raw !== null) return schema.parse(JSON.parse(raw));
+    throw err;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // /api/satori-price — live price (no history)
 // ---------------------------------------------------------------------------
@@ -75,7 +98,7 @@ export type SatoriPrice = z.infer<typeof satoriPriceSchema>;
 async function getSatoriPriceLiveCached(): Promise<SatoriPrice> {
   "use cache";
   cacheLife("hours");
-  return fetchParsed("satori-price", satoriPriceSchema);
+  return fetchParsedWithFallback("satori-price", satoriPriceSchema);
 }
 
 export async function getSatoriPriceLive(): Promise<SatoriPrice | null> {
@@ -96,7 +119,7 @@ const walletHoldersSchema = z.object({ count: z.number() });
 async function getWalletHoldersCountCached(): Promise<number> {
   "use cache";
   cacheLife("hours");
-  return (await fetchParsed("wallet-holders", walletHoldersSchema)).count;
+  return (await fetchParsedWithFallback("wallet-holders", walletHoldersSchema)).count;
 }
 
 export async function getWalletHoldersCount(): Promise<number | null> {
@@ -133,7 +156,7 @@ export type HolderTier = z.infer<typeof holderTierSchema>;
 async function getHolderAggregationCached(): Promise<HolderAggregation> {
   "use cache";
   cacheLife("hours");
-  return fetchParsed("holder-aggregation", holderAggregationSchema);
+  return fetchParsedWithFallback("holder-aggregation", holderAggregationSchema);
 }
 
 export async function getHolderAggregation(): Promise<HolderAggregation | null> {
@@ -167,7 +190,7 @@ const livePoolsResponseSchema = z.object({ pools: z.array(livePoolSchema) });
 async function getLivePoolsCached(): Promise<LivePool[]> {
   "use cache";
   cacheLife("hours");
-  return (await fetchParsed("pools", livePoolsResponseSchema)).pools;
+  return (await fetchParsedWithFallback("pools", livePoolsResponseSchema)).pools;
 }
 
 export async function getLivePools(): Promise<LivePool[]> {
@@ -227,16 +250,17 @@ async function fetchLeaderboardPage(date: Date, offset: number): Promise<Leaderb
   const cacheKey = `satorinet:leaderboard:${day}:${offset}`;
   const historical = isHistorical(date);
 
-  if (historical) {
-    const cached = await redis.get(cacheKey);
-    if (cached) return leaderboardPageSchema.parse(JSON.parse(cached));
-  }
+  // Redis-first for every date: historical is immutable, today's key is
+  // refreshed by the cache warmer (and by any successful direct fetch).
+  const cached = await redis.get(cacheKey);
+  if (cached) return leaderboardPageSchema.parse(JSON.parse(cached));
 
   const page = await fetchParsed("leaderboard", leaderboardPageSchema, {
     offset: String(offset),
     date: day,
   });
   if (historical) await redis.set(cacheKey, JSON.stringify(page));
+  else await redis.setex(cacheKey, 60 * 60 * 3, JSON.stringify(page));
   return page;
 }
 

@@ -124,7 +124,19 @@ async function getAudit<T>(
     if (cached) return JSON.parse(cached) as T[];
   }
 
-  const csv = await fetchAuditCsv(kind, date);
+  // Raw CSV copies are written by the cache warmer for environments where
+  // direct fetches are blocked (Cloudflare vs datacenter IPs on Vercel).
+  const rawKey = `satorinet:raw:audit:${kind}:${date ? date.toISOString().split("T")[0] : "latest"}`;
+
+  let csv: string | null;
+  try {
+    csv = await fetchAuditCsv(kind, date);
+    if (csv !== null && !date) await redis.setex(rawKey, 60 * 60 * 26, csv);
+  } catch (err) {
+    const raw = await redis.get(rawKey);
+    if (raw === null) throw err;
+    csv = raw;
+  }
   if (csv === null) return null;
 
   const rows = parseCsv(csv).map(mapRow);

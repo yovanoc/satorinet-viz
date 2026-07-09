@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "warm": "tsx scripts/warm-satori-cache.ts"
   },
   "dependencies": {
     "@diceui/combobox": "^1.2.2",

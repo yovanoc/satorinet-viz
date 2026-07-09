@@ -1,0 +1,27 @@
+name: Warm Satori cache
+
+on:
+  schedule:
+    - cron: "23 */2 * * *"
+  workflow_dispatch:
+    inputs:
+      backfill_since:
+        description: "Backfill historical days since this date (YYYY-MM-DD, earliest 2025-12-25)"
+        required: false
+
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsx scripts/warm-satori-cache.ts
+        env:
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          BACKFILL_SINCE: ${{ inputs.backfill_since }}
