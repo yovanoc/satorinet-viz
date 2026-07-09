@@ -1,4 +1,5 @@
 import ky from "ky";
+import { Impit } from "impit";
 import Bottleneck from "bottleneck";
 import { cacheLife } from "next/cache";
 import * as z from "zod/mini";
@@ -23,13 +24,21 @@ export const SATORI_API_EARLIEST_DATE = new Date(Date.UTC(2025, 11, 25));
 // ponytail: single global limiter, ~1 req/1.2s — their rate limit is per-IP and data changes daily
 const limiter = new Bottleneck({ maxConcurrent: 1, minTime: 1200 });
 
+// Browser TLS-fingerprint impersonation — plain fetch gets Cloudflare's
+// "Just a moment..." challenge from datacenter IPs (e.g. Vercel).
+const impit = new Impit({ browser: "chrome" });
+
+/**
+ * Fetch with Chrome TLS fingerprint — shared with audit.ts.
+ * ImpitResponse implements everything ky uses (status/headers/json/text/clone)
+ * but not the full Response interface (no blob/formData) — hence the bridge cast.
+ */
+export const impitFetch: typeof fetch = async (input, init) =>
+  (await impit.fetch(input, init as Parameters<Impit["fetch"]>[1])) as unknown as Response;
+
 const client = ky.create({
   prefix: BASE_URL,
-  headers: {
-    "User-Agent":
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-    Accept: "application/json, text/csv, */*",
-  },
+  fetch: impitFetch,
   retry: { limit: 3, methods: ["get"] },
   timeout: 30_000,
 });

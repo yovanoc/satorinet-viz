@@ -41,6 +41,7 @@
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "emittery": "^2.0.0",
+    "impit": "^0.14.2",
     "ioredis": "^5.11.1",
     "ky": "^2.0.2",
     "lucide-react": "^1.23.0",

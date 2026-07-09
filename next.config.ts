@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   reactStrictMode: true,
   cacheComponents: true,
+  serverExternalPackages: ["impit"],
   experimental: {
     parallelServerCompiles: true,
     turbopackFileSystemCacheForDev: true,
