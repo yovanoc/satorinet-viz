@@ -3,8 +3,13 @@ import Emittery from "emittery";
 import { setTimeout } from "timers/promises";
 import { getScriptHash } from "../evr";
 
+// # 167.71.11.203 (the pool box) was removed 2026-08-12: its ElectrumX stopped
+// # at block 1768205, mined 2026-03-20, and still answers queries normally
+// # from that stale tip. SATORIEVR was not issued until ~block 1896008, so it
+// # reports every wallet as holding 0 SATORIEVR. Re-add only once it is
+// # verifiably synced to the chain tip.
 const EVRMORE_ELECTRUMX_SERVERS_WITHOUT_SSL = [
-  "167.71.11.203:50001",
+  // "167.71.11.203:50001",
   "evrx-1.satoriog.com:50001",
   "electrum1-mainnet.evrmorecoin.org:50001",
   "electrum2-mainnet.evrmorecoin.org:50001",
