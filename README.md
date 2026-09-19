@@ -34,6 +34,11 @@ The workflow runs every two hours and can also be dispatched manually. Its optio
 `backfill_since` input accepts `YYYY-MM-DD` (earliest `2025-12-25`). A successful
 warm run supplies cached data when Satorinet blocks requests from the deployment.
 Browser headers do not guarantee passage through a Cloudflare challenge.
+Select `diagnostics_only` for a read-only comparison of curl, native fetch, and
+Impit from the GitHub runner. This skips warming and does not use Redis credentials;
+a successful diagnostic run means the probes completed, not that access succeeded.
+Inspect each probe's HTTP status and `validPrice` result. Run the same probes locally
+with `pnpm exec tsx scripts/diagnose-satori.ts`.
 
 ## Tooling compatibility
 

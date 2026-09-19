@@ -11,6 +11,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import type { Pool } from "@/lib/known_pools";
+import type { ResolvedPoolFee } from "@/lib/pool-utils";
 import {
   ComposedChart,
   Area,
@@ -23,9 +24,7 @@ import {
 import {
   applyFeePercent,
   applyFees,
-  getActiveTemporaryReductions,
   getFeeRange,
-  getPoolFeesForDate,
 } from "@/lib/pool-utils";
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
 // import { useIsMobile } from "@/hooks/use-mobile";
@@ -51,7 +50,7 @@ export type Entry = {
     {
       pool: Pool;
       earnings_per_staking_power: number;
-      fees: ReturnType<typeof getPoolFeesForDate>;
+      fees: ResolvedPoolFee;
     }
   >;
 };
@@ -73,13 +72,12 @@ export function PoolsStakingComparisonChart({
   // const isMobile = useIsMobile();
 
   const poolInfos = useMemo(() => {
-    return pools
-      .filter((p) => p.vault_address !== undefined)
-      .reduce((acc, pool) => {
+    return pools.reduce((acc, pool) => {
         const mean =
           data.reduce((sum, entry) => {
-            const gross =
-              entry.poolEarnings[pool.address]?.earnings_per_staking_power ?? 0;
+            const poolData = entry.poolEarnings[pool.address];
+            if (!poolData) return sum;
+            const gross = poolData.earnings_per_staking_power;
             let value = gross;
             if (showNetEarnings) {
               const res = applyFees({
@@ -89,6 +87,7 @@ export function PoolsStakingComparisonChart({
                 current_staked_amount: 1,
                 satoriPrice: entry.satoriPrice,
                 fullStakeAmount: entry.fullStakeAmount,
+                fee: poolData.fees,
               });
               if (res.type === "single" || res.type === "not_found") {
                 value = res.result.net;
@@ -108,7 +107,15 @@ export function PoolsStakingComparisonChart({
               ?.earnings_per_staking_power ?? 0,
         };
         return acc;
-      }, {} as Record<string, { mean: number; last_gross_rewards: number }>);
+      },
+      {} as Record<
+        string,
+        {
+          mean: number;
+          last_gross_rewards: number;
+        }
+      >
+    );
   }, [data, pools, showNetEarnings]);
 
   return (
@@ -135,6 +142,19 @@ export function PoolsStakingComparisonChart({
               Received + Pool&apos;s Own Staking Power)
             </div>
           </div>
+          {Array.from(
+            new Set(
+              data.flatMap((entry) =>
+                Object.values(entry.poolEarnings)
+                  .map(({ fees }) => fees.warning)
+                  .filter((warning): warning is string => Boolean(warning))
+              )
+            )
+          ).map((warning) => (
+            <div key={warning} className="mt-2 text-amber-600 dark:text-amber-400">
+              Fee warning: {warning}
+            </div>
+          ))}
         </CardDescription>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
@@ -192,7 +212,7 @@ export function PoolsStakingComparisonChart({
                   return [];
                 }
 
-                const { pool } = poolData;
+                const { pool, earnings_per_staking_power, fees } = poolData;
 
                 let valueStr = "BAD INPUT";
                 if (Array.isArray(value) && value[0] && value[1]) {
@@ -223,23 +243,25 @@ export function PoolsStakingComparisonChart({
                 const { min, max } = getFeeRange(
                   pool,
                   entry.date,
-                  entry.poolEarnings[pool.address]!.earnings_per_staking_power,
+                  earnings_per_staking_power,
                   entry.satoriPrice,
-                  entry.fullStakeAmount
+                  entry.fullStakeAmount,
+                  fees
                 );
 
-                if (min !== max) {
-                  finalName += ` (${(min * 100).toFixed(2)}% - ${(
-                    max * 100
-                  ).toFixed(2)}%)`;
+                if (fees.fees) {
+                  if (min !== max) {
+                    finalName += ` (${(min * 100).toFixed(2)}% - ${(
+                      max * 100
+                    ).toFixed(2)}%)`;
+                  } else {
+                    finalName += ` (${(min * 100).toFixed(2)}%)`;
+                  }
                 } else {
-                  finalName += ` (${(min * 100).toFixed(2)}%)`;
+                  finalName += " (unverified fee)";
                 }
 
-                const activeReductions = getActiveTemporaryReductions(
-                  pool,
-                  entry.date
-                );
+                const activeReductions = fees.temporaryReductions;
                 if (activeReductions.length > 0) {
                   const totalReduction = activeReductions.reduce(
                     (acc, r) => acc + r.percent,
@@ -261,22 +283,20 @@ export function PoolsStakingComparisonChart({
                 const { ref: _ref, ...legendProps } = props as typeof props & {
                   ref?: unknown;
                 };
-                const customPayload = pools
-                  .filter((p) => p.vault_address !== undefined)
-                  .map((pool) => {
-                    const actualDate = new Date();
-
+                const customPayload = pools.map((pool) => {
                     const poolInfo = poolInfos[pool.address];
+                    const lastEntry = data.at(-1);
+                    const lastPoolData = lastEntry?.poolEarnings[pool.address];
 
                     if (!poolInfo) {
                       return {
-                        value: `${pool.name} (0%)`,
+                        value: `${pool.name} (unverified fee)`,
                         type: "circle" as const,
                         color: pool.color,
                       };
                     }
 
-                    if (pool.closed && pool.closed < actualDate) {
+                    if (pool.closed && lastEntry && pool.closed < lastEntry.date) {
                       return {
                         value: `${
                           pool.name
@@ -286,25 +306,33 @@ export function PoolsStakingComparisonChart({
                       };
                     }
 
+                    if (!lastEntry || !lastPoolData) {
+                      return {
+                        value: `${pool.name} (unverified fee)`,
+                        type: "circle" as const,
+                        color: pool.color,
+                      };
+                    }
+
                     const { min, max } = getFeeRange(
                       pool,
-                      actualDate,
+                      lastEntry.date,
                       poolInfo.last_gross_rewards,
                       satoriPrice,
-                      fullStakeAmount
+                      fullStakeAmount,
+                      lastPoolData.fees
                     );
 
-                    const feeDisplay =
-                      min !== max
-                        ? `${(min * 100).toFixed(2)}% - ${(max * 100).toFixed(
-                            2
-                          )}%`
-                        : `${(min * 100).toFixed(2)}%`;
+                    const feeDisplay = lastPoolData.fees.fees
+                      ? min !== max
+                        ? `${(min * 100).toFixed(2)}% - ${(
+                            max * 100
+                          ).toFixed(2)}%`
+                        : `${(min * 100).toFixed(2)}%`
+                      : "unverified fee";
 
-                    const activeReductions = getActiveTemporaryReductions(
-                      pool,
-                      actualDate
-                    );
+                    const activeReductions =
+                      lastPoolData?.fees.temporaryReductions ?? [];
                     const reductionDisplay =
                       activeReductions.length > 0
                         ? ` 🎁 -${(
@@ -338,9 +366,7 @@ export function PoolsStakingComparisonChart({
               }}
             />
 
-            {pools
-              .filter((p) => p.vault_address !== undefined)
-              .map((pool) => (
+            {pools.map((pool) => (
                 <Area
                   key={`${pool.address}-area`}
                   yAxisId="left"
@@ -349,9 +375,9 @@ export function PoolsStakingComparisonChart({
                       return null;
                     }
 
-                    const gross =
-                      entry.poolEarnings[pool.address]
-                        ?.earnings_per_staking_power ?? 0;
+                    const poolData = entry.poolEarnings[pool.address];
+                    if (!poolData) return null;
+                    const gross = poolData.earnings_per_staking_power;
 
                     if (!showNetEarnings) {
                       return [gross, gross];
@@ -362,7 +388,8 @@ export function PoolsStakingComparisonChart({
                       entry.date,
                       gross,
                       satoriPrice,
-                      fullStakeAmount
+                      fullStakeAmount,
+                      poolData.fees
                     );
 
                     return [

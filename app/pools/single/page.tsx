@@ -8,6 +8,7 @@ import PoolWorkerComparison from "@/components/pools/pool-vs-worker-comparison";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getPoolHistoricalData } from "@/lib/db/queries/pools/historical-data";
+import { getPoolFeeSnapshot } from "@/lib/db/queries/pools/fees";
 import { getPoolWorkerStats } from "@/lib/db/queries/predictors/worker-stats";
 import { getPoolAndDate, type TopPoolWithName } from "@/lib/get-pool-and-date-params";
 import { KNOWN_POOLS } from "@/lib/known_pools";
@@ -104,10 +105,13 @@ async function PoolDataSection({ date, pool }: { date: Date; pool: TopPoolWithNa
   let historicalData: Awaited<ReturnType<typeof getPoolHistoricalData>>;
   let workerStats: Awaited<ReturnType<typeof getPoolWorkerStats>>;
   let workerReward: WorkerReward | null;
+  let feeWarning: string | undefined;
 
   try {
+    const feeSnapshot = await getPoolFeeSnapshot([pool], date);
+    feeWarning = feeSnapshot[pool.address]?.warning;
     [historicalData, workerStats, workerReward] = await Promise.all([
-      getPoolHistoricalData(pool, date),
+      getPoolHistoricalData(pool, date, 30, feeSnapshot[pool.address]),
       getPoolWorkerStats(pool.address, pool.vault_address, date),
       tryGetWorkerReward(pool.address),
     ]);
@@ -168,6 +172,7 @@ async function PoolDataSection({ date, pool }: { date: Date; pool: TopPoolWithNa
             workerStats={workerStats ?? []}
             date={date}
             poolName={name}
+            feeWarning={feeWarning}
           />
         </div>
         <div className="xl:col-span-5 flex flex-col gap-6 order-3">

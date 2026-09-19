@@ -3,21 +3,30 @@ import { db } from "../..";
 import { dailyPredictorAddress, dailyContributorAddress } from "../../schema";
 import { cacheLifeForDate } from "../../cache-utils";
 import { KNOWN_POOLS, type TopPool } from "@/lib/known_pools";
-import { getPoolFeesForDate } from "@/lib/pool-utils";
+import {
+  resolvePoolFee,
+  type ResolvedPoolFee,
+} from "@/lib/pool-utils";
 import { getVaultsForWallet } from "@/lib/evr/wallet-vault";
 
 export async function getPoolHistoricalData(
   pool: TopPool,
   date: Date,
   days = 30,
+  resolvedFee?: ResolvedPoolFee,
 ) {
   "use cache";
   cacheLifeForDate(date);
 
   const knownPool = KNOWN_POOLS.find((p) => p.address === pool.address);
 
-  const fees = knownPool ? getPoolFeesForDate(knownPool, date) : null;
-  const workerGivenPercent = fees?.workerGivenPercent ?? 0;
+  const fee =
+    resolvedFee ??
+    (knownPool ? resolvePoolFee(knownPool, date, null) : null);
+  // workerGivenPercent is a legacy configured rule. An audit commission replaces
+  // the configured fee wholesale, so static discounts do not stack on it.
+  const workerGivenPercent =
+    fee?.source === "known" ? fee.workerGivenPercent ?? 0 : 0;
 
   const vaultAddress =
     pool?.vault_address ??
@@ -55,7 +64,7 @@ export async function getPoolHistoricalData(
             WHEN ${dailyPredictorAddress.reward_address} = ${dailyPredictorAddress.worker_address}
             OR ${dailyPredictorAddress.reward_address} = ${dailyPredictorAddress.worker_vault_address}
             OR ${dailyPredictorAddress.pool_wallet} = ${pool.address}
-            OR ${dailyPredictorAddress.pool_vault} = ${vaultAddress}
+            OR ${vaultAddress ? eq(dailyPredictorAddress.pool_vault, vaultAddress) : sql`false`}
             THEN ${dailyPredictorAddress.balance}
             ELSE 0
           END

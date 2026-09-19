@@ -158,7 +158,9 @@ const CustomTooltip = ({ active, payload, poolColors }: CustomTooltipProps) => {
                     className="font-bold text-sm"
                     style={{ color: poolColor }}
                   >
-                    {(pool.min.feePercent * 100).toFixed(2)}%
+                    {pool.feeVerified
+                      ? `${(pool.min.feePercent * 100).toFixed(2)}%`
+                      : "unverified"}
                   </span>{" "}
                   fee)
                 </p>
@@ -195,7 +197,9 @@ const CustomTooltip = ({ active, payload, poolColors }: CustomTooltipProps) => {
                       className="font-bold text-sm"
                       style={{ color: poolColor }}
                     >
-                      {(pool.max.feePercent * 100).toFixed(2)}%
+                      {pool.feeVerified
+                        ? `${(pool.max.feePercent * 100).toFixed(2)}%`
+                        : "unverified"}
                     </span>{" "}
                     fee)
                   </p>
@@ -274,8 +278,27 @@ export function PoolComparisonChart({ data }: PoolComparisonChartProps) {
     .filter((entry) => entry.date >= MIN_AVG_DISTANCE_DATE)
     .map((entry) => entry);
 
+  const feeWarnings = Array.from(
+    new Set(
+      data.flatMap((entry) =>
+        Object.values(entry.pools)
+          .map((pool) => pool.feeWarning)
+          .filter((warning): warning is string => Boolean(warning))
+      )
+    )
+  );
+
   return (
-    <Tabs defaultValue="earnings" className="h-full w-full flex flex-col">
+    <div className="flex h-full w-full flex-col gap-2">
+      {feeWarnings.map((warning) => (
+        <div
+          key={warning}
+          className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300"
+        >
+          Fee warning: {warning}
+        </div>
+      ))}
+      <Tabs defaultValue="earnings" className="h-full w-full flex flex-col">
       <TabsList className="grid w-full grid-cols-2 mb-2">
         <TabsTrigger value="earnings">Earnings</TabsTrigger>
         <TabsTrigger value="avg_distance">Avg distance</TabsTrigger>
@@ -453,6 +476,7 @@ export function PoolComparisonChart({ data }: PoolComparisonChartProps) {
           </LineChart>
         </ChartContainer>
       </TabsContent>
-    </Tabs>
+      </Tabs>
+    </div>
   );
 }

@@ -1,8 +1,14 @@
 import { KNOWN_POOLS, type Pool, type TopPool } from "@/lib/known_pools";
 import { cacheLifeForDate } from "../../cache-utils";
 import { getPoolHistoricalData } from "./historical-data";
+import { feeDateKey, getPoolFeeSnapshots } from "./fees";
 import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
-import { applyFees, FeeResult, type AppliedFees } from "@/lib/pool-utils";
+import {
+  applyFees,
+  FeeResult,
+  type AppliedFees,
+  type FeeSource,
+} from "@/lib/pool-utils";
 import { getWorkerRewardAverage } from "../predictors/worker-reward-avg";
 import { generateDateRangeBackwards, isSameUTCDate } from "@/lib/date";
 import { env } from "@/lib/env";
@@ -127,6 +133,9 @@ type PoolEarningsData = {
   poolAddress: string;
   pool?: Pool;
   avg_distance: number;
+  feeSource: FeeSource;
+  feeVerified: boolean;
+  feeWarning?: string;
   min: EarningsData;
   max?: EarningsData;
 };
@@ -156,10 +165,17 @@ export async function getPoolVsWorkerComparison(
   "use cache";
   cacheLifeForDate(date);
 
+  const dates = generateDateRangeBackwards(date, days);
+  const feeSnapshots = await getPoolFeeSnapshots(pools, dates);
   const poolsData = await Promise.all(
     pools.map(async (pool) => ({
       pool,
-      data: await getPoolHistoricalData(pool, date, days),
+      data: await getPoolHistoricalData(
+        pool,
+        date,
+        days,
+        feeSnapshots[feeDateKey(date)]?.[pool.address]
+      ),
     }))
   );
 
@@ -174,9 +190,6 @@ export async function getPoolVsWorkerComparison(
     console.error("No data found for the given date and days.");
     return [];
   }
-
-  // Create a complete date range based on the requested parameters
-  const dates = generateDateRangeBackwards(date, days);
 
   // Validate that we have sufficient data coverage
   const dataCoverage = validateDataCoverage(poolsData, dates);
@@ -310,11 +323,18 @@ export async function getPoolVsWorkerComparison(
         continue;
       }
 
+      const fee = feeSnapshots[feeDateKey(dailyDate)]?.[pool.address];
+      if (!fee) {
+        console.warn(`No resolved fee data found for pool ${pool.address}`);
+        continue;
+      }
+
       const appliedFees = new Array<AppliedFees>();
 
       const res = applyFees({
         poolAddress: pool.address,
         date: dailyDate,
+        fee,
         fullStakeAmount: stake,
         earnings_per_staking_power: entry.earnings_per_staking_power,
         current_staked_amount: poolTracking.min.current_amount,
@@ -327,6 +347,7 @@ export async function getPoolVsWorkerComparison(
         const res = applyFees({
           poolAddress: pool.address,
           date: dailyDate,
+          fee,
           fullStakeAmount: stake,
           earnings_per_staking_power: entry.earnings_per_staking_power,
           current_staked_amount: poolTracking.max.current_amount,
@@ -362,6 +383,9 @@ export async function getPoolVsWorkerComparison(
           poolAddress: pool.address,
           pool: knownPool,
           avg_distance: entry.avg_distance,
+          feeSource: fee.source,
+          feeVerified: fee.fees !== null,
+          feeWarning: fee.warning,
           min: {
             total_earnings: poolTracking.min.total_earnings,
             full_stake_earnings: netPerFullStake,
@@ -415,6 +439,9 @@ export async function getPoolVsWorkerComparison(
           poolAddress: pool.address,
           pool: knownPool,
           avg_distance: entry.avg_distance,
+          feeSource: fee.source,
+          feeVerified: fee.fees !== null,
+          feeWarning: fee.warning,
           min: {
             total_earnings: poolTracking.min.total_earnings,
             full_stake_earnings: minNetPerFullStake,

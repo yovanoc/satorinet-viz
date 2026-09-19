@@ -5,6 +5,9 @@ import * as z from "zod/mini";
 import { redis } from "../redis";
 import { getTodayMidnightUTC, normalizeToUTCMidnight } from "../date";
 import { impitFetch } from "./transport";
+import { normalizeLiveCommission } from "@/lib/pool-utils";
+
+export { normalizeLiveCommission } from "@/lib/pool-utils";
 
 export { impitFetch } from "./transport";
 
@@ -173,6 +176,7 @@ export async function getHolderAggregation(): Promise<HolderAggregation | null> 
 const livePoolSchema = z.object({
   address: z.string(),
   alias: z.nullable(z.string()),
+  /** Live API contract: percentage points (40 means 40%), unlike our fraction contract. */
   commission: z.number(),
   version: z.nullable(z.string()),
   worker_count: z.number(),
@@ -181,14 +185,21 @@ const livePoolSchema = z.object({
   total_lent: z.number(),
   avg_worker_earnings: z.number(),
 });
-export type LivePool = z.infer<typeof livePoolSchema>;
+type RawLivePool = z.infer<typeof livePoolSchema>;
+export type LivePool = Omit<RawLivePool, "commission"> & { commission: number };
+
+function normalizeLivePool(pool: RawLivePool): LivePool {
+  return { ...pool, commission: normalizeLiveCommission(pool.commission) };
+}
 
 const livePoolsResponseSchema = z.object({ pools: z.array(livePoolSchema) });
 
 async function getLivePoolsCached(): Promise<LivePool[]> {
   "use cache";
   cacheLife("hours");
-  return (await fetchParsedWithFallback("pools", livePoolsResponseSchema)).pools;
+  return (await fetchParsedWithFallback("pools", livePoolsResponseSchema)).pools.map(
+    normalizeLivePool
+  );
 }
 
 export async function getLivePools(): Promise<LivePool[]> {

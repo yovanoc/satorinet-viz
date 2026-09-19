@@ -51,7 +51,9 @@ export function lendersSnapshotFromAudit(
       contribution: row.lender_contribution,
       share: row.share,
       reward: row.reward_calculated,
-      pool_commission: row.pool_commission,
+      ...(row.pool_commission !== null
+        ? { pool_commission: row.pool_commission }
+        : {}),
       is_operator:
         operatorWallets.has(row.lender_wallet) ||
         (row.lender_vault != null && operatorWallets.has(row.lender_vault)),

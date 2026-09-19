@@ -1,6 +1,146 @@
-import { KNOWN_POOLS, type Pool } from "./known_pools";
+import { KNOWN_POOLS, type Pool, type StakingFee } from "./known_pools";
 
-export function getPoolFeesForDate(pool: Pool, date: Date) {
+export type FeeSource = "audit" | "known" | "unknown";
+
+/** Live API commission is percentage points (21 means 21%); calculations use fractions. */
+export function normalizeLiveCommission(commission: number): number {
+  return commission / 100;
+}
+
+export type FeePool = Pick<
+  Pool,
+  "address" | "vault_address" | "staking_fees" | "temporary_fee_reductions"
+>;
+
+export type ResolvedPoolFee = {
+  source: FeeSource;
+  fees: StakingFee | null;
+  maxPercent?: number;
+  workerGivenPercent?: number;
+  temporaryReductions: { percent: number; reason: string }[];
+  warning?: string;
+};
+
+export type AuditCommissionRow = {
+  pool_wallet: string;
+  pool_vault: string | null;
+  /** Audit API contract: percentage points (40 means 40%), not a fraction. */
+  pool_commission: number | null;
+};
+
+export type AuditCommissionResult =
+  | { status: "valid"; feePercent: number }
+  | { status: "unavailable"; reason: string }
+  | { status: "invalid"; reason: string };
+
+export function getAuditCommissionForPool(
+  rows: readonly AuditCommissionRow[] | null,
+  poolAddress: string,
+  poolVault?: string
+): AuditCommissionResult {
+  if (!rows || rows.length === 0) {
+    return { status: "unavailable", reason: "no audit rows for the requested date" };
+  }
+
+  const matchingRows = rows.filter(
+    (row) =>
+      row.pool_wallet === poolAddress ||
+      (poolVault !== undefined && row.pool_vault === poolVault)
+  );
+
+  if (matchingRows.length === 0) {
+    return { status: "unavailable", reason: "no audit rows for this pool" };
+  }
+
+  const commissions = matchingRows.map((row) => row.pool_commission);
+  if (
+    commissions.some(
+      (commission) =>
+        commission === null ||
+        !Number.isFinite(commission) ||
+        commission < 0 ||
+        commission > 100
+    )
+  ) {
+    return {
+      status: "invalid",
+      reason: "audit pool_commission is missing, non-finite, or outside 0-100 percentage points",
+    };
+  }
+
+  const first = commissions[0]!;
+  if (commissions.some((commission) => Math.abs(commission! - first) > 1e-9)) {
+    return {
+      status: "invalid",
+      reason: "audit pool_commission differs between lender rows",
+    };
+  }
+
+  // The audit API reports percentage points; the calculation contract uses a fraction.
+  return { status: "valid", feePercent: first / 100 };
+}
+
+function enrichKnownPool(pool: FeePool | null): FeePool | null {
+  if (!pool) return null;
+  const known = KNOWN_POOLS.find((candidate) => candidate.address === pool.address);
+  return {
+    address: pool.address,
+    vault_address: pool.vault_address ?? known?.vault_address,
+    staking_fees: pool.staking_fees ?? known?.staking_fees,
+    temporary_fee_reductions:
+      pool.temporary_fee_reductions ?? known?.temporary_fee_reductions,
+  };
+}
+
+export function resolvePoolFee(
+  pool: FeePool | null,
+  date: Date,
+  auditRows: readonly AuditCommissionRow[] | null
+): ResolvedPoolFee {
+  const enrichedPool = enrichKnownPool(pool);
+  const audit = getAuditCommissionForPool(
+    auditRows,
+    enrichedPool?.address ?? "",
+    enrichedPool?.vault_address
+  );
+
+  if (audit.status === "valid") {
+    return {
+      source: "audit",
+      fees: { type: "percent", percent: audit.feePercent },
+      temporaryReductions: [],
+    };
+  }
+
+  const legacy = enrichedPool ? getPoolFeesForDate(enrichedPool, date) : null;
+  const warning = `Pool ${enrichedPool?.address ?? "unknown"}: Audit commission ${audit.reason}; using configured pool fee.`;
+  if (legacy) {
+    return {
+      source: "known",
+      fees: legacy.fees,
+      maxPercent: legacy.maxPercent,
+      workerGivenPercent: legacy.workerGivenPercent,
+      temporaryReductions: enrichedPool
+        ? getActiveTemporaryReductions(enrichedPool, date).map(({ percent, reason }) => ({
+            percent,
+            reason,
+          }))
+        : [],
+      warning,
+    };
+  }
+
+  return {
+    source: "unknown",
+    fees: null,
+    temporaryReductions: [],
+    warning: pool
+      ? `${warning.slice(0, -1)} and no configured pool fee; fee is not verified.`
+      : "No valid audit or configured pool fee; fee is not verified.",
+  };
+}
+
+export function getPoolFeesForDate(pool: FeePool, date: Date) {
   if (!pool.staking_fees) return null;
   let fees = pool.staking_fees.find((fee) => {
     if (fee.until === null) return true;
@@ -66,8 +206,7 @@ export type AppliedFees =
     };
 
 export function applyFees({
-  poolAddress,
-  date,
+  fee,
   earnings_per_staking_power,
   current_staked_amount,
   satoriPrice,
@@ -75,6 +214,7 @@ export function applyFees({
 }: {
   poolAddress: string;
   date: Date;
+  fee: ResolvedPoolFee;
   earnings_per_staking_power: number;
   current_staked_amount: number;
   satoriPrice: number;
@@ -82,24 +222,9 @@ export function applyFees({
 }): AppliedFees {
   const net = earnings_per_staking_power * current_staked_amount;
   const netPerFullStake = earnings_per_staking_power * fullStakeAmount;
+  const resolvedFee = fee;
 
-  const pool = KNOWN_POOLS.find((pool) => pool.address === poolAddress);
-
-  if (!pool) {
-    return {
-      type: "not_found",
-      result: {
-        feePercent: 0,
-        feeAmountPerSatori: 0,
-        net,
-        netPerFullStake,
-      },
-    }
-  }
-
-  const fees = getPoolFeesForDate(pool, date);
-
-  if (!fees?.fees) {
+  if (!resolvedFee.fees) {
     return {
       type: "not_found",
       result: {
@@ -111,14 +236,14 @@ export function applyFees({
     };
   }
 
-  switch (fees.fees.type) {
+  switch (resolvedFee.fees.type) {
     case "percent": {
-      if (Array.isArray(fees.fees.percent)) {
+      if (Array.isArray(resolvedFee.fees.percent)) {
         return {
           type: "multiple",
-          results: fees.fees.percent.map((feePercent) => {
-            if (fees.maxPercent) {
-              feePercent = Math.min(feePercent, fees.maxPercent);
+          results: resolvedFee.fees.percent.map((feePercent) => {
+            if (resolvedFee.maxPercent !== undefined) {
+              feePercent = Math.min(feePercent, resolvedFee.maxPercent);
             }
             return {
               feePercent,
@@ -130,9 +255,9 @@ export function applyFees({
           }),
         };
       }
-      let feePercent = fees.fees.percent;
-      if (fees.maxPercent) {
-        feePercent = Math.min(feePercent, fees.maxPercent);
+      let feePercent = resolvedFee.fees.percent;
+      if (resolvedFee.maxPercent !== undefined) {
+        feePercent = Math.min(feePercent, resolvedFee.maxPercent);
       }
 
       return {
@@ -149,21 +274,21 @@ export function applyFees({
     case "cost": {
       let feeForFullStakeInSatori: number;
 
-      if (fees.fees.amount_type === "satori") {
-        if (fees.fees.per === "full_stake") {
-          feeForFullStakeInSatori = fees.fees.amount;
+      if (resolvedFee.fees.amount_type === "satori") {
+        if (resolvedFee.fees.per === "full_stake") {
+          feeForFullStakeInSatori = resolvedFee.fees.amount;
         } else {
           // per N satori
           feeForFullStakeInSatori =
-            (fees.fees.amount / fees.fees.per) * fullStakeAmount;
+            (resolvedFee.fees.amount / resolvedFee.fees.per) * fullStakeAmount;
         }
       } else {
         // fees in USD
-        if (fees.fees.per === "full_stake") {
-          feeForFullStakeInSatori = fees.fees.amount / satoriPrice;
+        if (resolvedFee.fees.per === "full_stake") {
+          feeForFullStakeInSatori = resolvedFee.fees.amount / satoriPrice;
         } else {
           feeForFullStakeInSatori =
-            ((fees.fees.amount / fees.fees.per) * fullStakeAmount) /
+            ((resolvedFee.fees.amount / resolvedFee.fees.per) * fullStakeAmount) /
             satoriPrice;
         }
       }
@@ -172,8 +297,8 @@ export function applyFees({
         (current_staked_amount / fullStakeAmount) * feeForFullStakeInSatori;
 
       let feePercent = feeForCurrentStakeInSatori / net;
-      if (fees.maxPercent !== undefined) {
-        feePercent = Math.min(feePercent, fees.maxPercent);
+      if (resolvedFee.maxPercent !== undefined) {
+        feePercent = Math.min(feePercent, resolvedFee.maxPercent);
       }
 
       return {
@@ -195,15 +320,13 @@ export function getFeeRange(
   date: Date,
   earnings_per_staking_power: number,
   satoriPrice: number,
-  fullStakeAmount: number
+  fullStakeAmount: number,
+  fee: ResolvedPoolFee
 ): { min: number; max: number } {
-  const fees = getPoolFeesForDate(pool, date);
-
-  if (!fees) return { min: 0, max: 0 };
-
   const res = applyFees({
     poolAddress: pool.address,
     date,
+    fee,
     earnings_per_staking_power,
     current_staked_amount: 1,
     satoriPrice,
@@ -227,7 +350,7 @@ export function applyFeePercent(num: number, fee: number): number {
   return num * (1 - fee);
 }
 
-export function getActiveTemporaryReductions(pool: Pool, date: Date) {
+export function getActiveTemporaryReductions(pool: FeePool, date: Date) {
   if (!pool.temporary_fee_reductions) return [];
   return pool.temporary_fee_reductions.filter(
     (reduction) => reduction.from <= date && reduction.until >= date

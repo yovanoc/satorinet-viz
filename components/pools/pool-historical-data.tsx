@@ -43,6 +43,7 @@ interface PoolHistoricalDataProps {
   workerStats: WorkerStats[];
   date: Date;
   poolName: string;
+  feeWarning?: string;
 }
 
 const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
@@ -50,6 +51,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
   workerStats,
   date,
   poolName,
+  feeWarning,
 }) => {
   const [stakingMetric, setStakingMetric] = useState<
     "total_staking_power" | "contributor_counts" | "performance"
@@ -67,6 +69,11 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
             {date.toLocaleDateString()}
           </p>
         </CardTitle>
+        {feeWarning ? (
+          <p className="text-xs text-amber-600 dark:text-amber-400">
+            Fee warning: {feeWarning}
+          </p>
+        ) : null}
       </CardHeader>
       <CardContent className="p-4 md:p-4">
         <Tabs defaultValue="staking" className="w-full">
