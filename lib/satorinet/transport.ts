@@ -32,6 +32,7 @@ export const impitFetch: typeof fetch = async (input, init) => {
   // RequestInit type only omits standard fields this adapter never supplies.
   const response = await impit.fetch(input, {
     ...init,
+    signal: init?.signal ?? (input instanceof Request ? input.signal : undefined),
     headers,
   } as Parameters<Impit["fetch"]>[1]);
   // SAFETY: Ky only consumes status, headers, ok, url, clone, json, and text;

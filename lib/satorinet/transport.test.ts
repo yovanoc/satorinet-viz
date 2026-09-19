@@ -71,3 +71,16 @@ test("explicit init headers replace Request headers", async () => {
   assert.equal(received[0]?.["x-init-header"], "new");
   assert.equal(received[0]?.["user-agent"], SATORI_BROWSER_USER_AGENT);
 });
+
+
+test("Request abort signals reach the underlying transport", async () => {
+  const { server, received, url } = await startServer();
+  try {
+    await assert.rejects(impitFetch(new Request(`${url}/json`, {
+      signal: AbortSignal.abort(),
+    })));
+    assert.equal(received.length, 0);
+  } finally {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
+});
