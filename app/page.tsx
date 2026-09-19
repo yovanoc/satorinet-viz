@@ -142,6 +142,7 @@ async function CustomDataTable() {
 
 
 async function HolderTierDistribution() {
+  await connection();
   const aggregation = await getHolderAggregation();
   if (!aggregation || aggregation.tiers.length === 0) return null;
 

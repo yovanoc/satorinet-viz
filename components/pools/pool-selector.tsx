@@ -37,7 +37,7 @@ export const SimplePoolSelector: React.FC<PoolSelectorProps> = ({ pools, selecte
   };
 
   return (
-    <Select defaultValue={selectedPool.address} onValueChange={onPoolChangeInner}>
+    <Select value={selectedPool.address} onValueChange={onPoolChangeInner}>
       <SelectTrigger className="w-full text-base md:text-xl font-bold cursor-pointer">
         <SelectValue placeholder="Select a pool" />
       </SelectTrigger>
@@ -73,19 +73,9 @@ export const MultiplePoolSelector: React.FC<MultiplePoolSelectorProps> = ({
   selectedPools,
   onPoolsChange,
 }) => {
-  const [value, setValue] = React.useState<TopPoolWithName[]>(selectedPools);
-
   const poolByAddress = React.useMemo(() => {
     return new Map(pools.map((p) => [p.address, p] as const));
   }, [pools]);
-
-  React.useEffect(() => {
-    setValue(selectedPools);
-  }, [selectedPools]);
-
-  React.useEffect(() => {
-    onPoolsChange(value);
-  }, [value, onPoolsChange]);
 
   const onChangeInner = (addresses: string[]) => {
     const selected: TopPoolWithName[] = [];
@@ -93,12 +83,12 @@ export const MultiplePoolSelector: React.FC<MultiplePoolSelectorProps> = ({
       const pool = poolByAddress.get(address);
       if (pool) selected.push(pool);
     }
-    setValue(selected);
+    onPoolsChange(selected);
   }
 
   return (
     <Combobox
-      value={value.map((p) => p.address)}
+      value={selectedPools.map((p) => p.address)}
       onValueChange={onChangeInner}
       className="w-100"
       multiple
@@ -107,7 +97,7 @@ export const MultiplePoolSelector: React.FC<MultiplePoolSelectorProps> = ({
       <ComboboxLabel>Pools</ComboboxLabel>
       <ComboboxAnchor className="h-full min-h-10 flex-wrap px-3 py-2">
         <ComboboxBadgeList>
-          {value.map((item) => {
+          {selectedPools.map((item) => {
             const option = poolByAddress.get(item.address);
             if (!option) return null;
 

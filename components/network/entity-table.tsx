@@ -2,14 +2,10 @@
 
 import * as React from "react";
 import {
-  ColumnDef,
-  SortingState,
+  type RowData,
+  type SortingState,
   flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
+  useTable,
 } from "@tanstack/react-table";
 import {
   IconArrowDown,
@@ -31,11 +27,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
+import {
+  tableFeatures,
+  type TableColumnDef,
+} from "@/components/table-features";
 
-interface EntityTableProps<TData> {
-  columns: ColumnDef<TData, unknown>[];
+interface EntityTableProps<TData extends RowData> {
+  columns: TableColumnDef<TData>[];
   data: TData[];
   /** Placeholder for the global search input; omit to hide search. */
   searchPlaceholder?: string;
@@ -46,7 +45,7 @@ interface EntityTableProps<TData> {
   emptyMessage?: string;
 }
 
-export function EntityTable<TData>({
+export function EntityTable<TData extends RowData>({
   columns,
   data,
   searchPlaceholder,
@@ -58,21 +57,18 @@ export function EntityTable<TData>({
   const [sorting, setSorting] = React.useState<SortingState>(initialSorting);
   const [globalFilter, setGlobalFilter] = React.useState("");
 
-  const table = useReactTable({
+  const table = useTable({
+    features: tableFeatures,
     data,
     columns,
     state: { sorting, globalFilter },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     globalFilterFn: "includesString",
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: { pagination: { pageSize } },
+    initialState: { pagination: { pageIndex: 0, pageSize } },
   });
 
-  const { pageIndex } = table.getState().pagination;
+  const { pageIndex } = table.state.pagination;
   const pageCount = table.getPageCount();
   const filteredCount = table.getFilteredRowModel().rows.length;
 
@@ -105,30 +101,46 @@ export function EntityTable<TData>({
                 {headerGroup.headers.map((header) => {
                   const sortable = header.column.getCanSort();
                   const sorted = header.column.getIsSorted();
+                  const content = (
+                    <>
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                      {sorted === "asc" ? (
+                        <IconArrowUp className="size-3.5" />
+                      ) : sorted === "desc" ? (
+                        <IconArrowDown className="size-3.5" />
+                      ) : null}
+                    </>
+                  );
                   return (
                     <TableHead
                       key={header.id}
-                      className={cn(
-                        "whitespace-nowrap text-xs uppercase tracking-wide text-muted-foreground",
-                        sortable && "cursor-pointer select-none"
-                      )}
-                      onClick={
+                      aria-sort={
                         sortable
-                          ? header.column.getToggleSortingHandler()
+                          ? sorted === "asc"
+                            ? "ascending"
+                            : sorted === "desc"
+                              ? "descending"
+                              : "none"
                           : undefined
                       }
+                      className="whitespace-nowrap text-xs uppercase tracking-wide text-muted-foreground"
                     >
-                      <span className="inline-flex items-center gap-1">
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        {sorted === "asc" ? (
-                          <IconArrowUp className="size-3.5" />
-                        ) : sorted === "desc" ? (
-                          <IconArrowDown className="size-3.5" />
-                        ) : null}
-                      </span>
+                      {sortable ? (
+                        <button
+                          type="button"
+                          onClick={(event) =>
+                            header.column.getToggleSortingHandler()?.(event)
+                          }
+                          className="inline-flex items-center gap-1 text-left"
+                        >
+                          {content}
+                        </button>
+                      ) : (
+                        <span className="inline-flex items-center gap-1">{content}</span>
+                      )}
                     </TableHead>
                   );
                 })}

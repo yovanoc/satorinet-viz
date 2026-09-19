@@ -11,17 +11,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { KNOWN_POOLS } from "@/lib/known_pools";
+import { flexRender, useTable } from "@tanstack/react-table";
 import {
-  flexRender,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getSortedRowModel,
-  useReactTable,
-  type ColumnDef,
-  type Row,
-} from "@tanstack/react-table";
+  tableFeatures,
+  type TableColumnDef,
+  type TableRowModel,
+} from "@/components/table-features";
 import { formatSatori } from "@/lib/format";
 import type { LivePool } from "@/lib/satorinet/api";
 
@@ -48,8 +43,8 @@ interface TopPoolsProps {
   livePools?: LivePool[];
 }
 
-const getColumns = (isLive: boolean): ColumnDef<PoolRow>[] => {
-  const cols: ColumnDef<PoolRow>[] = [
+const getColumns = (isLive: boolean): TableColumnDef<PoolRow>[] => {
+  const cols: TableColumnDef<PoolRow>[] = [
     {
       accessorKey: "pool",
       header: "Pool",
@@ -150,7 +145,7 @@ const getColumns = (isLive: boolean): ColumnDef<PoolRow>[] => {
   return cols;
 };
 
-function MyRow({ row }: { row: Row<PoolRow> }) {
+function MyRow({ row }: { row: TableRowModel<PoolRow> }) {
   return (
     <TableRow
       data-state={row.getIsSelected() && "selected"}
@@ -187,15 +182,11 @@ const TopPools: FC<TopPoolsProps> = ({ pools, livePools }) => {
   const isLive = livePools != null && livePools.length > 0;
   const columns = getColumns(isLive);
 
-  const table = useReactTable({
+  const table = useTable({
+    features: tableFeatures,
     data,
     columns,
     getRowId: (row) => row.pool_address,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
   return (

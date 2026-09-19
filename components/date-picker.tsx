@@ -11,7 +11,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { useState, type FC } from "react"
+import { type FC } from "react"
 
 interface CalendarFormProps {
   selectedDate?: Date
@@ -19,7 +19,7 @@ interface CalendarFormProps {
 }
 
 export const CalendarForm: FC<CalendarFormProps> = ({ selectedDate, onDateChange }) => {
-  const [date, setDate] = useState(selectedDate);
+  const date = selectedDate;
 
   return (
     <Popover>
@@ -45,13 +45,12 @@ export const CalendarForm: FC<CalendarFormProps> = ({ selectedDate, onDateChange
           selected={date}
           onSelect={(newDate) => {
             // ! newDate is already 00:00:00 UTC
-            setDate(newDate)
             onDateChange(newDate)
           }}
           disabled={(date) =>
             date > new Date() || date < new Date("2024-09-05")
           }
-          initialFocus
+          autoFocus
         />
       </PopoverContent>
     </Popover>

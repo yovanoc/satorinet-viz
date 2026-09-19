@@ -55,9 +55,17 @@ export function ChartAreaInteractive({ dailyCounts }: DailyWorkerCountsProps) {
 
   React.useEffect(() => {
     if (isMobile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTimeRange("7d");
     }
   }, [isMobile]);
+
+  const timeRangeLabel =
+    timeRange === "90d"
+      ? "3 months"
+      : timeRange === "30d"
+        ? "30 days"
+        : "7 days";
 
   const filteredData = dailyCounts.filter((item) => {
     const date = new Date(item.date);
@@ -79,20 +87,15 @@ export function ChartAreaInteractive({ dailyCounts }: DailyWorkerCountsProps) {
         <CardTitle>Total neurons</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
-            Total neurons for the last{" "}
-            {timeRange === "90d"
-              ? "3 months"
-              : timeRange === "30d"
-              ? "30 days"
-              : "7 days"}
+            Total neurons for the last {timeRangeLabel}
           </span>
-          <span className="@[540px]/card:hidden">Last 3 months</span>
+          <span className="@[540px]/card:hidden">Last {timeRangeLabel}</span>
         </CardDescription>
         <CardAction>
           <ToggleGroup
             type="single"
             value={timeRange}
-            onValueChange={(val) => {
+            onValueChange={(val: string) => {
               if (val) setTimeRange(val);
             }}
             variant="outline"
@@ -177,7 +180,7 @@ export function ChartAreaInteractive({ dailyCounts }: DailyWorkerCountsProps) {
               content={
                 <ChartTooltipContent
                   labelFormatter={(value) => {
-                    return new Date(value).toLocaleDateString("en-US", {
+                    return new Date(String(value)).toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
                     });

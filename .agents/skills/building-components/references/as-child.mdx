@@ -1,6 +1,14 @@
 ---
 title: asChild
 description: How to use the `asChild` prop to render a custom element within the component.
+type: reference
+summary: Using the asChild prop to replace default markup with custom elements while preserving component functionality and event handlers.
+prerequisites:
+  - /composition
+  - /types
+related:
+  - /polymorphism
+  - /state
 ---
 
 The `asChild` prop is a powerful pattern in modern React component libraries. Popularized by [Radix UI](https://www.radix-ui.com/primitives/docs/guides/composition) and adopted by [shadcn/ui](https://ui.shadcn.com), this pattern allows you to replace default markup with custom elements while maintaining the component's functionality.
@@ -18,6 +26,7 @@ At its core, `asChild` changes how a component renders. When set to `true`, inst
 ```
 
 This renders nested elements:
+
 ```html
 <button data-state="closed">
   <button>Open Dialog</button>
@@ -33,6 +42,7 @@ This renders nested elements:
 ```
 
 This renders a single, merged element:
+
 ```html
 <button data-state="closed">Open Dialog</button>
 ```
@@ -55,7 +65,7 @@ function Component({ asChild, children, ...props }) {
       onClick: (e) => {
         props.onClick?.(e);
         children.props.onClick?.(e);
-      }
+      },
     });
   }
 
@@ -65,6 +75,7 @@ function Component({ asChild, children, ...props }) {
 ```
 
 The component:
+
 1. Checks if `asChild` is true
 2. Clones the child element
 3. Merges props from both parent and child
@@ -120,13 +131,13 @@ Traditional composition often creates deeply nested DOM structures. `asChild` el
 `asChild` enables seamless integration with your existing design system components:
 
 ```tsx
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 
 <DropdownMenu.Trigger asChild>
   <Button variant="outline" size="icon">
     <MoreVertical className="h-4 w-4" />
   </Button>
-</DropdownMenu.Trigger>
+</DropdownMenu.Trigger>;
 ```
 
 Your Button component receives all the necessary dropdown trigger behavior without modification.
@@ -138,9 +149,7 @@ You can compose multiple behaviors onto a single element:
 ```tsx
 <Dialog.Trigger asChild>
   <Tooltip.Trigger asChild>
-    <button>
-      Open dialog (with tooltip)
-    </button>
+    <button>Open dialog (with tooltip)</button>
   </Tooltip.Trigger>
 </Dialog.Trigger>
 ```
@@ -192,17 +201,12 @@ Integrate with form libraries while preserving functionality:
   render={({ field }) => (
     <FormItem>
       <Checkbox.Root asChild>
-        <input
-          type="checkbox"
-          {...field}
-          className="sr-only"
-        />
+        <input type="checkbox" {...field} className="sr-only" />
       </Checkbox.Root>
     </FormItem>
   )}
 />
 ```
-
 
 ## Best Practices
 
@@ -246,13 +250,13 @@ Verify that custom components work correctly with `asChild`:
 ```tsx
 // Test that props are properly forwarded
 const TestButton = (props) => {
-  console.log('Received props:', props);
+  console.log("Received props:", props);
   return <button {...props} />;
 };
 
 <Tooltip.Trigger asChild>
   <TestButton>Test</TestButton>
-</Tooltip.Trigger>
+</Tooltip.Trigger>;
 ```
 
 ### 4. Handle Edge Cases

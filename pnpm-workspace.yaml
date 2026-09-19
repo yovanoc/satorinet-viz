@@ -4,3 +4,9 @@ allowBuilds:
   esbuild: true
   sharp: true
   unrs-resolver: true
+minimumReleaseAgeExclude:
+  - '@types/node@26.6.2'
+  - dotenv@18.0.1
+  - p-limit@7.3.3
+  - '@tabler/icons-react@3.47.0'
+  - '@tabler/icons@3.47.0'

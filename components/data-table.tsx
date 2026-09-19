@@ -2,17 +2,14 @@
 
 import * as React from "react";
 import {
-  ColumnDef,
-  Row,
   flexRender,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
+  useTable,
 } from "@tanstack/react-table";
+import {
+  tableFeatures,
+  type TableColumnDef,
+  type TableRowModel,
+} from "@/components/table-features";
 import { z } from "zod";
 import { Label } from "@/components/ui/label";
 import {
@@ -64,7 +61,7 @@ const holderSchema = z.object({
 
 export type SingleHolderData = z.infer<typeof holderSchema>;
 
-const breakdownColumns: ColumnDef<HoldersSummaryData>[] = [
+const breakdownColumns: TableColumnDef<HoldersSummaryData>[] = [
   {
     accessorKey: "tier",
     header: "Tier",
@@ -101,7 +98,7 @@ const breakdownColumns: ColumnDef<HoldersSummaryData>[] = [
   },
 ];
 
-const topHoldersColumns: ColumnDef<SingleHolderData>[] = [
+const topHoldersColumns: TableColumnDef<SingleHolderData>[] = [
   {
     accessorKey: "address",
     header: "Address",
@@ -130,7 +127,7 @@ const topHoldersColumns: ColumnDef<SingleHolderData>[] = [
   },
 ];
 
-const knownAddressesColumns: ColumnDef<SingleHolderData>[] = [
+const knownAddressesColumns: TableColumnDef<SingleHolderData>[] = [
   {
     accessorKey: "address",
     header: "Address",
@@ -159,7 +156,7 @@ const knownAddressesColumns: ColumnDef<SingleHolderData>[] = [
   },
 ];
 
-function MyRow({ row }: { row: Row<HoldersSummaryData> }) {
+function MyRow({ row }: { row: TableRowModel<HoldersSummaryData> }) {
   return (
     <TableRow
       data-state={row.getIsSelected() && "selected"}
@@ -174,7 +171,7 @@ function MyRow({ row }: { row: Row<HoldersSummaryData> }) {
   );
 }
 
-function MyRowSingle({ row }: { row: Row<SingleHolderData> }) {
+function MyRowSingle({ row }: { row: TableRowModel<SingleHolderData> }) {
   return (
     <TableRow
       data-state={row.getIsSelected() && "selected"}
@@ -206,40 +203,25 @@ export function DataTable({
 }) {
   const [tab, setTab] = React.useState("holders-summary");
 
-  const breakdownTable = useReactTable({
+  const breakdownTable = useTable({
+    features: tableFeatures,
     data: breakdown,
     columns: breakdownColumns,
     getRowId: (row) => row.tier,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  const topHoldersTable = useReactTable({
+  const topHoldersTable = useTable({
+    features: tableFeatures,
     data: topHolders,
     columns: topHoldersColumns,
     getRowId: (row) => row.address,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  const knownAddressesTable = useReactTable({
+  const knownAddressesTable = useTable({
+    features: tableFeatures,
     data: knownAddresses,
     columns: knownAddressesColumns,
     getRowId: (row) => row.address,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
   return (

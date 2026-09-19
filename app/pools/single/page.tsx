@@ -101,69 +101,16 @@ async function ContributorsAndPredictors({
 
 async function PoolDataSection({ date, pool }: { date: Date; pool: TopPoolWithName }) {
   const knownPool = KNOWN_POOLS.find((p) => p.address === pool.address);
+  let historicalData: Awaited<ReturnType<typeof getPoolHistoricalData>>;
+  let workerStats: Awaited<ReturnType<typeof getPoolWorkerStats>>;
+  let workerReward: WorkerReward | null;
+
   try {
-    const [historicalData, workerStats, workerReward] = await Promise.all([
+    [historicalData, workerStats, workerReward] = await Promise.all([
       getPoolHistoricalData(pool, date),
       getPoolWorkerStats(pool.address, pool.vault_address, date),
       tryGetWorkerReward(pool.address),
     ]);
-
-    const dateWorkerStats = workerStats.find(
-      (workerStat) => new Date(workerStat.date).getTime() === date.getTime()
-    );
-    const dateHistoricalData = historicalData.find(
-      (historicalData) =>
-        new Date(historicalData.date).getTime() === date.getTime()
-    );
-    const enrichedPoolData: PoolData = {
-      workerReward,
-      url: knownPool?.url,
-      worker_count: dateWorkerStats?.worker_count,
-      worker_count_with_earnings: dateWorkerStats?.worker_count_with_earnings,
-      total_reward: dateWorkerStats?.total_reward,
-      total_miner_earned: dateWorkerStats?.total_miner_earned,
-      avg_distance: dateWorkerStats?.avg_distance,
-      contributor_count: dateHistoricalData?.contributor_count,
-      contributor_count_with_staking_power:
-        dateHistoricalData?.contributor_count_with_staking_power,
-      pool_address: pool.address,
-      total_staking_power: dateHistoricalData?.total_staking_power ?? 0,
-      total_delegated_stake: dateWorkerStats?.total_delegated_stake,
-      total_balance: dateWorkerStats?.total_balance,
-      pool_balance: dateHistoricalData?.pool_balance,
-      pools_own_staking_power: dateHistoricalData?.pools_own_staking_power,
-      earnings_per_staking_power:
-        dateHistoricalData?.earnings_per_staking_power,
-      pool_miner_percent: dateWorkerStats?.pool_miner_percent,
-      closed: knownPool?.closed,
-    };
-
-    const name = knownPool?.name ?? pool.address;
-
-    return (
-      <div className="h-full flex flex-col gap-8">
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-          <div className="xl:col-span-3 flex flex-col gap-6 order-1">
-            <DailyContributorAddressCard
-              poolData={enrichedPoolData}
-              date={date}
-              poolName={name}
-            />
-          </div>
-          <div className="xl:col-span-4 flex flex-col gap-6 order-2">
-            <PoolHistoricalData
-              historicalData={historicalData ?? []}
-              workerStats={workerStats ?? []}
-              date={date}
-              poolName={name}
-            />
-          </div>
-          <div className="xl:col-span-5 flex flex-col gap-6 order-3">
-            <PoolWorkerComparison pool={pool} date={date} />
-          </div>
-        </div>
-      </div>
-    );
   } catch (e) {
     console.error(e);
     return (
@@ -172,6 +119,63 @@ async function PoolDataSection({ date, pool }: { date: Date; pool: TopPoolWithNa
       </Card>
     );
   }
+
+  const dateWorkerStats = workerStats.find(
+    (workerStat) => new Date(workerStat.date).getTime() === date.getTime()
+  );
+  const dateHistoricalData = historicalData.find(
+    (historicalData) =>
+      new Date(historicalData.date).getTime() === date.getTime()
+  );
+  const enrichedPoolData: PoolData = {
+    workerReward,
+    url: knownPool?.url,
+    worker_count: dateWorkerStats?.worker_count,
+    worker_count_with_earnings: dateWorkerStats?.worker_count_with_earnings,
+    total_reward: dateWorkerStats?.total_reward,
+    total_miner_earned: dateWorkerStats?.total_miner_earned,
+    avg_distance: dateWorkerStats?.avg_distance,
+    contributor_count: dateHistoricalData?.contributor_count,
+    contributor_count_with_staking_power:
+      dateHistoricalData?.contributor_count_with_staking_power,
+    pool_address: pool.address,
+    total_staking_power: dateHistoricalData?.total_staking_power ?? 0,
+    total_delegated_stake: dateWorkerStats?.total_delegated_stake,
+    total_balance: dateWorkerStats?.total_balance,
+    pool_balance: dateHistoricalData?.pool_balance,
+    pools_own_staking_power: dateHistoricalData?.pools_own_staking_power,
+    earnings_per_staking_power:
+      dateHistoricalData?.earnings_per_staking_power,
+    pool_miner_percent: dateWorkerStats?.pool_miner_percent,
+    closed: knownPool?.closed,
+  };
+
+  const name = knownPool?.name ?? pool.address;
+
+  return (
+    <div className="h-full flex flex-col gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <div className="xl:col-span-3 flex flex-col gap-6 order-1">
+          <DailyContributorAddressCard
+            poolData={enrichedPoolData}
+            date={date}
+            poolName={name}
+          />
+        </div>
+        <div className="xl:col-span-4 flex flex-col gap-6 order-2">
+          <PoolHistoricalData
+            historicalData={historicalData ?? []}
+            workerStats={workerStats ?? []}
+            date={date}
+            poolName={name}
+          />
+        </div>
+        <div className="xl:col-span-5 flex flex-col gap-6 order-3">
+          <PoolWorkerComparison pool={pool} date={date} />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default async function PoolsSingle({

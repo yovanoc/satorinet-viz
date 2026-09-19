@@ -1,6 +1,11 @@
 ---
 title: Definitions
 description: This page establishes precise terminology used throughout the specification. Terms are intentionally framework agnostic, but we will use React for examples.
+type: reference
+summary: Precise terminology for the specification covering primitives, components, patterns, blocks, pages, templates, and utilities.
+related:
+  - /principles
+  - /composition
 ---
 
 ## 1. Artifact Taxonomy
@@ -26,7 +31,8 @@ Expectations:
 - Versioning favors stability; breaking changes are rare and documented.
 
 <Callout>
-The terms primitive and component are typically used interchangeably across the web, but they are not the same.
+  The terms primitive and component are typically used interchangeably across
+  the web, but they are not the same.
 </Callout>
 
 ### 1.2 Component
@@ -36,11 +42,13 @@ A component is a styled, reusable UI unit that adds visual design to primitives 
 Components are still relatively low-level but include styling, making them immediately usable in applications. They typically wrap unstyled primitives with default visual design while remaining customizable.
 
 Examples:
+
 - [shadcn/ui components](https://ui.shadcn.com/) (styled wrappers of Radix primitives)
 - [Material UI components](https://mui.com/components/)
 - [Ant Design components](https://ant.design/components/overview/)
 
 Expectations:
+
 - Clear props API; supports controlled and uncontrolled usage where applicable.
 - Includes default styling but remains override-friendly (classes, tokens, slots).
 - Fully keyboard accessible and screen-reader friendly (inherits from primitives).
@@ -52,12 +60,14 @@ Expectations:
 Patterns are a specific composition of primitives or components that are used to solve a specific UI/UX problem.
 
 Examples:
+
 - Form validation with inline errors
 - Confirming destructive actions
 - Typeahead search
 - Optimistic UI
 
 Expectations.
+
 - Describes behavior, a11y, keyboard map, and failure modes.
 - May include reference implementations in multiple frameworks.
 
@@ -66,6 +76,7 @@ Expectations.
 An opinionated, production-ready composition of components that solves a concrete interface use case (often product-specific) with content scaffolding. Blocks trade generality for speed of adoption.
 
 Examples:
+
 - Pricing table
 - Auth screens
 - Onboarding stepper
@@ -73,12 +84,20 @@ Examples:
 - Billing settings form
 
 Expectations.
+
 - Strong defaults, copy-paste friendly, easily branded/themed.
 - Minimal logic beyond layout and orchestration; domain logic is stubbed via handlers.
 - Accepts data via props; never hides data behind fetches without a documented adapter.
 
-<AuthorNote name="Rob Austin" role="Founder of shadcnblocks.com" githubUsername="JugglerX" link="https://www.shadcnblocks.com/">
-Blocks are typically not reusable like a component. You don't import them, but they typically import components and primitives. This makes them good candidates for a [Registry](/registry) distribution method.
+<AuthorNote
+  name="Rob Austin"
+  role="Founder of shadcnblocks.com"
+  githubUsername="JugglerX"
+  link="https://www.shadcnblocks.com/"
+>
+  Blocks are typically not reusable like a component. You don't import them, but
+  they typically import components and primitives. This makes them good
+  candidates for a [Registry](/registry) distribution method.
 </AuthorNote>
 
 ### 1.5 Page
@@ -86,11 +105,13 @@ Blocks are typically not reusable like a component. You don't import them, but t
 A complete, single-route view composed of multiple blocks arranged to serve a specific user-facing purpose. Pages combine blocks into a cohesive layout that represents one destination in an application.
 
 Examples:
+
 - Landing page (hero block + features block + pricing block + footer block)
 - Product detail page (image gallery block + product info block + reviews block)
 - Dashboard page (stats block + chart block + activity feed block)
 
 Expectations:
+
 - Combines multiple blocks into a unified layout for a single route.
 - Focuses on layout and block orchestration rather than component-level details.
 - May include page-specific logic for data coordination between blocks.
@@ -101,12 +122,14 @@ Expectations:
 A multi-page collection or full-site scaffold that bundles pages, routing configuration, shared layouts, global providers, and project structure. Templates are complete starting points for entire applications or major application sections.
 
 Examples:
+
 - [TailwindCSS Templates](https://tailwindui.com/templates)
 - [shadcnblocks Templates](https://www.shadcnblocks.com/templates) (full application shells)
 - "SaaS starter" (auth pages + dashboard pages + settings pages + marketing pages)
 - "E-commerce template" (storefront + product pages + checkout flow + admin pages)
 
 Expectations:
+
 - Includes multiple pages with routing/navigation structure.
 - Provides global configuration (theme providers, auth context, layout shells).
 - Opinionated project structure with clear conventions.
@@ -118,12 +141,14 @@ Expectations:
 A helper exported for developer ergonomics or composition; not rendered UI.
 
 Examples:
+
 - React hooks (useControllableState, useId)
 - Class utilities
 - Keybinding helpers
 - Focus scopes
 
 Expectations.
+
 - Side-effect free (except where explicitly documented).
 - Testable in isolation; supports tree-shaking.
 
@@ -136,6 +161,7 @@ The public configuration surface of a component. Props are stable, typed, and do
 ### 2.2 Children / Slots
 
 Placeholders for caller-provided structure or content.
+
 - Children (implicit slot). JSX between opening/closing tags.
 - Named slots. Props like icon, footer, or `<Component.Slot>` subcomponents.
 - Slot forwarding. Passing DOM attributes/className/refs through to the underlying element.
@@ -146,9 +172,7 @@ A function child used to delegate rendering while the parent supplies state/data
 
 ```tsx
 <ParentComponent data={data}>
-  {(item) => (
-    <ChildComponent key={item.id} {...item} />
-  )}
+  {(item) => <ChildComponent key={item.id} {...item} />}
 </ParentComponent>
 ```
 

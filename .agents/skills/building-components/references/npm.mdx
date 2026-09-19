@@ -1,6 +1,13 @@
 ---
 title: NPM
 description: How to publish your components to NPM.
+type: guide
+summary: Publishing component libraries to npm with versioned distribution, Tailwind configuration, TypeScript support, and package.json setup.
+prerequisites:
+  - /registry
+related:
+  - /marketplaces
+  - /docs
 ---
 
 NPM packages represent the traditional approach to distributing component libraries. While [registries](/registry) have gained popularity for their flexibility, npm publishing remains a powerful option with distinct advantages for certain use cases.
@@ -16,7 +23,7 @@ npm install @acme/ui-components
 ```
 
 ```tsx title="MyApp.tsx"
-import { Button } from '@acme/ui-components'
+import { Button } from "@acme/ui-components";
 
 // Component is imported from node_modules
 // Source code is not directly editable
@@ -88,11 +95,7 @@ This creates a dependency relationship where users must rely on the package main
 Tweaking components requires working within the exposed API. While you can provide props for customization:
 
 ```tsx
-<Button
-  variant="primary"
-  size="large"
-  className="custom-styles"
-/>
+<Button variant="primary" size="large" className="custom-styles" />
 ```
 
 Users cannot fundamentally alter how the component works without forking the entire package.
@@ -138,9 +141,7 @@ To publish your components to npm, you need a properly configured `package.json`
     },
     "./styles.css": "./dist/styles.css"
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "tsup",
     "prepublishOnly": "npm run build"

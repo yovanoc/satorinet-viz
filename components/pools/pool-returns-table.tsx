@@ -138,7 +138,7 @@ export function PoolReturnsTable({
             size="sm"
             variant="outline"
             value={mode}
-            onValueChange={(v) => {
+            onValueChange={(v: string) => {
               if (v) setMode(v as "net" | "gross");
             }}
             aria-label="Net or gross returns"
@@ -151,7 +151,7 @@ export function PoolReturnsTable({
             size="sm"
             variant="outline"
             value={String(period)}
-            onValueChange={(v) => {
+            onValueChange={(v: string) => {
               if (v) setPeriod(Number(v) as (typeof PERIODS)[number]);
             }}
             aria-label="Return period"
