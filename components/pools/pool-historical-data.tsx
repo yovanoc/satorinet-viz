@@ -117,13 +117,15 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
                   domain={["auto", "auto"]}
                 />
                 <Tooltip
-                  formatter={(value: number) =>
-                    value.toLocaleString(undefined, {
-                      maximumFractionDigits: 8,
-                    })
+                  formatter={(value) =>
+                    typeof value === "number"
+                      ? value.toLocaleString(undefined, {
+                          maximumFractionDigits: 8,
+                        })
+                      : ""
                   }
                   labelFormatter={(label) =>
-                    new Date(label).toLocaleDateString()
+                    new Date(String(label)).toLocaleDateString()
                   }
                 />
                 <Legend />
@@ -216,13 +218,15 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
                   domain={["auto", "auto"]}
                 />
                 <Tooltip
-                  formatter={(value: number) =>
-                    value.toLocaleString(undefined, {
-                      maximumFractionDigits: 8,
-                    })
+                  formatter={(value) =>
+                    typeof value === "number"
+                      ? value.toLocaleString(undefined, {
+                          maximumFractionDigits: 8,
+                        })
+                      : ""
                   }
                   labelFormatter={(label) =>
-                    new Date(label).toLocaleDateString()
+                    new Date(String(label)).toLocaleDateString()
                   }
                 />
                 <Legend />

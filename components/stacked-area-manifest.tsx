@@ -63,6 +63,13 @@ export function StackedAreaManifest({
     }
   }, [isMobile]);
 
+  const timeRangeLabel =
+    timeRange === "90d"
+      ? "3 months"
+      : timeRange === "30d"
+        ? "30 days"
+        : "7 days";
+
   const filteredData = manifests.filter((item) => {
     const referenceDate = new Date();
     let daysToSubtract = 90;
@@ -82,20 +89,15 @@ export function StackedAreaManifest({
         <CardTitle>Manifest</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
-            Manifest for the last{" "}
-            {timeRange === "90d"
-              ? "3 months"
-              : timeRange === "30d"
-              ? "30 days"
-              : "7 days"}
+            Manifest for the last {timeRangeLabel}
           </span>
-          <span className="@[540px]/card:hidden">Last 3 months</span>
+          <span className="@[540px]/card:hidden">Last {timeRangeLabel}</span>
         </CardDescription>
         <CardAction>
           <ToggleGroup
             type="single"
             value={timeRange}
-            onValueChange={(val) => {
+            onValueChange={(val: string) => {
               if (val) setTimeRange(val);
             }}
             variant="outline"
@@ -162,11 +164,13 @@ export function StackedAreaManifest({
               content={
                 <ChartTooltipContent
                   labelFormatter={(_, payload) => {
-                    const p = payload[0];
-                    return p?.payload.date.toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    });
+                    const date = payload[0]?.payload?.date;
+                    return date
+                      ? new Date(date).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })
+                      : "";
                   }}
                   indicator="line"
                 />

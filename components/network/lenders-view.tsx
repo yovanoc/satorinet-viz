@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ColumnDef } from "@tanstack/react-table";
+import type { TableColumnDef } from "@/components/table-features";
 
 import { EntityTable } from "@/components/network/entity-table";
 import { Identity, identityName, shortAddress } from "@/components/network/identity";
@@ -37,7 +37,7 @@ export function LendersView({ lenders }: LendersViewProps) {
     [lenders, operator]
   );
 
-  const columns = React.useMemo<ColumnDef<LenderRow, unknown>[]>(
+  const columns = React.useMemo<TableColumnDef<LenderRow>[]>(
     () => [
       {
         id: "rank",

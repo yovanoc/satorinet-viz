@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ColumnDef } from "@tanstack/react-table";
+import type { TableColumnDef } from "@/components/table-features";
 
 import { EntityTable } from "@/components/network/entity-table";
 import { Identity, identityName, shortAddress } from "@/components/network/identity";
@@ -51,7 +51,7 @@ export function WorkersView({ workers, networkAvgReward }: WorkersViewProps) {
     [workers, operator]
   );
 
-  const columns = React.useMemo<ColumnDef<WorkerRow, unknown>[]>(
+  const columns = React.useMemo<TableColumnDef<WorkerRow>[]>(
     () => [
       {
         id: "rank",

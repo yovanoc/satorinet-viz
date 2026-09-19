@@ -86,7 +86,9 @@ export function PoolsAvgDistanceComparisonChart({
             <YAxis yAxisId="left" tick={{ fontSize: 12 }} domain={["auto", "auto"]} reversed />
             <Tooltip
               contentStyle={{ backgroundColor: "var(--background)" }}
-              labelFormatter={(value) => value.toLocaleDateString()}
+              labelFormatter={(value) =>
+                new Date(String(value)).toLocaleDateString()
+              }
               formatter={(value, name) => {
                 if (typeof value !== "number") return [];
                 return [
@@ -97,7 +99,9 @@ export function PoolsAvgDistanceComparisonChart({
             />
             <Legend
               content={(props) => {
-                const { ref, ...legendProps } = props;
+                const { ref: _ref, ...legendProps } = props as typeof props & {
+                  ref?: unknown;
+                };
                 const customPayload = pools.map((pool) => {
                   const info = poolInfos[pool.address];
                   const meanDisplay =

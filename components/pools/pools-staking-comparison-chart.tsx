@@ -170,7 +170,7 @@ export function PoolsStakingComparisonChart({
                 backgroundColor: "var(--background)",
               }}
               labelFormatter={(value) => {
-                return value.toLocaleDateString();
+                return new Date(String(value)).toLocaleDateString();
               }}
               formatter={(
                 value,
@@ -258,7 +258,9 @@ export function PoolsStakingComparisonChart({
             />
             <Legend
               content={(props) => {
-                const { ref, ...legendProps } = props;
+                const { ref: _ref, ...legendProps } = props as typeof props & {
+                  ref?: unknown;
+                };
                 const customPayload = pools
                   .filter((p) => p.vault_address !== undefined)
                   .map((pool) => {

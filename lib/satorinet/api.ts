@@ -1,10 +1,12 @@
 import ky from "ky";
-import { Impit } from "impit";
 import Bottleneck from "bottleneck";
 import { cacheLife } from "next/cache";
 import * as z from "zod/mini";
 import { redis } from "../redis";
 import { getTodayMidnightUTC, normalizeToUTCMidnight } from "../date";
+import { impitFetch } from "./transport";
+
+export { impitFetch } from "./transport";
 
 /**
  * Client for the satorinet.io website API.
@@ -23,18 +25,6 @@ export const SATORI_API_EARLIEST_DATE = new Date(Date.UTC(2025, 11, 25));
 
 // ponytail: single global limiter, ~1 req/1.2s — their rate limit is per-IP and data changes daily
 const limiter = new Bottleneck({ maxConcurrent: 1, minTime: 1200 });
-
-// Browser TLS-fingerprint impersonation — plain fetch gets Cloudflare's
-// "Just a moment..." challenge from datacenter IPs (e.g. Vercel).
-const impit = new Impit({ browser: "chrome" });
-
-/**
- * Fetch with Chrome TLS fingerprint — shared with audit.ts.
- * ImpitResponse implements everything ky uses (status/headers/json/text/clone)
- * but not the full Response interface (no blob/formData) — hence the bridge cast.
- */
-export const impitFetch: typeof fetch = async (input, init) =>
-  (await impit.fetch(input, init as Parameters<Impit["fetch"]>[1])) as unknown as Response;
 
 const client = ky.create({
   prefix: BASE_URL,
@@ -72,15 +62,23 @@ async function fetchParsedWithFallback<T>(
   schema: z.ZodMiniType<T>
 ): Promise<T> {
   const rawKey = `satorinet:raw:${path}`;
+
+  let data: T;
   try {
-    const data = await fetchParsed(path, schema);
-    await redis.setex(rawKey, RAW_TTL, JSON.stringify(data));
-    return data;
-  } catch (err) {
-    const raw = await redis.get(rawKey);
-    if (raw !== null) return schema.parse(JSON.parse(raw));
-    throw err;
+    data = await fetchParsed(path, schema);
+  } catch (requestError) {
+    try {
+      const raw = await redis.get(rawKey);
+      if (raw !== null) return schema.parse(JSON.parse(raw));
+    } catch {
+      // Redis is optional for a direct request; preserve its original error.
+    }
+    throw requestError;
   }
+
+  // A cache outage must not turn a successful upstream response into a failure.
+  void redis.setex(rawKey, RAW_TTL, JSON.stringify(data)).catch(() => undefined);
+  return data;
 }
 
 // ---------------------------------------------------------------------------
@@ -252,15 +250,21 @@ async function fetchLeaderboardPage(date: Date, offset: number): Promise<Leaderb
 
   // Redis-first for every date: historical is immutable, today's key is
   // refreshed by the cache warmer (and by any successful direct fetch).
-  const cached = await redis.get(cacheKey);
-  if (cached) return leaderboardPageSchema.parse(JSON.parse(cached));
+  try {
+    const cached = await redis.get(cacheKey);
+    if (cached) return leaderboardPageSchema.parse(JSON.parse(cached));
+  } catch {
+    // Fetch directly when Redis is unavailable or contains bad data.
+  }
 
   const page = await fetchParsed("leaderboard", leaderboardPageSchema, {
     offset: String(offset),
     date: day,
   });
-  if (historical) await redis.set(cacheKey, JSON.stringify(page));
-  else await redis.setex(cacheKey, 60 * 60 * 3, JSON.stringify(page));
+  const write = historical
+    ? redis.set(cacheKey, JSON.stringify(page))
+    : redis.setex(cacheKey, 60 * 60 * 3, JSON.stringify(page));
+  void write.catch(() => undefined);
   return page;
 }
 
@@ -294,8 +298,12 @@ export async function getFullLeaderboard(date: Date): Promise<Leaderboard | null
   const cacheKey = `satorinet:leaderboard-full:${day}`;
 
   try {
-    const cached = await redis.get(cacheKey);
-    if (cached) return JSON.parse(cached) as Leaderboard;
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached) return JSON.parse(cached) as Leaderboard;
+    } catch {
+      // Fetch directly when Redis is unavailable or contains bad data.
+    }
 
     const first = await fetchLeaderboardPage(date, 0);
     const predictors = [...first.predictors];
@@ -315,8 +323,10 @@ export async function getFullLeaderboard(date: Date): Promise<Leaderboard | null
     };
 
     // Historical days are immutable — keep forever. Today may still change — 1h TTL.
-    if (isHistorical(date)) await redis.set(cacheKey, JSON.stringify(result));
-    else await redis.setex(cacheKey, 60 * 60, JSON.stringify(result));
+    const write = isHistorical(date)
+      ? redis.set(cacheKey, JSON.stringify(result))
+      : redis.setex(cacheKey, 60 * 60, JSON.stringify(result));
+    void write.catch(() => undefined);
 
     return result;
   } catch (e) {

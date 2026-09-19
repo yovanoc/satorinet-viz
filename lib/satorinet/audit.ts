@@ -2,7 +2,8 @@ import ky from "ky";
 import { cacheLife } from "next/cache";
 import { redis } from "../redis";
 import { getTodayMidnightUTC, normalizeToUTCMidnight } from "../date";
-import { impitFetch, SATORI_API_EARLIEST_DATE } from "./api";
+import { SATORI_API_EARLIEST_DATE } from "./api";
+import { impitFetch } from "./transport";
 
 /**
  * Daily audit CSVs from network.satorinet.io — the most accurate per-neuron
@@ -120,8 +121,12 @@ async function getAudit<T>(
     : null;
 
   if (cacheKey) {
-    const cached = await redis.get(cacheKey);
-    if (cached) return JSON.parse(cached) as T[];
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached) return JSON.parse(cached) as T[];
+    } catch {
+      // Fetch directly when Redis is unavailable or contains bad data.
+    }
   }
 
   // Raw CSV copies are written by the cache warmer for environments where
@@ -129,18 +134,29 @@ async function getAudit<T>(
   const rawKey = `satorinet:raw:audit:${kind}:${date ? date.toISOString().split("T")[0] : "latest"}`;
 
   let csv: string | null;
+  let fetchedFresh = false;
   try {
     csv = await fetchAuditCsv(kind, date);
-    if (csv !== null && !date) await redis.setex(rawKey, 60 * 60 * 26, csv);
-  } catch (err) {
-    const raw = await redis.get(rawKey);
-    if (raw === null) throw err;
-    csv = raw;
+    fetchedFresh = true;
+  } catch (requestError) {
+    try {
+      const raw = await redis.get(rawKey);
+      if (raw === null) throw requestError;
+      csv = raw;
+    } catch {
+      // Redis is optional for a direct request; preserve its original error.
+      throw requestError;
+    }
   }
   if (csv === null) return null;
 
   const rows = parseCsv(csv).map(mapRow);
-  if (cacheKey) await redis.set(cacheKey, JSON.stringify(rows));
+  if (fetchedFresh && !date) {
+    void redis.setex(rawKey, 60 * 60 * 26, csv).catch(() => undefined);
+  }
+  if (cacheKey) {
+    void redis.set(cacheKey, JSON.stringify(rows)).catch(() => undefined);
+  }
   return rows;
 }
 

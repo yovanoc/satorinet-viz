@@ -9,16 +9,23 @@ on:
         description: "Backfill historical days since this date (YYYY-MM-DD, earliest 2025-12-25)"
         required: false
 
+concurrency:
+  group: warm-satori-cache
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
 jobs:
   warm:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 340
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec tsx scripts/warm-satori-cache.ts

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { getPriceRange } from "@/app/actions";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -65,7 +65,7 @@ export function PriceHistoryChart() {
         <ToggleGroup
           type="single"
           value={range}
-          onValueChange={(val) => {
+          onValueChange={(val: string) => {
             if (val) handleRangeChange(val);
           }}
           variant="outline"
@@ -157,10 +157,8 @@ export function PriceHistoryChart() {
                 content={
                   <ChartTooltipContent
                     labelFormatter={(_, payload) => {
-                      const p = payload[0];
-                      return p?.payload.date
-                        ? new Date(p.payload.date).toLocaleString()
-                        : "";
+                      const date = payload[0]?.payload?.date;
+                      return date ? new Date(date).toLocaleString() : "";
                     }}
                     indicator="line"
                   />

@@ -1,6 +1,12 @@
 ---
 title: Registry
 description: Understand the concept of component registries, how they work, and why they're revolutionizing how developers share and discover UI components.
+type: conceptual
+summary: What component registries are, their source-code distribution model, and how to create one using the shadcn ecosystem.
+related:
+  - /npm
+  - /marketplaces
+  - /docs
 ---
 
 Component registries are a way to share and discover UI components. Popularized by [shadcn/ui](https://ui.shadcn.com), they allow you to discover and copy components directly into your projects.
@@ -15,12 +21,12 @@ Unlike npm packages that distribute compiled code, registries distribute source 
 
 ```typescript
 // Traditional npm package
-import { Button } from 'some-ui-library';
+import { Button } from "some-ui-library";
 
 // Registry-based component
 // Copy source from registry into your project
 // src/components/ui/button.tsx contains the full source
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 ```
 
 ### 2. Metadata and Configuration
@@ -72,7 +78,6 @@ From the perspective of component users, registries greatly improve the discover
 Before integrating a component, users can preview it in action, experiment with different variants, and review its behavior and code quality. This ability to evaluate components beforehand reduces risk and increases confidence in adoption.
 
 Perhaps most importantly, registries empower users with true ownership. Instead of being locked into a dependency, users copy the source code directly into their projects. This means they can modify components as needed, avoid dependency management headaches, and retain full control over their codebase.
-
 
 ## Creating a Registry
 

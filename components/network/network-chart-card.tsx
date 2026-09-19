@@ -122,7 +122,7 @@ export function NetworkChartCard({
             size="sm"
             variant="outline"
             value={range}
-            onValueChange={(value) => {
+            onValueChange={(value: string) => {
               if (value) setRange(value as RangeValue);
             }}
             className="hidden *:data-[slot=toggle-group-item]:!px-3 @[540px]/card:flex"
@@ -214,7 +214,7 @@ export function NetworkChartCard({
                 <ChartTooltipContent
                   indicator="dot"
                   labelFormatter={(value) =>
-                    new Date(value).toLocaleDateString("en-US", {
+                    new Date(String(value)).toLocaleDateString("en-US", {
                       year: "numeric",
                       month: "short",
                       day: "numeric",

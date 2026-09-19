@@ -1,6 +1,14 @@
 ---
 title: Data Attributes
 description: Using data attributes for declarative styling and component identification.
+type: reference
+summary: Using data-state for declarative visual state styling and data-slot for stable component identification in Tailwind-based systems.
+prerequisites:
+  - /composition
+  - /styling
+related:
+  - /design-tokens
+  - /accessibility
 ---
 
 Data attributes provide a powerful way to expose component state and structure to consumers, enabling flexible styling without prop explosion. Modern component libraries use two primary patterns: `data-state` for visual states and `data-slot` for component identification.
@@ -17,12 +25,13 @@ In less modern components, you'll often see APIs like this:
   closedClassName="bg-white"
   classes={{
     open: "opacity-100",
-    closed: "opacity-0"
+    closed: "opacity-0",
   }}
 />
 ```
 
 This approach has several problems:
+
 - It couples the component's internal state to its styling API
 - It creates an explosion of props as components grow more complex
 - It makes the component harder to use and maintain
@@ -38,8 +47,8 @@ const Dialog = ({ className, ...props }: DialogProps) => {
 
   return (
     <div
-      data-state={isOpen ? 'open' : 'closed'}
-      className={cn('transition-all', className)}
+      data-state={isOpen ? "open" : "closed"}
+      className={cn("transition-all", className)}
       {...props}
     />
   );
@@ -92,12 +101,12 @@ Tailwind supports arbitrary variants, making data attribute styling elegant:
 <Dialog
   className={cn(
     // Base styles
-    'rounded-lg border p-4',
+    "rounded-lg border p-4",
     // State-based styles
-    'data-[state=open]:animate-in data-[state=open]:fade-in',
-    'data-[state=closed]:animate-out data-[state=closed]:fade-out',
+    "data-[state=open]:animate-in data-[state=open]:fade-in",
+    "data-[state=closed]:animate-out data-[state=closed]:fade-out",
     // Multiple attributes
-    'data-[state=open][data-side=top]:slide-in-from-top-2'
+    "data-[state=open][data-side=top]:slide-in-from-top-2",
   )}
 />
 ```
@@ -112,10 +121,10 @@ module.exports = {
         open: 'state="open"',
         closed: 'state="closed"',
         active: 'state="active"',
-      }
-    }
-  }
-}
+      },
+    },
+  },
+};
 ```
 
 Now you can use shorthand:
@@ -129,7 +138,7 @@ Now you can use shorthand:
 This pattern is used extensively by [Radix UI](https://www.radix-ui.com/), which automatically applies data attributes to its primitives:
 
 ```tsx
-import * as Dialog from '@radix-ui/react-dialog';
+import * as Dialog from "@radix-ui/react-dialog";
 
 <Dialog.Root>
   <Dialog.Trigger />
@@ -138,10 +147,11 @@ import * as Dialog from '@radix-ui/react-dialog';
     <Dialog.Overlay className="data-[state=open]:animate-in data-[state=closed]:animate-out" />
     <Dialog.Content className="data-[state=open]:fade-in data-[state=closed]:fade-out" />
   </Dialog.Portal>
-</Dialog.Root>
+</Dialog.Root>;
 ```
 
 Other data attributes Radix provides include:
+
 - `data-state` - open/closed, active/inactive, on/off
 - `data-side` - top/right/bottom/left (for positioned elements)
 - `data-align` - start/center/end (for positioned elements)
@@ -185,7 +195,7 @@ function FieldSet({ className, ...props }: React.ComponentProps<"fieldset">) {
         // Target specific child slots
         "has-[>[data-slot=checkbox-group]]:gap-3",
         "has-[>[data-slot=radio-group]]:gap-3",
-        className
+        className,
       )}
       {...props}
     />
@@ -229,7 +239,7 @@ function Form({ className, ...props }: React.ComponentProps<"form">) {
         "has-[>[data-slot=inline-fields]]:space-y-2",
         // Style based on slot states
         "has-[[data-slot=submit-button][data-loading=true]]:opacity-50",
-        className
+        className,
       )}
       {...props}
     />
@@ -253,7 +263,7 @@ function Card({ className, ...props }: React.ComponentProps<"div">) {
         "[&_[data-slot=card-title]]:text-lg [&_[data-slot=card-title]]:font-semibold",
         "[&_[data-slot=card-description]]:text-sm [&_[data-slot=card-description]]:text-muted-foreground",
         "[&_[data-slot=card-footer]]:mt-4 [&_[data-slot=card-footer]]:border-t [&_[data-slot=card-footer]]:pt-4",
-        className
+        className,
       )}
       {...props}
     />
@@ -316,17 +326,20 @@ data-slot="mainContent"     // Use camelCase
 Understanding when to use each pattern is key to a clean API:
 
 ### `data-state` use cases
+
 - **Visual states** - open/closed, active/inactive, loading, etc.
 - **Layout states** - orientation, side, alignment
 - **Interaction states** - hover, focus, disabled (when you need to style children)
 
 ### `data-slot` use cases
+
 - **Component identification** - Stable identifiers for targeting
 - **Composition patterns** - Parent-child relationships
 - **Global styling** - Theme-wide component styling
 - **Variant-independent targeting** - Target any variant of a component
 
 ### `props` use cases
+
 - **Variants** - Different visual designs (primary, secondary, destructive)
 - **Sizes** - sm, md, lg
 - **Behavioral configuration** - controlled/uncontrolled, default values
@@ -338,8 +351,8 @@ A well-designed component uses all three patterns appropriately:
 
 ```tsx title="button.tsx"
 type ButtonProps = {
-  variant?: 'primary' | 'secondary' | 'destructive';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "primary" | "secondary" | "destructive";
+  size?: "sm" | "md" | "lg";
   loading?: boolean;
   disabled?: boolean;
   onClick?: () => void;
@@ -347,8 +360,8 @@ type ButtonProps = {
 };
 
 const Button = ({
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   loading,
   disabled,
   className,
@@ -365,7 +378,7 @@ const Button = ({
         // Variant styles via props
         buttonVariants({ variant, size }),
         // Additional state styling allowed via className
-        className
+        className,
       )}
       disabled={disabled}
       {...props}

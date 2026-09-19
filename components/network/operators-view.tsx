@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ColumnDef } from "@tanstack/react-table";
+import type { TableColumnDef } from "@/components/table-features";
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 
 import { EntityTable } from "@/components/network/entity-table";
@@ -99,7 +99,7 @@ function ShareBarChart({
                     <span className="flex w-full items-baseline justify-between gap-4 tabular-nums">
                       <span>{formatCurrency(Number(value), digits)}</span>
                       <span className="text-muted-foreground">
-                        {formatCurrency(item.payload.share, 1)}%
+                        {formatCurrency(Number(item.payload?.share ?? 0), 1)}%
                       </span>
                     </span>
                   )}
@@ -161,7 +161,7 @@ export function OperatorsView({
     []
   );
 
-  const columns = React.useMemo<ColumnDef<OperatorRow, unknown>[]>(
+  const columns = React.useMemo<TableColumnDef<OperatorRow>[]>(
     () => [
       {
         id: "identity",

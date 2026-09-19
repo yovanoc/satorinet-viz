@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ColumnDef } from "@tanstack/react-table";
+import type { TableColumnDef } from "@/components/table-features";
 import { Bar, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from "recharts";
 
 import { EntityTable } from "@/components/network/entity-table";
@@ -51,7 +51,7 @@ function MovementChart({ movement }: { movement: MovementDay[] }) {
             size="sm"
             variant="outline"
             value={range}
-            onValueChange={(v) => {
+            onValueChange={(v: string) => {
               if (v) setRange(v as typeof range);
             }}
           >
@@ -91,7 +91,7 @@ function MovementChart({ movement }: { movement: MovementDay[] }) {
                 <ChartTooltipContent
                   indicator="dot"
                   labelFormatter={(value) =>
-                    new Date(value).toLocaleDateString("en-US", {
+                    new Date(String(value)).toLocaleDateString("en-US", {
                       year: "numeric",
                       month: "short",
                       day: "numeric",
@@ -220,7 +220,7 @@ export function ParticipantsView({ active, left, movement }: ParticipantsViewPro
     [active, role, activity]
   );
 
-  const columns = React.useMemo<ColumnDef<Participant, unknown>[]>(
+  const columns = React.useMemo<TableColumnDef<Participant>[]>(
     () => [
       {
         id: "rank",

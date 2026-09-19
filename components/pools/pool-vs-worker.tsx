@@ -334,7 +334,6 @@ export function PoolComparisonChart({ data }: PoolComparisonChartProps) {
                     if (min) return [min, min];
                     return null;
                   }}
-                  isRange
                   name={`Pool: ${
                     pool ? (typeof pool === "string" ? pool : pool.name) : key
                   }`}
@@ -356,7 +355,6 @@ export function PoolComparisonChart({ data }: PoolComparisonChartProps) {
                 const v = entry.worker.total_rewards;
                 return [v, v];
               }}
-              isRange
               name="Self Earnings"
               stroke={SELF_COLOR}
               fill={SELF_COLOR}
@@ -401,7 +399,9 @@ export function PoolComparisonChart({ data }: PoolComparisonChartProps) {
             />
             <Tooltip
               contentStyle={{ backgroundColor: "var(--background)" }}
-              labelFormatter={(value) => new Date(value).toLocaleDateString()}
+              labelFormatter={(value) =>
+                new Date(String(value)).toLocaleDateString()
+              }
               formatter={(value, name) => {
                 if (typeof value !== "number") return [];
                 return [

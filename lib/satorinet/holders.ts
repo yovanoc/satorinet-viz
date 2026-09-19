@@ -54,7 +54,7 @@ export const classifyAssetHolders = (assetHolders: AssetHolder[]) => {
   const assetHoldersWithRank: AssetHolderWithRank[] = sortedAssetHolders.map((holder, idx) => ({
       ...holder,
       rank: idx + 1,
-      percent: (holder.balance / totalBalance) * 100,
+      percent: totalBalance > 0 ? (holder.balance / totalBalance) * 100 : 0,
       tier: tiers.find(tier => holder.balance >= tier.min && holder.balance < tier.max)?.name ?? null,
   }));
   const summary: HoldersSummary = {
@@ -93,8 +93,10 @@ export const classifyAssetHolders = (assetHolders: AssetHolder[]) => {
 
   for (const tierName of Object.keys(summary.tiers) as TierName[]) {
       const tierData = summary.tiers[tierName];
-      tierData.percentAmount = (tierData.total / summary.totalSatori) * 100;
-      tierData.percentCount = (tierData.count / assetHolders.length) * 100;
+      tierData.percentAmount =
+        summary.totalSatori > 0 ? (tierData.total / summary.totalSatori) * 100 : 0;
+      tierData.percentCount =
+        assetHolders.length > 0 ? (tierData.count / assetHolders.length) * 100 : 0;
   }
 
   return summary;

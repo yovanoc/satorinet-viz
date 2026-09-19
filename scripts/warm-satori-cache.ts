@@ -13,11 +13,52 @@
  */
 import { config } from "dotenv";
 config({ path: [".env.local", ".env"], quiet: true });
-import { Impit } from "impit";
 import { Redis } from "ioredis";
+import { impitFetch } from "../lib/satorinet/transport";
 
-const redis = new Redis(process.env.REDIS_URL!);
-const impit = new Impit({ browser: "chrome" });
+const REDIS_CONNECT_TIMEOUT_MS = 5_000;
+
+function createRedis(rawUrl: string | undefined): Redis {
+  const url = rawUrl?.trim();
+  if (!url) {
+    throw new Error(
+      "REDIS_URL is required; add the production REDIS_URL repository secret before running the cache warmer",
+    );
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error("REDIS_URL must be a valid redis:// or rediss:// URL");
+  }
+  if (!parsed.hostname || !["redis:", "rediss:"].includes(parsed.protocol)) {
+    throw new Error("REDIS_URL must be a valid redis:// or rediss:// URL");
+  }
+
+  return new Redis(url, {
+    lazyConnect: true,
+    connectTimeout: REDIS_CONNECT_TIMEOUT_MS,
+    enableOfflineQueue: false,
+    maxRetriesPerRequest: 0,
+    retryStrategy: () => null,
+  });
+}
+
+function describeError(error: unknown): string {
+  if (error instanceof Error && "errors" in error && Array.isArray(error.errors)) {
+    const nested = error.errors.map((entry: unknown) => describeError(entry));
+    if (nested.length > 0) return nested.join("; ");
+  }
+  return error instanceof Error ? error.message : String(error);
+}
+
+let redis!: Redis;
+let lastRedisError: unknown;
+const onRedisError = (error: unknown) => {
+  lastRedisError = error;
+  console.error(`Redis error: ${describeError(error)}`);
+};
 
 const EARLIEST = "2025-12-25";
 const DELAY_MS = 1300;
@@ -27,13 +68,27 @@ const TTL_TODAY_LB = 3 * 3600;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const dayStr = (d: Date) => d.toISOString().split("T")[0]!;
 
-let criticalFailures = 0;
+let warmFailures = 0;
+
+async function connectRedis(): Promise<void> {
+  try {
+    await redis.connect();
+    await redis.ping();
+  } catch (error) {
+    const cause = lastRedisError ?? error;
+    throw new Error(`Redis connection failed: ${describeError(cause)}`, {
+      cause,
+    });
+  }
+}
 
 /** Throttled GET with 429 backoff; throws on HTTP errors, Cloudflare challenges, and data-gap 404/500s. */
 async function get(url: string): Promise<string> {
   for (let attempt = 0; ; attempt++) {
     await sleep(DELAY_MS);
-    const res = await impit.fetch(url, { timeout: 60_000 });
+    const res = await impitFetch(url, {
+      signal: AbortSignal.timeout(60_000),
+    });
     const body = await res.text();
     if (res.status === 429 && attempt < 5) {
       console.log(`429, backing off 60s (${url})`);
@@ -54,8 +109,8 @@ async function warmJsonLatest(): Promise<void> {
       await redis.setex(`satorinet:raw:${path}`, TTL_RAW, body);
       console.log(`ok   ${path}`);
     } catch (e) {
-      criticalFailures++;
-      console.error(`FAIL ${path}: ${e instanceof Error ? e.message : e}`);
+      warmFailures++;
+      console.error(`FAIL ${path}: ${describeError(e)}`);
     }
   }
 }
@@ -74,8 +129,8 @@ async function warmAudit(day: string | null): Promise<void> {
       else await redis.setex(key, TTL_RAW, body);
       console.log(`ok   audit ${kind} ${day ?? "latest"}`);
     } catch (e) {
-      if (!day) criticalFailures++;
-      console.error(`FAIL audit ${kind} ${day ?? "latest"}: ${e instanceof Error ? e.message : e}`);
+      if (!day) warmFailures++;
+      console.error(`FAIL audit ${kind} ${day ?? "latest"}: ${describeError(e)}`);
     }
   }
 }
@@ -102,7 +157,13 @@ async function warmLeaderboard(day: string, forever: boolean): Promise<void> {
     }
     console.log(`ok   leaderboard ${day} (${offset} rows+)`);
   } catch (e) {
-    console.error(`FAIL leaderboard ${day} @${offset}: ${e instanceof Error ? e.message : e}`);
+    const message = describeError(e);
+    if (forever && message.startsWith("HTTP 404:")) {
+      console.log(`SKIP leaderboard ${day} @${offset}: historical gap`);
+      return;
+    }
+    warmFailures++;
+    console.error(`FAIL leaderboard ${day} @${offset}: ${message}`);
   }
 }
 
@@ -116,30 +177,42 @@ function* daysBetween(from: string, to: string): Generator<string> {
 }
 
 async function main(): Promise<void> {
-  const today = dayStr(new Date());
-  const yesterday = dayStr(new Date(Date.now() - 86_400_000));
+  redis = createRedis(process.env.REDIS_URL);
+  redis.on("error", onRedisError);
+  try {
+    await connectRedis();
 
-  await warmJsonLatest();
-  await warmAudit(null);
-  await warmAudit(today);
-  await warmAudit(yesterday);
-  await warmLeaderboard(today, false);
-  await warmLeaderboard(yesterday, true);
+    const today = dayStr(new Date());
+    const yesterday = dayStr(new Date(Date.now() - 86_400_000));
 
-  const since = process.env.BACKFILL_SINCE;
-  if (since) {
-    console.log(`Backfilling ${since} -> ${yesterday} (resumable, skips existing keys)`);
-    for (const day of daysBetween(since < EARLIEST ? EARLIEST : since, yesterday)) {
-      await warmAudit(day);
-      await warmLeaderboard(day, true);
+    await warmJsonLatest();
+    await warmAudit(null);
+    await warmAudit(today);
+    await warmAudit(yesterday);
+    await warmLeaderboard(today, false);
+    await warmLeaderboard(yesterday, true);
+
+    const since = process.env.BACKFILL_SINCE;
+    if (since) {
+      console.log(`Backfilling ${since} -> ${yesterday} (resumable, skips existing keys)`);
+      for (const day of daysBetween(since < EARLIEST ? EARLIEST : since, yesterday)) {
+        await warmAudit(day);
+        await warmLeaderboard(day, true);
+      }
     }
-  }
 
-  redis.quit();
-  if (criticalFailures > 0) {
-    console.error(`${criticalFailures} critical failure(s) — this IP may be blocked too`);
-    process.exit(1);
+    if (warmFailures > 0) {
+      throw new Error(
+        `${warmFailures} required cache operation(s) failed; inspect the FAIL lines for the upstream error`,
+      );
+    }
+  } finally {
+    redis.off("error", onRedisError);
+    redis.disconnect();
   }
 }
 
-void main();
+void main().catch((error) => {
+  console.error(`Warm Satori cache failed: ${describeError(error)}`);
+  process.exitCode = 1;
+});
