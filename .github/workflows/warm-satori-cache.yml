@@ -5,6 +5,13 @@ on:
     - cron: "23 */2 * * *"
   workflow_dispatch:
     inputs:
+      runner:
+        description: "Runner network used for warming or diagnosis"
+        type: choice
+        options:
+          - ubuntu-24.04
+          - macos-15
+        default: ubuntu-24.04
       diagnostics_only:
         description: "Compare curl, native fetch, and Impit without touching Redis"
         type: boolean
@@ -24,7 +31,7 @@ permissions:
 
 jobs:
   warm:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ inputs.runner || 'ubuntu-24.04' }}
     timeout-minutes: 340
     steps:
       - uses: actions/checkout@v7
