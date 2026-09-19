@@ -43,6 +43,20 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec tsx scripts/diagnose-satori.ts
         if: ${{ inputs.diagnostics_only == true }}
+      - name: Check a browser session (read-only)
+        if: ${{ inputs.diagnostics_only == true && inputs.runner != 'macos-15' }}
+        timeout-minutes: 3
+        run: |
+          xvfb-run -a bash <<'BROWSER'
+          set -e
+          export AGENT_BROWSER_SESSION=satori-diagnostic
+          export AGENT_BROWSER_EXECUTABLE_PATH=/usr/bin/google-chrome
+          export AGENT_BROWSER_HEADED=true
+          trap 'npx --yes agent-browser@0.15.1 close || true' EXIT
+          npx --yes agent-browser@0.15.1 open https://satorinet.io/api/satori-price
+          npx --yes agent-browser@0.15.1 wait 15000
+          npx --yes agent-browser@0.15.1 get text body | head -c 1000
+          BROWSER
       - run: pnpm exec tsx scripts/warm-satori-cache.ts
         if: ${{ inputs.diagnostics_only != true }}
         env:
