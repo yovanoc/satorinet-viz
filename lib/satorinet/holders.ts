@@ -6,7 +6,7 @@ export const getAllSatoriHolders = async () => {
   cacheLife('hours');
   try {
     const electrumxClient = await getElectrumxClient();
-    const holders = await electrumxClient.getAssetHolders(null, 'SATORI');
+    const holders = await electrumxClient.getAssetHolders(null, 'SATORIEVR');
     return holders;
   } catch (e) {
     console.error('Error connecting to ElectrumX server:', e);
