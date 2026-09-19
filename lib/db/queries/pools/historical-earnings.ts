@@ -1,5 +1,6 @@
 import type { Pool } from "@/lib/known_pools";
 import { getPoolHistoricalData } from "./historical-data";
+import { getPoolFeeSnapshot } from "./fees";
 import { cacheLifeForDate } from "../../cache-utils";
 
 export async function getPoolsHistoricalEarnings(
@@ -10,12 +11,17 @@ export async function getPoolsHistoricalEarnings(
   "use cache";
   cacheLifeForDate(date);
 
-  // TODO use a proper query
+  const feeSnapshot = await getPoolFeeSnapshot(pools, date);
 
   return Promise.all(
     pools.map(async (pool) => ({
       pool,
-      data: await getPoolHistoricalData(pool, date, days)
+      data: await getPoolHistoricalData(
+        pool,
+        date,
+        days,
+        feeSnapshot[pool.address]
+      ),
     }))
   );
 }

@@ -345,11 +345,5 @@ export const KNOWN_POOLS: Pool[] = [
 ];
 
 export function mostWantedTop(pools: TopPoolWithName[]) {
-  return pools
-    .filter(
-      (pool) =>
-        pool.name
-      // && !["Managers/Dev", "Dev", "Reserves", "Lightning"].includes(pool.name)
-    )
-    .slice(0, 4);
+  return pools.slice(0, 4);
 }

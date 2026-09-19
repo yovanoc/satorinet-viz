@@ -8,11 +8,11 @@ import type { Entry } from "./pools-staking-comparison-chart";
 import type { DistanceEntry } from "./pools-avg-distance-comparison-chart";
 import { PoolsComparisonTabs } from "./pools-comparison-tabs";
 import { cacheLifeForDate } from "@/lib/db/cache-utils";
-import { getPoolFeesForDate } from "@/lib/pool-utils";
 import { getSatoriPriceForDateSafe } from "@/lib/livecoinwatch";
 import { getPoolsHistoricalEarnings } from "@/lib/db/queries/pools/historical-earnings";
 import { getMaxDelegatedStake } from "@/lib/db/queries/predictors/max-delegated-stake";
 import { getPoolHistoricalData } from "@/lib/db/queries/pools/historical-data";
+import { feeDateKey, getPoolFeeSnapshots } from "@/lib/db/queries/pools/fees";
 
 interface PoolsStakingComparisonProps {
   date: Date;
@@ -22,50 +22,50 @@ interface PoolsStakingComparisonProps {
 async function transformData(
   rawData: Awaited<ReturnType<typeof getPoolsHistoricalEarnings>>
 ): Promise<Entry[]> {
-  const dateMap = new Map<
-    string,
-    {
-      satoriPrice: number;
-      fullStakeAmount: number;
-      pools: Record<
-        string,
+  const pools = rawData.map(({ pool }) => pool);
+  const dates = Array.from(
+    new Map(
+      rawData
+        .flatMap(({ data }) => data ?? [])
+        .map((row) => {
+          const date = new Date(row.date);
+          return [feeDateKey(date), date] as const;
+        })
+    ).values()
+  );
+  const [feeSnapshots, dateResources] = await Promise.all([
+    getPoolFeeSnapshots(pools, dates),
+    Promise.all(
+      dates.map(async (date) => [
+        feeDateKey(date),
         {
-          pool: Pool;
-          earnings_per_staking_power: number;
-          fees: ReturnType<typeof getPoolFeesForDate>;
-        }
-      >;
-    }
-  >();
+          satoriPrice: (await getSatoriPriceForDateSafe(date)) ?? 0,
+          fullStakeAmount: (await getMaxDelegatedStake(date)) ?? 0,
+          pools: {} as Entry["poolEarnings"],
+        },
+      ] as const)
+    ),
+  ]);
+  const dateMap = new Map(dateResources);
 
   for (const { pool, data } of rawData) {
-    if (!data) continue;
-    await Promise.all(
-      data.map(async ({ date, earnings_per_staking_power }) => {
-        if (pool.closed && pool.closed <= new Date(date)) return;
-        if (!dateMap.has(date)) {
-          const dateObj = new Date(date);
-          const [satoriPrice, fullStakeAmount] = await Promise.all([
-            getSatoriPriceForDateSafe(dateObj),
-            getMaxDelegatedStake(dateObj),
-          ]);
-
-          dateMap.set(date, {
-            satoriPrice: satoriPrice ?? 0,
-            fullStakeAmount: fullStakeAmount ?? 0,
-            pools: {},
-          });
-        }
-        dateMap.get(date)!.pools[pool.address] = {
-          pool,
-          earnings_per_staking_power,
-          fees: getPoolFeesForDate(pool, new Date(date)),
-        };
-      })
-    );
+    for (const row of data ?? []) {
+      const date = new Date(row.date);
+      if (pool.closed && pool.closed <= date) continue;
+      const key = feeDateKey(date);
+      const entry = dateMap.get(key);
+      const fee = feeSnapshots[key]?.[pool.address];
+      if (!entry || !fee) continue;
+      entry.pools[pool.address] = {
+        pool,
+        earnings_per_staking_power: row.earnings_per_staking_power,
+        fees: fee,
+      };
+    }
   }
 
   return Array.from(dateMap.entries())
+    .filter(([, data]) => Object.keys(data.pools).length > 0)
     .map(([date, data]) => ({
       date: new Date(date),
       satoriPrice: data.satoriPrice,
@@ -135,23 +135,18 @@ export async function PoolsStakingComparison({
     getMaxDelegatedStake(date),
   ]);
 
-  const topOnes = mostWantedTop(topPools)
-    .map((pool) => KNOWN_POOLS.find((p) => p.address === pool.address))
-    .filter((pool) => !!pool);
+  const topOnes = mostWantedTop(topPools).map(
+    (pool) =>
+      KNOWN_POOLS.find((knownPool) => knownPool.address === pool.address) ?? {
+        name: pool.name ?? "Unknown Pool",
+        color: "#888",
+        address: pool.address,
+        vault_address: pool.vault_address,
+      }
+  );
 
-  const [earningsRaw, avgDistanceRaw] = await Promise.all([
-    getPoolsHistoricalEarnings(topOnes, date),
-    Promise.all(
-      topOnes.map(async (pool) => ({
-        pool,
-        data: await getPoolHistoricalData(
-          { address: pool.address, vault_address: pool.vault_address },
-          date,
-          30
-        ),
-      }))
-    ),
-  ]);
+  const earningsRaw = await getPoolsHistoricalEarnings(topOnes, date);
+  const avgDistanceRaw = earningsRaw;
 
   const [earningsData, avgDistanceData] = await Promise.all([
     transformData(earningsRaw),

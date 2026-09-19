@@ -5,8 +5,14 @@ on:
     - cron: "23 */2 * * *"
   workflow_dispatch:
     inputs:
+      diagnostics_only:
+        description: "Compare curl, native fetch, and Impit without touching Redis"
+        type: boolean
+        default: false
       backfill_since:
-        description: "Backfill historical days since this date (YYYY-MM-DD, earliest 2025-12-25)"
+        description: >-
+          Backfill historical days since this date
+          (YYYY-MM-DD, earliest 2025-12-25)
         required: false
 
 concurrency:
@@ -28,7 +34,10 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsx scripts/diagnose-satori.ts
+        if: ${{ inputs.diagnostics_only == true }}
       - run: pnpm exec tsx scripts/warm-satori-cache.ts
+        if: ${{ inputs.diagnostics_only != true }}
         env:
           REDIS_URL: ${{ secrets.REDIS_URL }}
           BACKFILL_SINCE: ${{ inputs.backfill_since }}

@@ -23,7 +23,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { applyFees } from "@/lib/pool-utils";
+import {
+  applyFees,
+  type FeeSource,
+  type ResolvedPoolFee,
+} from "@/lib/pool-utils";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 
@@ -33,7 +37,7 @@ export interface PoolReturnSeries {
   address: string;
   name: string;
   /** Ascending daily gross earnings per staking power. */
-  days: { date: string; eps: number }[];
+  days: { date: string; eps: number; fee: ResolvedPoolFee }[];
 }
 
 interface PoolReturnsTableProps {
@@ -47,7 +51,9 @@ type Computed = {
   name: string;
   observedDays: number;
   projected: boolean;
-  feePercent: number;
+  feePercent: number | null;
+  feeSource: FeeSource | "mixed";
+  warnings: string[];
   returnPct: number;
   finalBalance: number;
 };
@@ -64,12 +70,17 @@ function compound(
   if (window.length === 0) return null;
 
   let current = balance;
-  let feePercent = 0;
+  let feePercent: number | null = null;
+  const feeSources = new Set<FeeSource>();
+  const warnings = new Set<string>();
   for (const day of window) {
+    feeSources.add(day.fee.source);
+    if (day.fee.warning) warnings.add(day.fee.warning);
     if (net) {
       const applied = applyFees({
         poolAddress: pool.address,
         date: new Date(`${day.date}T00:00:00Z`),
+        fee: day.fee,
         earnings_per_staking_power: day.eps,
         current_staked_amount: current,
         satoriPrice: satoriPrice ?? 0,
@@ -77,7 +88,7 @@ function compound(
       });
       const result = applied.type === "multiple" ? applied.results[0]! : applied.result;
       current += Math.max(result.net, 0);
-      feePercent = result.feePercent;
+      feePercent = day.fee.fees ? result.feePercent : null;
     } else {
       current += Math.max(day.eps * current, 0);
     }
@@ -97,6 +108,8 @@ function compound(
     observedDays,
     projected,
     feePercent,
+    feeSource: feeSources.size === 1 ? [...feeSources][0]! : "mixed",
+    warnings: [...warnings],
     returnPct: balance > 0 ? (finalBalance / balance - 1) * 100 : 0,
     finalBalance,
   };
@@ -188,7 +201,7 @@ export function PoolReturnsTable({
                   Pool
                 </TableHead>
                 <TableHead className="text-right text-xs uppercase tracking-wide text-muted-foreground">
-                  Commission
+                  Latest Commission
                 </TableHead>
                 <TableHead className="text-right text-xs uppercase tracking-wide text-muted-foreground">
                   {period}D Return
@@ -219,8 +232,20 @@ export function PoolReturnsTable({
                   </TableCell>
                   <TableCell className="text-right tabular-nums text-muted-foreground">
                     {mode === "net"
-                      ? `${formatCurrency(Math.min(row.feePercent, 1) * 100, 1)}%`
+                      ? row.feeSource === "mixed"
+                        ? "Mixed"
+                        : row.feePercent !== null
+                          ? `${row.feeSource === "audit" ? "Audit" : "Configured"} ${formatCurrency(
+                              Math.min(row.feePercent, 1) * 100,
+                              1
+                            )}%`
+                          : "Unverified"
                       : "—"}
+                    {row.warnings.length > 0 ? (
+                      <div className="text-xs text-amber-600 dark:text-amber-400">
+                        {row.warnings[0]}
+                      </div>
+                    ) : null}
                   </TableCell>
                   <TableCell
                     className={cn(

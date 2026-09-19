@@ -4,6 +4,13 @@ import { redis } from "../redis";
 import { getTodayMidnightUTC, normalizeToUTCMidnight } from "../date";
 import { SATORI_API_EARLIEST_DATE } from "./api";
 import { impitFetch } from "./transport";
+import {
+  auditDateParam,
+  parseAuditCommission,
+  parsedAuditCacheKey,
+} from "./audit-parser";
+
+export { auditDateParam, parseAuditCommission, parsedAuditCacheKey } from "./audit-parser";
 
 /**
  * Daily audit CSVs from network.satorinet.io — the most accurate per-neuron
@@ -35,7 +42,8 @@ export interface AuditStakerRow {
   pool_reward: string | null;
   pool_balance: number;
   lender_contribution: number;
-  pool_commission: number;
+  /** Audit API contract: percentage points (40 means 40%), null means malformed/missing. */
+  pool_commission: number | null;
   share: number;
   reward_calculated: number;
 }
@@ -80,14 +88,14 @@ function parseCsv(text: string): Record<string, string>[] {
 const str = (v: string): string | null => (v === "" ? null : v);
 const num = (v: string): number => {
   const n = Number(v);
-  return Number.isNaN(n) ? 0 : n;
+  return Number.isFinite(n) ? n : 0;
 };
 
 type AuditKind = "stakers" | "workers" | "predictors";
 
 /** null = the API has no audit for that date. Throws on network failure. */
 async function fetchAuditCsv(kind: AuditKind, date?: Date): Promise<string | null> {
-  const path = date ? `${kind}?date=${date.toISOString().split("T")[0]}` : `${kind}/latest`;
+  const path = date ? `${kind}?date=${auditDateParam(date)}` : `${kind}/latest`;
   const res = await client.get(path, { throwHttpErrors: false });
   // Missing dates come back as 404 with a JSON body ("No audit found")
   if (res.status === 404) return null;
@@ -116,9 +124,7 @@ async function getAudit<T>(
   const historical =
     date !== undefined &&
     normalizeToUTCMidnight(date).getTime() < getTodayMidnightUTC().getTime();
-  const cacheKey = historical
-    ? `satorinet:audit:${kind}:${date.toISOString().split("T")[0]}`
-    : null;
+  const cacheKey = historical ? parsedAuditCacheKey(kind, date) : null;
 
   if (cacheKey) {
     try {
@@ -131,7 +137,7 @@ async function getAudit<T>(
 
   // Raw CSV copies are written by the cache warmer for environments where
   // direct fetches are blocked (Cloudflare vs datacenter IPs on Vercel).
-  const rawKey = `satorinet:raw:audit:${kind}:${date ? date.toISOString().split("T")[0] : "latest"}`;
+  const rawKey = `satorinet:raw:audit:${kind}:${date ? auditDateParam(date) : "latest"}`;
 
   let csv: string | null;
   let fetchedFresh = false;
@@ -160,7 +166,7 @@ async function getAudit<T>(
   return rows;
 }
 
-const mapStakerRow = (r: Record<string, string>): AuditStakerRow => ({
+export const parseAuditStakerRow = (r: Record<string, string>): AuditStakerRow => ({
   observation_ts: r.observation_ts!,
   peer_id: num(r.peer_id!),
   lender_wallet: r.lender_wallet!,
@@ -171,7 +177,7 @@ const mapStakerRow = (r: Record<string, string>): AuditStakerRow => ({
   pool_reward: str(r.pool_reward!),
   pool_balance: num(r.pool_balance!),
   lender_contribution: num(r.lender_contribution!),
-  pool_commission: num(r.pool_commission!),
+  pool_commission: parseAuditCommission(r.pool_commission),
   share: num(r.share!),
   reward_calculated: num(r.reward_calculated!),
 });
@@ -204,7 +210,7 @@ const mapPredictorRow = (r: Record<string, string>): AuditPredictorRow => ({
 async function getAuditStakersCached(date?: Date): Promise<AuditStakerRow[] | null> {
   "use cache";
   cacheLife("hours");
-  return getAudit("stakers", mapStakerRow, date);
+  return getAudit("stakers", parseAuditStakerRow, date);
 }
 
 async function getAuditWorkersCached(date?: Date): Promise<AuditWorkerRow[] | null> {
