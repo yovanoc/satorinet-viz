@@ -144,10 +144,14 @@ async function fetchFromPage(
       page,
       Math.max(1, deadline - Date.now()),
     );
-    if (!isApprovedSatoriApiUrl(page.url())) {
-      throw new Error(`Satori browser navigation left the approved API URL`);
+    if (!matchesTarget(page.url())) {
+      throw new Error("Satori browser navigation changed the requested API URL");
     }
-    return { status: status ?? navigation?.status() ?? 0, body };
+    const finalStatus = status ?? navigation?.status() ?? 0;
+    if (finalStatus >= 200 && finalStatus < 300 && !isJsonBody(body)) {
+      throw new Error(`Satori browser received non-JSON content for ${target.href}`);
+    }
+    return { status: finalStatus, body };
   } finally {
     page.off("response", onResponse);
   }
@@ -177,7 +181,12 @@ export function createSatoriBrowserFetcher(
 
   const getPage = async (): Promise<Page> => {
     if (closed) throw new Error("Satori browser fetcher is closed");
-    if (page) return page;
+    if (page && !page.isClosed() && browser?.isConnected()) return page;
+    await context?.close().catch(() => undefined);
+    await browser?.close().catch(() => undefined);
+    page = undefined;
+    context = undefined;
+    browser = undefined;
 
     try {
       browser = await chromium.launch({ executablePath, headless: false });

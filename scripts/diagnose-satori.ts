@@ -36,7 +36,7 @@ async function main() {
       await new Promise((resolve) => setTimeout(resolve, 1500));
     }
   }
-  if (process.env.SATORI_BROWSER_EXECUTABLE_PATH) {
+  if (process.env.SATORI_BROWSER_EXECUTABLE_PATH?.trim()) {
     const browser = createSatoriBrowserFetcher();
     const url = "https://satorinet.io/api/satori-price";
     try {
