@@ -5,15 +5,8 @@ on:
     - cron: "23 */2 * * *"
   workflow_dispatch:
     inputs:
-      runner:
-        description: "Runner network used for warming or diagnosis"
-        type: choice
-        options:
-          - ubuntu-24.04
-          - macos-15
-        default: ubuntu-24.04
       diagnostics_only:
-        description: "Compare curl, native fetch, and Impit without touching Redis"
+        description: "Compare HTTP clients and Chrome without touching Redis"
         type: boolean
         default: false
       backfill_since:
@@ -31,8 +24,10 @@ permissions:
 
 jobs:
   warm:
-    runs-on: ${{ inputs.runner || 'ubuntu-24.04' }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 340
+    env:
+      SATORI_BROWSER_EXECUTABLE_PATH: /usr/bin/google-chrome
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -41,23 +36,9 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec tsx scripts/diagnose-satori.ts
+      - run: xvfb-run -a pnpm exec tsx scripts/diagnose-satori.ts
         if: ${{ inputs.diagnostics_only == true }}
-      - name: Check a browser session (read-only)
-        if: ${{ inputs.diagnostics_only == true && inputs.runner != 'macos-15' }}
-        timeout-minutes: 3
-        run: |
-          xvfb-run -a bash <<'BROWSER'
-          set -e
-          export AGENT_BROWSER_SESSION=satori-diagnostic
-          export AGENT_BROWSER_EXECUTABLE_PATH=/usr/bin/google-chrome
-          export AGENT_BROWSER_HEADED=true
-          trap 'npx --yes agent-browser@0.15.1 close || true' EXIT
-          npx --yes agent-browser@0.15.1 open https://satorinet.io/api/satori-price
-          npx --yes agent-browser@0.15.1 wait 15000
-          npx --yes agent-browser@0.15.1 get text body | head -c 1000
-          BROWSER
-      - run: pnpm exec tsx scripts/warm-satori-cache.ts
+      - run: xvfb-run -a pnpm exec tsx scripts/warm-satori-cache.ts
         if: ${{ inputs.diagnostics_only != true }}
         env:
           REDIS_URL: ${{ secrets.REDIS_URL }}

@@ -1,6 +1,7 @@
 /** Read-only comparison from the network where the warmer actually runs. */
 import { execFileSync } from "node:child_process";
 import { impitFetch, SATORI_BROWSER_USER_AGENT } from "../lib/satorinet/transport";
+import { createSatoriBrowserFetcher } from "./satori-browser";
 
 function report(url: string, client: string, status: number, body: string) {
   let validPrice = false;
@@ -35,5 +36,15 @@ async function main() {
       await new Promise((resolve) => setTimeout(resolve, 1500));
     }
   }
+  if (process.env.SATORI_BROWSER_EXECUTABLE_PATH) {
+    const browser = createSatoriBrowserFetcher();
+    const url = "https://satorinet.io/api/satori-price";
+    try {
+      const response = await browser.fetch(url);
+      report(url, "chrome", response.status, response.body);
+    } catch { console.log(JSON.stringify({ url, client: "chrome", error: "Request failed" })); }
+    finally { await browser.close(); }
+  }
+
 }
 void main();
