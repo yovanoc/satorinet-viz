@@ -15,11 +15,6 @@ import { config } from "dotenv";
 config({ path: [".env.local", ".env"], quiet: true });
 import { Redis } from "ioredis";
 import { impitFetch } from "../lib/satorinet/transport";
-import {
-  createSatoriBrowserFetcher,
-  isApprovedSatoriApiUrl,
-  type SatoriBrowserFetcher,
-} from "./satori-browser";
 
 const REDIS_CONNECT_TIMEOUT_MS = 5_000;
 
@@ -59,7 +54,6 @@ function describeError(error: unknown): string {
 }
 
 let redis!: Redis;
-let browserFetcher: SatoriBrowserFetcher | undefined;
 let lastRedisError: unknown;
 const onRedisError = (error: unknown) => {
   lastRedisError = error;
@@ -92,25 +86,16 @@ async function connectRedis(): Promise<void> {
 async function get(url: string): Promise<string> {
   for (let attempt = 0; ; attempt++) {
     await sleep(DELAY_MS);
-    let status: number;
-    let body: string;
-    if (browserFetcher && isApprovedSatoriApiUrl(url)) {
-      const response = await browserFetcher.fetch(url);
-      status = response.status;
-      body = response.body;
-    } else {
-      const response = await impitFetch(url, {
-        signal: AbortSignal.timeout(60_000),
-      });
-      status = response.status;
-      body = await response.text();
-    }
-    if (status === 429 && attempt < 5) {
+    const res = await impitFetch(url, {
+      signal: AbortSignal.timeout(60_000),
+    });
+    const body = await res.text();
+    if (res.status === 429 && attempt < 5) {
       console.log(`429, backing off 60s (${url})`);
       await sleep(60_000);
       continue;
     }
-    if (status < 200 || status >= 300) throw new Error(`HTTP ${status}: ${url}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
     if (body.includes("Just a moment")) throw new Error(`Cloudflare challenge: ${url}`);
     return body;
   }
@@ -196,9 +181,6 @@ async function main(): Promise<void> {
   redis.on("error", onRedisError);
   try {
     await connectRedis();
-    if (process.env.SATORI_BROWSER_EXECUTABLE_PATH?.trim()) {
-      browserFetcher = createSatoriBrowserFetcher();
-    }
 
     const today = dayStr(new Date());
     const yesterday = dayStr(new Date(Date.now() - 86_400_000));
@@ -225,12 +207,8 @@ async function main(): Promise<void> {
       );
     }
   } finally {
-    try {
-      await browserFetcher?.close();
-    } finally {
-      redis.off("error", onRedisError);
-      redis.disconnect();
-    }
+    redis.off("error", onRedisError);
+    redis.disconnect();
   }
 }
 

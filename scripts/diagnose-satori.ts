@@ -3,7 +3,6 @@ import { execFileSync } from "node:child_process";
 import { createServer } from "node:http";
 import { Impit, type ImpitOptions } from "impit";
 import { impitFetch, SATORI_BROWSER_USER_AGENT } from "../lib/satorinet/transport";
-import { createSatoriBrowserFetcher } from "./satori-browser";
 
 function report(url: string, client: string, status: number, body: string) {
   let validPrice = false;
@@ -70,15 +69,5 @@ async function main() {
     } catch { console.log(JSON.stringify({ url, client, error: "Request failed" })); }
     await new Promise((resolve) => setTimeout(resolve, 3500));
   }
-  if (process.env.SATORI_BROWSER_EXECUTABLE_PATH?.trim()) {
-    const browser = createSatoriBrowserFetcher();
-    const url = "https://satorinet.io/api/satori-price";
-    try {
-      const response = await browser.fetch(url);
-      report(url, "chrome", response.status, response.body);
-    } catch { console.log(JSON.stringify({ url, client: "chrome", error: "Request failed" })); }
-    finally { await browser.close(); }
-  }
-
 }
 void main();

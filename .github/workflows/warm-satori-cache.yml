@@ -6,7 +6,8 @@ on:
   workflow_dispatch:
     inputs:
       diagnostics_only:
-        description: "Compare HTTP clients and Chrome without touching Redis"
+        description: >-
+          Compare HTTP clients and Impit profiles without touching Redis
         type: boolean
         default: false
       backfill_since:
@@ -16,7 +17,8 @@ on:
         required: false
 
 concurrency:
-  group: ${{ inputs.diagnostics_only && 'satori-diagnostics' || 'warm-satori-cache' }}
+  group: >-
+    ${{ inputs.diagnostics_only && 'satori-probes' || 'warm-satori-cache' }}
   cancel-in-progress: false
 
 permissions:

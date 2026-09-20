@@ -1,6 +1,6 @@
 import { Impit } from "impit";
 
-/** A normal browser UA is required by the Satorinet Cloudflare edge. */
+/** Native chrome151 identity, used by diagnostics and wire-level regression tests. */
 export const SATORI_BROWSER_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36";
 const SATORI_ACCEPT = "application/json, text/csv, */*";
@@ -9,8 +9,8 @@ const SATORI_ACCEPT = "application/json, text/csv, */*";
 const impit = new Impit({ browser: "chrome151" });
 
 /**
- * Keep the headers on the actual Impit request. Ky supplies request-specific
- * headers, which otherwise can override Impit's browser defaults.
+ * Preserve Ky request headers while letting Impit supply a consistent browser
+ * identity across its User-Agent, client hints, and TLS fingerprint.
  */
 export const impitFetch: typeof fetch = async (input, init) => {
   const requestHeaders =
