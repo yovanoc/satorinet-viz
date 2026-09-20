@@ -11,6 +11,7 @@ import { formatDateParam } from "./date-param";
 test("date-only picker and chart values keep their UTC calendar day", () => {
   const previousTimeZone = process.env.TZ;
   const selected = new Date("2026-01-15T00:00:00.000Z");
+  assert.equal(formatDateOnly("not-a-date", "en-US"), "Invalid Date");
 
   try {
     for (const timeZone of ["America/Los_Angeles", "Pacific/Kiritimati"]) {

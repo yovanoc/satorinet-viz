@@ -5,10 +5,7 @@ export function formatDateOnly(
   options?: Intl.DateTimeFormatOptions,
 ): string {
   const date = typeof value === "string" ? new Date(value) : value;
-  return new Intl.DateTimeFormat(locales, {
-    ...options,
-    timeZone: "UTC",
-  }).format(date);
+  return date.toLocaleDateString(locales, { ...options, timeZone: "UTC" });
 }
 
 export function getTodayMidnightUTC() {
