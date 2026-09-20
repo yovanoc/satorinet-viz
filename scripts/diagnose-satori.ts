@@ -40,7 +40,7 @@ async function main() {
   }
   const profiles: [string, ImpitOptions][] = [
     ["impit-chrome151-native", { browser: "chrome151" }],
-    ["impit-chrome151-ua124", { browser: "chrome151", headers: { "User-Agent": SATORI_BROWSER_USER_AGENT } }],
+    ["impit-chrome151-ua124", { browser: "chrome151", headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" } }],
     ["impit-chrome-native", { browser: "chrome" }],
     ["impit-chrome142-native", { browser: "chrome142" }],
     ["impit-firefox144-native", { browser: "firefox144" }],
