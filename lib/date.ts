@@ -1,3 +1,13 @@
+/** Formats a date-only value using its UTC calendar day, never local time. */
+export function formatDateOnly(
+  value: Date | string,
+  locales?: Intl.LocalesArgument,
+  options?: Intl.DateTimeFormatOptions,
+): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  return date.toLocaleDateString(locales, { ...options, timeZone: "UTC" });
+}
+
 export function getTodayMidnightUTC() {
   const today = new Date();
   return normalizeToUTCMidnight(today);

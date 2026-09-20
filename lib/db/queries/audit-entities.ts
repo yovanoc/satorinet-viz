@@ -39,7 +39,9 @@ export function lendersSnapshotFromAudit(
   date: Date,
   rows: readonly AuditStakerRow[]
 ): LendersSnapshot {
-  const operatorWallets = new Set(rows.map((row) => row.pool_wallet));
+  const operatorWallets = new Set(
+    rows.flatMap((row) => [row.pool_wallet, row.pool_vault]).filter((wallet) => wallet != null),
+  );
   const lenders = rows
     .filter((row) => row.lender_contribution > 0)
     .sort((a, b) => b.lender_contribution - a.lender_contribution)

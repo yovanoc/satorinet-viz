@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ChartContainer } from "@/components/ui/chart";
+import { formatDateOnly } from "@/lib/date";
 
 interface HistoricalData {
   date: string;
@@ -66,7 +67,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
         <CardTitle className="text-xl md:text-2xl font-bold uppercase">
           <span>Historical Data for {poolName} (last 30 days)</span>
           <p className="text-xs md:text-sm font-bold float-right">
-            {date.toLocaleDateString()}
+            {formatDateOnly(date)}
           </p>
         </CardTitle>
         {feeWarning ? (
@@ -115,7 +116,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
                   dataKey="date"
                   tick={{ fontSize: 12 }}
                   tickFormatter={(value) =>
-                    new Date(value).toLocaleDateString()
+                    formatDateOnly(value)
                   }
                 />
                 <YAxis
@@ -132,7 +133,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
                       : ""
                   }
                   labelFormatter={(label) =>
-                    new Date(String(label)).toLocaleDateString()
+                    formatDateOnly(String(label))
                   }
                 />
                 <Legend />
@@ -210,7 +211,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
                   dataKey="date"
                   tick={{ fontSize: 12 }}
                   tickFormatter={(value) =>
-                    new Date(value).toLocaleDateString()
+                    formatDateOnly(value)
                   }
                 />
                 <YAxis
@@ -233,7 +234,7 @@ const PoolHistoricalData: FC<PoolHistoricalDataProps> = ({
                       : ""
                   }
                   labelFormatter={(label) =>
-                    new Date(String(label)).toLocaleDateString()
+                    formatDateOnly(String(label))
                   }
                 />
                 <Legend />

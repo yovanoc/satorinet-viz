@@ -8,7 +8,7 @@
  *
  * Keys written match what lib/satorinet/{api,audit}.ts read:
  *   satorinet:raw:<path>                      latest JSON endpoints (TTL 26h)
- *   satorinet:raw:audit:<kind>:<latest|day>   raw audit CSVs (latest TTL 26h, days forever)
+ *   satorinet:raw:audit:<kind>:<latest|day>   raw audit CSVs (latest TTL 26h, today TTL 3h, past forever)
  *   satorinet:leaderboard:<day>:<offset>      leaderboard pages (today TTL 3h, past forever)
  */
 import { config } from "dotenv";
@@ -115,17 +115,19 @@ async function warmJsonLatest(): Promise<void> {
   }
 }
 
-async function warmAudit(day: string | null): Promise<void> {
+async function warmAudit(day: string | null, today = dayStr(new Date())): Promise<void> {
+  const mutable = day !== null && day === today;
   for (const kind of ["stakers", "workers", "predictors"]) {
     const key = `satorinet:raw:audit:${kind}:${day ?? "latest"}`;
     try {
-      if (day && (await redis.exists(key))) continue; // immutable, already warmed
+      if (day && !mutable && (await redis.ttl(key)) === -1) continue; // immutable, already warmed
       const url = day
         ? `https://network.satorinet.io/api/v1/audit/${kind}?date=${day}`
         : `https://network.satorinet.io/api/v1/audit/${kind}/latest`;
       const body = await get(url);
       if (body.startsWith("{")) throw new Error("no audit data");
-      if (day) await redis.set(key, body);
+      if (day && mutable) await redis.setex(key, TTL_TODAY_LB, body);
+      else if (day) await redis.set(key, body);
       else await redis.setex(key, TTL_RAW, body);
       console.log(`ok   audit ${kind} ${day ?? "latest"}`);
     } catch (e) {
@@ -186,9 +188,9 @@ async function main(): Promise<void> {
     const yesterday = dayStr(new Date(Date.now() - 86_400_000));
 
     await warmJsonLatest();
-    await warmAudit(null);
-    await warmAudit(today);
-    await warmAudit(yesterday);
+    await warmAudit(null, today);
+    await warmAudit(today, today);
+    await warmAudit(yesterday, today);
     await warmLeaderboard(today, false);
     await warmLeaderboard(yesterday, true);
 
@@ -196,7 +198,7 @@ async function main(): Promise<void> {
     if (since) {
       console.log(`Backfilling ${since} -> ${yesterday} (resumable, skips existing keys)`);
       for (const day of daysBetween(since < EARLIEST ? EARLIEST : since, yesterday)) {
-        await warmAudit(day);
+        await warmAudit(day, today);
         await warmLeaderboard(day, true);
       }
     }

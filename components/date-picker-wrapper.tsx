@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { formatDateParam } from "@/lib/date-param";
 import { CalendarForm } from "./date-picker";
 
 interface DatePickerWrapperProps {
@@ -17,14 +18,9 @@ export default function DatePickerWrapper({
     if (!searchParams) return;
     const current = new URLSearchParams(Array.from(searchParams.entries()));
 
+    current.delete("offset");
     newDate ??= new Date();
-    const localDateString =
-      newDate.getFullYear() +
-      "-" +
-      String(newDate.getMonth() + 1).padStart(2, "0") +
-      "-" +
-      String(newDate.getDate()).padStart(2, "0");
-    current.set("date", localDateString);
+    current.set("date", formatDateParam(newDate));
 
     const search = current.toString();
     const query = search ? `?${search}` : "";

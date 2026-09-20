@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { formatDateOnly } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 const RANGES = [
@@ -71,7 +72,7 @@ function compactFormatter(digits: number) {
 }
 
 function formatDateTick(value: string) {
-  return new Date(value).toLocaleDateString("en-US", {
+  return formatDateOnly(value, "en-US", {
     month: "short",
     day: "numeric",
   });
@@ -214,7 +215,7 @@ export function NetworkChartCard({
                 <ChartTooltipContent
                   indicator="dot"
                   labelFormatter={(value) =>
-                    new Date(String(value)).toLocaleDateString("en-US", {
+                    formatDateOnly(String(value), "en-US", {
                       year: "numeric",
                       month: "short",
                       day: "numeric",

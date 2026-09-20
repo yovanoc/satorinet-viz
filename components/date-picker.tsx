@@ -1,8 +1,8 @@
 "use client"
 
-import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 
+import { formatDateOnly } from "@/lib/date"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -32,7 +32,11 @@ export const CalendarForm: FC<CalendarFormProps> = ({ selectedDate, onDateChange
           )}
         >
           {date ? (
-            format(date, "PPP")
+            formatDateOnly(date, "en-US", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            })
           ) : (
             <span>Pick a date</span>
           )}
@@ -42,6 +46,7 @@ export const CalendarForm: FC<CalendarFormProps> = ({ selectedDate, onDateChange
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
+          timeZone="UTC"
           selected={date}
           onSelect={(newDate) => {
             // ! newDate is already 00:00:00 UTC

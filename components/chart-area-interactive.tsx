@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 
+import { formatDateOnly } from "@/lib/date";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Card,
@@ -167,8 +168,7 @@ export function ChartAreaInteractive({ dailyCounts }: DailyWorkerCountsProps) {
               tickMargin={8}
               minTickGap={32}
               tickFormatter={(value) => {
-                const date = new Date(value);
-                return date.toLocaleDateString("en-US", {
+                return formatDateOnly(value, "en-US", {
                   month: "short",
                   day: "numeric",
                 });
@@ -180,7 +180,7 @@ export function ChartAreaInteractive({ dailyCounts }: DailyWorkerCountsProps) {
               content={
                 <ChartTooltipContent
                   labelFormatter={(value) => {
-                    return new Date(String(value)).toLocaleDateString("en-US", {
+                    return formatDateOnly(String(value), "en-US", {
                       month: "short",
                       day: "numeric",
                     });

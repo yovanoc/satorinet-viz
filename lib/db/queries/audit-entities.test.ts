@@ -152,3 +152,29 @@ test("maps positive audit stakers and calculated rewards", () => {
     ],
   });
 });
+
+
+test("audit operator roles recognize pool vaults without matching unrelated lenders", () => {
+  const row: AuditStakerRow = {
+    observation_ts: "2026-01-15T00:01:00.000Z",
+    peer_id: 1,
+    lender_wallet: "operator-wallet",
+    lender_vault: "operator-vault",
+    lender_reward: null,
+    pool_wallet: "pool-wallet",
+    pool_vault: "operator-vault",
+    pool_reward: null,
+    pool_balance: 100,
+    lender_contribution: 10,
+    pool_commission: 5,
+    share: 10,
+    reward_calculated: 1,
+  };
+  const rows = [
+    row,
+    { ...row, peer_id: 2, lender_wallet: "operator-vault", lender_vault: null },
+    { ...row, peer_id: 3, lender_wallet: "unrelated", lender_vault: null, pool_vault: null },
+  ];
+  deepStrictEqual(lendersSnapshotFromAudit(DATE, rows).lenders.map((lender) => lender.is_operator),
+    [true, true, false]);
+});
