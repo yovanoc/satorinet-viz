@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { MovementDay, Participant } from "@/lib/db/queries/entities";
+import { formatDateOnly } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 
@@ -81,7 +82,7 @@ function MovementChart({ movement }: { movement: MovementDay[] }) {
               tickMargin={8}
               minTickGap={32}
               tickFormatter={(value) =>
-                new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                formatDateOnly(value, "en-US", { month: "short", day: "numeric" })
               }
             />
             <YAxis tickLine={false} axisLine={false} width={40} tick={{ fontSize: 12 }} />
@@ -91,7 +92,7 @@ function MovementChart({ movement }: { movement: MovementDay[] }) {
                 <ChartTooltipContent
                   indicator="dot"
                   labelFormatter={(value) =>
-                    new Date(String(value)).toLocaleDateString("en-US", {
+                    formatDateOnly(String(value), "en-US", {
                       year: "numeric",
                       month: "short",
                       day: "numeric",

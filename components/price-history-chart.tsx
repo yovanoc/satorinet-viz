@@ -38,17 +38,13 @@ export function PriceHistoryChart() {
   const [data, setData] = useState<{ date: number; rate: number }[]>([]);
   const [isPending, startTransition] = useTransition();
 
-  const fetchData = (
-    period: "hourly" | "daily" | "weekly" | "monthly" | "yearly"
-  ) => {
-    startTransition(async () => {
-      const result = await getPriceRange(period);
-      setData(result.history);
-    });
-  };
-
   useEffect(() => {
-    fetchData(range);
+    let active = true;
+    startTransition(async () => {
+      const result = await getPriceRange(range);
+      if (active) setData(result.history);
+    });
+    return () => { active = false; };
   }, [range]);
 
   const handleRangeChange = (val: string) => {

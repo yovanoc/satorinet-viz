@@ -1,4 +1,9 @@
 /** Parses a `?date=YYYY-MM-DD` search param into a UTC-midnight Date (today by default). */
+/** Serializes a date-only selection using its UTC calendar date. */
+export function formatDateParam(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
 export function parseDateParam(param?: string): Date {
   if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) {
     const [year, month, day] = param.split("-").map(Number);
