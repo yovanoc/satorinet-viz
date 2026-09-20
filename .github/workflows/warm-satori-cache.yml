@@ -16,7 +16,7 @@ on:
         required: false
 
 concurrency:
-  group: warm-satori-cache
+  group: ${{ inputs.diagnostics_only && 'satori-diagnostics' || 'warm-satori-cache' }}
   cancel-in-progress: false
 
 permissions:
