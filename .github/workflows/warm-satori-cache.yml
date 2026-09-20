@@ -6,7 +6,8 @@ on:
   workflow_dispatch:
     inputs:
       diagnostics_only:
-        description: "Compare HTTP clients and Chrome without touching Redis"
+        description: >-
+          Compare HTTP clients and Impit profiles without touching Redis
         type: boolean
         default: false
       backfill_since:
@@ -16,7 +17,8 @@ on:
         required: false
 
 concurrency:
-  group: warm-satori-cache
+  group: >-
+    ${{ inputs.diagnostics_only && 'satori-probes' || 'warm-satori-cache' }}
   cancel-in-progress: false
 
 permissions:
@@ -26,8 +28,6 @@ jobs:
   warm:
     runs-on: ubuntu-24.04
     timeout-minutes: 340
-    env:
-      SATORI_BROWSER_EXECUTABLE_PATH: /usr/bin/google-chrome
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -36,9 +36,9 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: xvfb-run -a pnpm exec tsx scripts/diagnose-satori.ts
+      - run: pnpm exec tsx scripts/diagnose-satori.ts
         if: ${{ inputs.diagnostics_only == true }}
-      - run: xvfb-run -a pnpm exec tsx scripts/warm-satori-cache.ts
+      - run: pnpm exec tsx scripts/warm-satori-cache.ts
         if: ${{ inputs.diagnostics_only != true }}
         env:
           REDIS_URL: ${{ secrets.REDIS_URL }}

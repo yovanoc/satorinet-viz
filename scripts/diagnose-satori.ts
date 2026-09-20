@@ -1,7 +1,8 @@
 /** Read-only comparison from the network where the warmer actually runs. */
 import { execFileSync } from "node:child_process";
+import { createServer } from "node:http";
+import { Impit, type ImpitOptions } from "impit";
 import { impitFetch, SATORI_BROWSER_USER_AGENT } from "../lib/satorinet/transport";
-import { createSatoriBrowserFetcher } from "./satori-browser";
 
 function report(url: string, client: string, status: number, body: string) {
   let validPrice = false;
@@ -36,15 +37,37 @@ async function main() {
       await new Promise((resolve) => setTimeout(resolve, 1500));
     }
   }
-  if (process.env.SATORI_BROWSER_EXECUTABLE_PATH?.trim()) {
-    const browser = createSatoriBrowserFetcher();
+  const profiles: [string, ImpitOptions][] = [
+    ["impit-chrome151-native", { browser: "chrome151" }],
+    ["impit-chrome151-ua124", { browser: "chrome151", headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" } }],
+    ["impit-chrome-native", { browser: "chrome" }],
+    ["impit-chrome142-native", { browser: "chrome142" }],
+    ["impit-firefox144-native", { browser: "firefox144" }],
+  ];
+  for (const [client, options] of profiles) {
+    const impit = new Impit(options);
+    // Capture actual emitted identity headers locally, without a third-party echo server.
+    const server = createServer((request, response) => {
+      console.log(JSON.stringify({ client, userAgent: request.headers["user-agent"],
+        clientHints: request.headers["sec-ch-ua"] }));
+      response.end("{}");
+    });
+    try {
+      await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+      const address = server.address();
+      if (!address || typeof address === "string") throw new Error("Missing local probe address");
+      const echo = await impit.fetch(`http://127.0.0.1:${address.port}`, { signal: AbortSignal.timeout(5_000) });
+      await echo.text();
+    } finally {
+      server.closeAllConnections();
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
     const url = "https://satorinet.io/api/satori-price";
     try {
-      const response = await browser.fetch(url);
-      report(url, "chrome", response.status, response.body);
-    } catch { console.log(JSON.stringify({ url, client: "chrome", error: "Request failed" })); }
-    finally { await browser.close(); }
+      const response = await impit.fetch(url, { signal: AbortSignal.timeout(20_000) });
+      report(url, client, response.status, await response.text());
+    } catch { console.log(JSON.stringify({ url, client, error: "Request failed" })); }
+    await new Promise((resolve) => setTimeout(resolve, 3500));
   }
-
 }
 void main();

@@ -48,6 +48,7 @@ test("shared Satorinet fetch preserves Ky Request headers and UA", async () => {
 
   assert.equal(received.length, 2);
   assert.equal(received[0]?.["user-agent"], SATORI_BROWSER_USER_AGENT);
+  assert.match(String(received[0]?.["sec-ch-ua"]), /"Chromium";v="151"/);
   assert.equal(received[0]?.["x-request-header"], "from-request");
   assert.equal(received[0]?.accept, "application/json");
   assert.equal(received[1]?.["user-agent"], SATORI_BROWSER_USER_AGENT);
