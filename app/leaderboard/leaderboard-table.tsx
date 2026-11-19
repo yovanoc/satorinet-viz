@@ -17,14 +17,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { KNOWN_POOLS } from "@/lib/known_pools";
+import { findKnownPool } from "@/lib/pool-utils";
 import { formatCurrency } from "@/lib/format";
 import type { LeaderboardPage } from "@/lib/satorinet/api";
 
 function poolName(address: string): string | null {
-  const pool = KNOWN_POOLS.find(
-    (p) => p.address === address || p.vault_address === address
-  );
+  const pool = findKnownPool(address);
   return pool?.name ?? null;
 }
 

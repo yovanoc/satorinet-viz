@@ -1,9 +1,12 @@
 import { sql, and, or, eq, gte, lte } from "drizzle-orm";
+import { poolAddressIn } from "../../pool-filter";
 import { db } from "../..";
 import { dailyPredictorAddress, dailyContributorAddress } from "../../schema";
 import { cacheLifeForDate } from "../../cache-utils";
-import { KNOWN_POOLS, type TopPool } from "@/lib/known_pools";
+import type { TopPool } from "@/lib/known_pools";
 import {
+  findKnownPool,
+  knownVaultFor,
   resolvePoolFee,
   type ResolvedPoolFee,
 } from "@/lib/pool-utils";
@@ -18,7 +21,7 @@ export async function getPoolHistoricalData(
   "use cache";
   cacheLifeForDate(date);
 
-  const knownPool = KNOWN_POOLS.find((p) => p.address === pool.address);
+  const knownPool = findKnownPool(pool.address, pool.vault_address);
 
   const fee =
     resolvedFee ??
@@ -30,7 +33,7 @@ export async function getPoolHistoricalData(
 
   const vaultAddress =
     pool?.vault_address ??
-    knownPool?.vault_address ??
+    (knownPool ? knownVaultFor(knownPool, pool.address) : undefined) ??
     (await getVaultsForWallet(pool.address))[0]; // ! nearly everyone has a single vault address
 
   // Subquery: Pre-aggregate daily_predictor_address with explicit aliases
@@ -63,8 +66,8 @@ export async function getPoolHistoricalData(
           CASE
             WHEN ${dailyPredictorAddress.reward_address} = ${dailyPredictorAddress.worker_address}
             OR ${dailyPredictorAddress.reward_address} = ${dailyPredictorAddress.worker_vault_address}
-            OR ${dailyPredictorAddress.pool_wallet} = ${pool.address}
-            OR ${vaultAddress ? eq(dailyPredictorAddress.pool_vault, vaultAddress) : sql`false`}
+            OR ${poolAddressIn(dailyPredictorAddress.pool_wallet, pool.address, vaultAddress)}
+            OR ${poolAddressIn(dailyPredictorAddress.pool_vault, pool.address, vaultAddress)}
             THEN ${dailyPredictorAddress.balance}
             ELSE 0
           END
@@ -80,15 +83,10 @@ export async function getPoolHistoricalData(
         // ),
         or(
           // ! for before auto distribution
-          eq(dailyPredictorAddress.reward_address, pool.address),
-          vaultAddress
-            ? eq(dailyPredictorAddress.reward_address, vaultAddress)
-            : undefined,
+          poolAddressIn(dailyPredictorAddress.reward_address, pool.address, vaultAddress),
           // ! after auto distribution
-          eq(dailyPredictorAddress.pool_wallet, pool.address),
-          vaultAddress
-            ? eq(dailyPredictorAddress.pool_vault, vaultAddress)
-            : undefined,
+          poolAddressIn(dailyPredictorAddress.pool_wallet, pool.address, vaultAddress),
+          poolAddressIn(dailyPredictorAddress.pool_vault, pool.address, vaultAddress),
         ),
         // Without this the subquery aggregates the whole table history.
         gte(
@@ -131,12 +129,7 @@ export async function getPoolHistoricalData(
     .leftJoin(predictorAgg, eq(dailyContributorAddress.date, predictorAgg.date))
     .where(
       and(
-        or(
-          eq(dailyContributorAddress.pool_address, pool.address),
-          vaultAddress
-            ? eq(dailyContributorAddress.pool_address, vaultAddress)
-            : undefined,
-        ),
+        poolAddressIn(dailyContributorAddress.pool_address, pool.address, vaultAddress),
         gte(
           dailyContributorAddress.date,
           sql`${date}::timestamp - ${days} * interval '1 day'`,

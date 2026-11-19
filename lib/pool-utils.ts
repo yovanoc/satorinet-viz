@@ -44,8 +44,8 @@ export function getAuditCommissionForPool(
 
   const matchingRows = rows.filter(
     (row) =>
-      row.pool_wallet === poolAddress ||
-      (poolVault !== undefined && row.pool_vault === poolVault)
+      isSamePool(row.pool_wallet, poolAddress) ||
+      (poolVault !== undefined && isSamePool(row.pool_vault, poolVault))
   );
 
   if (matchingRows.length === 0) {
@@ -82,7 +82,7 @@ export function getAuditCommissionForPool(
 
 function enrichKnownPool(pool: FeePool | null): FeePool | null {
   if (!pool) return null;
-  const known = KNOWN_POOLS.find((candidate) => candidate.address === pool.address);
+  const known = findKnownPool(pool.address, pool.vault_address);
   return {
     address: pool.address,
     vault_address: pool.vault_address ?? known?.vault_address,
@@ -355,4 +355,111 @@ export function getActiveTemporaryReductions(pool: FeePool, date: Date) {
   return pool.temporary_fee_reductions.filter(
     (reduction) => reduction.from <= date && reduction.until >= date
   );
+}
+
+/* ---------------------------------------------------------------------------
+ * Pool address matching.
+ *
+ * Until 2026-10-27 the database designates pools by Evrmore addresses; since
+ * 2026-11-01 it uses EVM (Base) addresses whose casing is not guaranteed.
+ * Evrmore addresses are compared exactly, EVM addresses case-insensitively.
+ * ------------------------------------------------------------------------- */
+
+const EVM_ADDRESS = /^0x[0-9a-f]{40}$/i;
+
+export function isEvmAddress(address: string): boolean {
+  return EVM_ADDRESS.test(address);
+}
+
+export function addressesEqual(
+  a: string | null | undefined,
+  b: string | null | undefined
+): boolean {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  return isEvmAddress(a) && isEvmAddress(b) && a.toLowerCase() === b.toLowerCase();
+}
+
+type PoolAddresses = Pick<
+  Pool,
+  "address" | "vault_address" | "base_address" | "base_vault_address"
+>;
+
+/** Every known address of a pool (Evrmore + Base). */
+export function poolAddresses(pool: PoolAddresses): string[] {
+  return [
+    pool.address,
+    pool.vault_address,
+    pool.base_address,
+    pool.base_vault_address,
+  ].filter((a): a is string => Boolean(a));
+}
+
+/** Known pool owning any of the given addresses (wallet or vault, either network). */
+export function findKnownPool(
+  ...addresses: (string | null | undefined)[]
+): Pool | undefined {
+  const wanted = addresses.filter((a): a is string => Boolean(a));
+  if (wanted.length === 0) return undefined;
+  return KNOWN_POOLS.find((pool) =>
+    poolAddresses(pool).some((own) => wanted.some((a) => addressesEqual(own, a)))
+  );
+}
+
+/** True when both addresses designate the same pool, whatever their network. */
+export function isSamePool(
+  a: string | null | undefined,
+  b: string | null | undefined
+): boolean {
+  if (addressesEqual(a, b)) return true;
+  const known = findKnownPool(a);
+  return known !== undefined && known === findKnownPool(b);
+}
+
+/** The known pool's vault in the same address family as `address`. */
+export function knownVaultFor(pool: Pool, address: string): string | undefined {
+  return isEvmAddress(address)
+    ? pool.base_vault_address ?? pool.vault_address
+    : pool.vault_address ?? pool.base_vault_address;
+}
+
+/**
+ * Exact spellings to match in SQL for a pool: the given addresses, all the
+ * known addresses of the pool if it is known, plus the lowercase form of every
+ * EVM address. Used with `IN (...)` so btree indexes stay usable.
+ */
+export function poolAddressForms(
+  address: string,
+  vaultAddress?: string | null
+): string[] {
+  const known = findKnownPool(address, vaultAddress);
+  const out = new Set<string>();
+  for (const a of [address, vaultAddress, ...(known ? poolAddresses(known) : [])]) {
+    if (!a) continue;
+    out.add(a);
+    if (isEvmAddress(a)) out.add(a.toLowerCase());
+  }
+  return [...out];
+}
+
+/** Known pool data merged onto a DB-derived pool (keeps the DB address), or an unknown placeholder. */
+export function mergeKnownPool(pool: {
+  address: string;
+  vault_address?: string;
+  name?: string;
+}): Pool {
+  const known = findKnownPool(pool.address, pool.vault_address);
+  if (!known) {
+    return {
+      name: pool.name ?? "Unknown Pool",
+      color: "#888",
+      address: pool.address,
+      vault_address: pool.vault_address,
+    };
+  }
+  return {
+    ...known,
+    address: pool.address,
+    vault_address: pool.vault_address ?? knownVaultFor(known, pool.address),
+  };
 }

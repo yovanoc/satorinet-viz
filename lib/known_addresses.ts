@@ -1,4 +1,4 @@
-import { KNOWN_POOLS } from "./known_pools";
+import { findKnownPool } from "./pool-utils";
 
 export function getAddressName(address: string): string | null {
   const knownAddress = KNOWN_ADDRESSES.find((k) => k.address === address);
@@ -6,9 +6,7 @@ export function getAddressName(address: string): string | null {
     return knownAddress.name;
   }
 
-  const pool = KNOWN_POOLS.find(
-    (p) => p.address === address || p.vault_address === address
-  );
+  const pool = findKnownPool(address);
   if (pool) {
     return  `[POOL] ${pool.name}`;
   }

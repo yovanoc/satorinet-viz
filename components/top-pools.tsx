@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { KNOWN_POOLS } from "@/lib/known_pools";
+import { addressesEqual, findKnownPool } from "@/lib/pool-utils";
 import { flexRender, useTable } from "@tanstack/react-table";
 import {
   tableFeatures,
@@ -162,8 +162,8 @@ function MyRow({ row }: { row: TableRowModel<PoolRow> }) {
 
 const TopPools: FC<TopPoolsProps> = ({ pools, livePools }) => {
   const data: PoolRow[] = pools.map((pool) => {
-    const knownPool = KNOWN_POOLS.find((p) => p.address === pool.pool_address);
-    const livePool = livePools?.find((p) => p.address === pool.pool_address);
+    const knownPool = findKnownPool(pool.pool_address);
+    const livePool = livePools?.find((p) => addressesEqual(p.address, pool.pool_address));
     return {
       pool_name: knownPool?.name || livePool?.alias || undefined,
       pool_address: pool.pool_address,

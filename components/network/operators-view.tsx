@@ -10,7 +10,7 @@ import { ActivityBadge, RoleBadge, TrendCell } from "@/components/network/badges
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import type { OperatorRow } from "@/lib/db/queries/entities";
-import { KNOWN_POOLS } from "@/lib/known_pools";
+import { findKnownPool } from "@/lib/pool-utils";
 import { formatCurrency } from "@/lib/format";
 
 const SHARE_COLORS = [
@@ -132,14 +132,6 @@ export function OperatorsView({
   prevNetworkAvgReward,
   stakePerWorker,
 }: OperatorsViewProps) {
-  const knownPoolAddresses = React.useMemo(
-    () =>
-      new Set(
-        KNOWN_POOLS.flatMap((p) => [p.address, p.vault_address]).filter(Boolean) as string[]
-      ),
-    []
-  );
-
   const workerShare = React.useMemo(
     () => shareData(operators, (o) => o.worker_count, 51),
     [operators]
@@ -172,7 +164,7 @@ export function OperatorsView({
         cell: ({ row }) => (
           <span className="flex items-center gap-1.5">
             <Identity address={row.original.wallet} vault={row.original.vault} />
-            {knownPoolAddresses.has(row.original.wallet) ? <RoleBadge role="pool" /> : null}
+            {findKnownPool(row.original.wallet) ? <RoleBadge role="pool" /> : null}
             <ActivityBadge state={row.original.activity_state} />
           </span>
         ),
@@ -282,7 +274,7 @@ export function OperatorsView({
         },
       },
     ],
-    [capacity, efficiency, knownPoolAddresses, networkAvgReward, prevNetworkAvgReward]
+    [capacity, efficiency, networkAvgReward, prevNetworkAvgReward]
   );
 
   return (

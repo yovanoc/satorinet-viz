@@ -1,5 +1,11 @@
 import { KNOWN_POOLS, type TopPool } from "@/lib/known_pools";
 import { isValidAddress } from "./evr";
+import {
+  findKnownPool,
+  isEvmAddress,
+  isSamePool,
+  knownVaultFor,
+} from "./pool-utils";
 import { getTopPools } from "./db/queries/contributors";
 import { getVaultsForWallet } from "./evr/wallet-vault";
 import { cacheLifeForDate } from "./db/cache-utils";
@@ -26,6 +32,11 @@ function addUtcDays(date: Date, days: number) {
       0
     )
   );
+}
+
+/** Pool URL parameter: an Evrmore address (legacy links) or an EVM (Base) address. */
+function isValidPoolParam(pool: string) {
+  return isValidAddress(pool) || isEvmAddress(pool);
 }
 
 export async function getPoolAndDate({
@@ -90,10 +101,12 @@ export async function getPoolAndDate({
     }));
 
     const fallbackSelectedPoolAddress =
-      pool && isValidAddress(pool) ? pool : KNOWN_POOLS[0]!.address;
+      pool && isValidPoolParam(pool) ? pool : KNOWN_POOLS[0]!.address;
 
     const selectedPool =
-      topPoolsWithNames.find((p) => p.address === fallbackSelectedPoolAddress) ??
+      topPoolsWithNames.find((p) =>
+        isSamePool(p.address, fallbackSelectedPoolAddress)
+      ) ??
       topPoolsWithNames[0]!;
 
     return {
@@ -109,19 +122,18 @@ export async function getPoolAndDate({
   const first = topPools[0]!.pool_address;
 
   const selectedPoolAddress =
-    pool && isValidAddress(pool)
-      ? topPools.find((p) => p.pool_address === pool)?.pool_address ?? first
+    pool && isValidPoolParam(pool)
+      ? topPools.find((p) => isSamePool(p.pool_address, pool))?.pool_address ??
+        first
       : first;
 
   const topPoolsWithNamesData = await Promise.all(
     topPools.map(async (pool) => {
-      const knownPool = KNOWN_POOLS.find(
-        (p) => p.address === pool.pool_address
-      );
+      const knownPool = findKnownPool(pool.pool_address);
       return {
         address: pool.pool_address,
         vaultAddress:
-          knownPool?.vault_address ??
+          (knownPool ? knownVaultFor(knownPool, pool.pool_address) : undefined) ??
           (await getVaultsForWallet(pool.pool_address))[0], // ! nearly everyone has a single vault address
         name: knownPool?.name,
         sp: pool.total_staking_power,

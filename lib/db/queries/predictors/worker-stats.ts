@@ -1,6 +1,7 @@
-import { and, or, eq, gte, lte, sql } from "drizzle-orm";
+import { and, or, gte, lte, sql } from "drizzle-orm";
 import { cacheLife } from "next/cache";
 import { db } from "../..";
+import { poolAddressIn } from "../../pool-filter";
 import { dailyPredictorAddress } from "../../schema";
 
 export async function getPoolWorkerStats(
@@ -34,15 +35,22 @@ export async function getPoolWorkerStats(
         // ),
         or(
           // ! for before auto distribution
-          eq(dailyPredictorAddress.reward_address, poolAddress),
-          poolVaultAddress
-            ? eq(dailyPredictorAddress.reward_address, poolVaultAddress)
-            : undefined,
+          poolAddressIn(
+            dailyPredictorAddress.reward_address,
+            poolAddress,
+            poolVaultAddress,
+          ),
           // ! after auto distribution
-          eq(dailyPredictorAddress.pool_wallet, poolAddress),
-          poolVaultAddress
-            ? eq(dailyPredictorAddress.pool_vault, poolVaultAddress)
-            : undefined,
+          poolAddressIn(
+            dailyPredictorAddress.pool_wallet,
+            poolAddress,
+            poolVaultAddress,
+          ),
+          poolAddressIn(
+            dailyPredictorAddress.pool_vault,
+            poolAddress,
+            poolVaultAddress,
+          ),
         ),
         gte(
           dailyPredictorAddress.date,

@@ -11,7 +11,7 @@ import { getPoolHistoricalData } from "@/lib/db/queries/pools/historical-data";
 import { getPoolFeeSnapshot } from "@/lib/db/queries/pools/fees";
 import { getPoolWorkerStats } from "@/lib/db/queries/predictors/worker-stats";
 import { getPoolAndDate, type TopPoolWithName } from "@/lib/get-pool-and-date-params";
-import { KNOWN_POOLS } from "@/lib/known_pools";
+import { findKnownPool } from "@/lib/pool-utils";
 import { getWorkerReward, type WorkerReward } from "@/lib/satorinet/central";
 import { Suspense } from "react";
 import { getContributors } from "@/lib/db/queries/contributors";
@@ -101,7 +101,7 @@ async function ContributorsAndPredictors({
 }
 
 async function PoolDataSection({ date, pool }: { date: Date; pool: TopPoolWithName }) {
-  const knownPool = KNOWN_POOLS.find((p) => p.address === pool.address);
+  const knownPool = findKnownPool(pool.address, pool.vault_address);
   let historicalData: Awaited<ReturnType<typeof getPoolHistoricalData>>;
   let workerStats: Awaited<ReturnType<typeof getPoolWorkerStats>>;
   let workerReward: WorkerReward | null;
