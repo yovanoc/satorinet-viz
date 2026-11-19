@@ -33,6 +33,10 @@ export type Pool = {
   closed?: Date;
   address: string;
   vault_address?: string;
+  /** EVM (Base) wallet address, used by the database since 2026-11-01. */
+  base_address?: string;
+  /** EVM (Base) vault address, used by the database since 2026-11-01. */
+  base_vault_address?: string;
   staking_fees?: StakingFees[];
   temporary_fee_reductions?: TemporaryFeeReduction[];
 };
@@ -46,6 +50,8 @@ export const KNOWN_POOLS: Pool[] = [
     url: "https://www.satorinet-pools.com",
     address: "EcJRjWynLxVZcGSY5nXXXMmrQvddeLQRVY",
     vault_address: "EKKtydH4pbq86aJmiNuEVR4kP17exCcV25",
+    base_address: "0xF2955d65FeaFb49D218ca53eF0f036c23C9Ac426",
+    base_vault_address: "0xc429790EB40791337BE6d5c9212048CC85cD746B",
     staking_fees: [
       {
         fees: {

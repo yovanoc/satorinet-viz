@@ -5,7 +5,7 @@ import Link from "next/link";
 import { IconCheck, IconCopy } from "@tabler/icons-react";
 
 import { getAddressName } from "@/lib/known_addresses";
-import { KNOWN_POOLS } from "@/lib/known_pools";
+import { findKnownPool } from "@/lib/pool-utils";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
@@ -21,9 +21,7 @@ export function shortAddress(address: string) {
 export function identityName(address: string): string | undefined {
   return (
     getAddressName(address) ??
-    KNOWN_POOLS.find(
-      (p) => p.address === address || p.vault_address === address
-    )?.name
+    findKnownPool(address)?.name
   );
 }
 

@@ -13,6 +13,12 @@ import {
   getPoolFeesForDate,
   normalizeLiveCommission,
   resolvePoolFee,
+  addressesEqual,
+  findKnownPool,
+  isSamePool,
+  knownVaultFor,
+  mergeKnownPool,
+  poolAddressForms,
 } from "./pool-utils";
 
 const DATE = new Date("2026-01-15T00:00:00.000Z");
@@ -161,4 +167,86 @@ test("preserves legacy cost and max-percent fallback", () => {
   });
   assert.equal(applied.type, "single");
   assert.equal(applied.result.feePercent, 0.2);
+});
+
+const SATORINET_BASE = "0xF2955d65FeaFb49D218ca53eF0f036c23C9Ac426";
+const SATORINET_BASE_VAULT = "0xc429790EB40791337BE6d5c9212048CC85cD746B";
+
+test("addressesEqual is case-insensitive for EVM and exact for Evrmore", () => {
+  assert.equal(addressesEqual(SATORINET_BASE, SATORINET_BASE.toLowerCase()), true);
+  assert.equal(
+    addressesEqual("EcJRjWynLxVZcGSY5nXXXMmrQvddeLQRVY", "ecjrjwynlxvzcgsy5nxxxmmrqvddelqrvy"),
+    false
+  );
+  assert.equal(addressesEqual(SATORINET_BASE, SATORINET_BASE_VAULT), false);
+  assert.equal(addressesEqual(undefined, undefined), false);
+  assert.equal(addressesEqual("", ""), false);
+});
+
+test("findKnownPool resolves a pool from any Evrmore or Base address", () => {
+  const evrWallet = "EcJRjWynLxVZcGSY5nXXXMmrQvddeLQRVY";
+  const pool = findKnownPool(evrWallet);
+  assert.equal(pool?.name, "Satorinet");
+  assert.equal(findKnownPool(pool!.vault_address), pool);
+  assert.equal(findKnownPool(SATORINET_BASE), pool);
+  assert.equal(findKnownPool(SATORINET_BASE.toLowerCase()), pool);
+  assert.equal(findKnownPool(SATORINET_BASE_VAULT.toLowerCase()), pool);
+  assert.equal(findKnownPool("0x0000000000000000000000000000000000000001"), undefined);
+  assert.equal(findKnownPool(undefined, null), undefined);
+});
+
+test("isSamePool links legacy Evrmore and Base addresses of one pool", () => {
+  const evr = "EcJRjWynLxVZcGSY5nXXXMmrQvddeLQRVY";
+  assert.equal(isSamePool(evr, SATORINET_BASE.toLowerCase()), true);
+  assert.equal(isSamePool(SATORINET_BASE, SATORINET_BASE_VAULT), true);
+  assert.equal(isSamePool(evr, "0x0000000000000000000000000000000000000001"), false);
+  assert.equal(
+    isSamePool("0x0000000000000000000000000000000000000001", "0x0000000000000000000000000000000000000002"),
+    false
+  );
+});
+
+test("poolAddressForms covers all known addresses plus lowercase EVM forms", () => {
+  const forms = poolAddressForms(SATORINET_BASE.toLowerCase());
+  for (const a of [
+    "EcJRjWynLxVZcGSY5nXXXMmrQvddeLQRVY",
+    "EKKtydH4pbq86aJmiNuEVR4kP17exCcV25",
+    SATORINET_BASE,
+    SATORINET_BASE.toLowerCase(),
+    SATORINET_BASE_VAULT,
+    SATORINET_BASE_VAULT.toLowerCase(),
+  ]) {
+    assert.ok(forms.includes(a), a);
+  }
+  assert.equal(new Set(forms).size, forms.length);
+
+  const unknown = poolAddressForms("0xABCDEF0000000000000000000000000000000001", null);
+  assert.deepEqual(unknown, [
+    "0xABCDEF0000000000000000000000000000000001",
+    "0xabcdef0000000000000000000000000000000001",
+  ]);
+});
+
+test("mergeKnownPool keeps the DB address and picks the matching vault", () => {
+  const merged = mergeKnownPool({ address: SATORINET_BASE.toLowerCase() });
+  assert.equal(merged.name, "Satorinet");
+  assert.equal(merged.address, SATORINET_BASE.toLowerCase());
+  assert.equal(merged.vault_address, SATORINET_BASE_VAULT);
+  assert.equal(knownVaultFor(findKnownPool(SATORINET_BASE)!, "EcJRjWynLxVZcGSY5nXXXMmrQvddeLQRVY"), "EKKtydH4pbq86aJmiNuEVR4kP17exCcV25");
+
+  const unknown = mergeKnownPool({ address: "0x0000000000000000000000000000000000000001" });
+  assert.equal(unknown.name, "Unknown Pool");
+});
+
+test("audit commission matches Base rows regardless of address casing", () => {
+  const rows = [
+    { pool_wallet: SATORINET_BASE.toLowerCase(), pool_vault: SATORINET_BASE_VAULT, pool_commission: 20 },
+  ];
+  const result = getAuditCommissionForPool(rows, SATORINET_BASE, SATORINET_BASE_VAULT.toLowerCase());
+  assert.deepEqual(result, { status: "valid", feePercent: 0.2 });
+  // A pool known by its Evrmore address is still found in Base-era audit rows.
+  assert.deepEqual(
+    getAuditCommissionForPool(rows, "EcJRjWynLxVZcGSY5nXXXMmrQvddeLQRVY", "EKKtydH4pbq86aJmiNuEVR4kP17exCcV25"),
+    { status: "valid", feePercent: 0.2 }
+  );
 });

@@ -1,5 +1,6 @@
-import { sql, desc, and, or, eq } from "drizzle-orm";
+import { sql, desc, and } from "drizzle-orm";
 import { db } from "..";
+import { poolAddressIn } from "../pool-filter";
 import { dailyContributorAddress } from "../schema";
 import { cacheLifeForDate } from "../cache-utils";
 
@@ -45,11 +46,10 @@ export async function hasContributionsToPool(
     .from(dailyContributorAddress)
     .where(
       and(
-        or(
-          eq(dailyContributorAddress.pool_address, poolAddress),
+        poolAddressIn(
+          dailyContributorAddress.pool_address,
+          poolAddress,
           poolVaultAddress
-            ? eq(dailyContributorAddress.pool_address, poolVaultAddress)
-            : undefined
         ),
         sql`${dailyContributorAddress.date} = ${date}`,
         sql`${dailyContributorAddress.staking_power_contribution} > 0`
@@ -88,11 +88,10 @@ export async function getContributors(
     .from(dailyContributorAddress)
     .where(
       and(
-        or(
-          eq(dailyContributorAddress.pool_address, poolAddress),
+        poolAddressIn(
+          dailyContributorAddress.pool_address,
+          poolAddress,
           poolVaultAddress
-            ? eq(dailyContributorAddress.pool_address, poolVaultAddress)
-            : undefined
         ),
         sql`${dailyContributorAddress.date} = ${date}`,
         sql`${dailyContributorAddress.staking_power_contribution} > 0`

@@ -13,7 +13,8 @@ import { PoolComparisonChart } from "./pool-vs-worker";
 import PoolWorkerInputs from "./pool-vs-worker-inputs";
 import { getPoolVsWorkerComparisonData } from "@/app/pools/actions";
 import { MultiplePoolSelector } from "./pool-selector";
-import { KNOWN_POOLS, mostWantedTop } from "@/lib/known_pools";
+import { mostWantedTop } from "@/lib/known_pools";
+import { findKnownPool } from "@/lib/pool-utils";
 import type { TopPoolWithName } from "@/lib/get-pool-and-date-params";
 
 export default function MultiPoolWorkerComparison({
@@ -47,10 +48,10 @@ export default function MultiPoolWorkerComparison({
   }, [formAction, date, days, startingAmount, selectedPools]);
 
   const allowedPools = topPools.map((pool) => {
-    const foundPool = KNOWN_POOLS.find((p) => p.address === pool.address);
+    const foundPool = findKnownPool(pool.address, pool.vault_address);
     return foundPool
       ? {
-          address: foundPool.address,
+          address: pool.address,
           name: foundPool.name,
         }
       : {

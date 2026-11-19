@@ -1,10 +1,11 @@
-import { KNOWN_POOLS, type Pool, type TopPool } from "@/lib/known_pools";
+import { type Pool, type TopPool } from "@/lib/known_pools";
 import { cacheLifeForDate } from "../../cache-utils";
 import { getPoolHistoricalData } from "./historical-data";
 import { feeDateKey, getPoolFeeSnapshots } from "./fees";
 import { getSatoriPriceForDate } from "@/lib/livecoinwatch";
 import {
   applyFees,
+  findKnownPool,
   FeeResult,
   type AppliedFees,
   type FeeSource,
@@ -286,7 +287,7 @@ export async function getPoolVsWorkerComparison(
     };
 
     for (const pool of pools) {
-      const knownPool = KNOWN_POOLS.find((p) => p.address === pool.address);
+      const knownPool = findKnownPool(pool.address, pool.vault_address);
 
       if (knownPool && knownPool.closed && knownPool.closed <= dailyDate) {
         // console.warn(

@@ -1,5 +1,5 @@
+import { mergeKnownPool } from "@/lib/pool-utils";
 import {
-  KNOWN_POOLS,
   mostWantedTop,
   type Pool,
   type TopPool,
@@ -136,13 +136,7 @@ export async function PoolsStakingComparison({
   ]);
 
   const topOnes = mostWantedTop(topPools).map(
-    (pool) =>
-      KNOWN_POOLS.find((knownPool) => knownPool.address === pool.address) ?? {
-        name: pool.name ?? "Unknown Pool",
-        color: "#888",
-        address: pool.address,
-        vault_address: pool.vault_address,
-      }
+    (pool) => mergeKnownPool(pool)
   );
 
   const earningsRaw = await getPoolsHistoricalEarnings(topOnes, date);
