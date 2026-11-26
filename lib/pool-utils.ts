@@ -406,6 +406,19 @@ export function findKnownPool(
   );
 }
 
+/** Resolve a display name without treating observed vaults as pool identity. */
+export function poolDisplayName(address: string, labelVault?: string | null): string | undefined {
+  const known = findKnownPool(address);
+  if (known) return known.name;
+  if (!labelVault) return undefined;
+  const matches = KNOWN_POOLS.filter((pool) =>
+    [pool.vault_address, pool.base_vault_address, pool.label_vault_address].some((vault) =>
+      addressesEqual(vault, labelVault)
+    )
+  );
+  return matches.length === 1 ? matches[0]!.name : undefined;
+}
+
 /** True when both addresses designate the same pool, whatever their network. */
 export function isSamePool(
   a: string | null | undefined,

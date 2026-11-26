@@ -10,7 +10,7 @@ import { getTopPools } from "./db/queries/contributors";
 import { getVaultsForWallet } from "./evr/wallet-vault";
 import { cacheLifeForDate } from "./db/cache-utils";
 
-export type TopPoolWithName = TopPool & { name?: string };
+export type TopPoolWithName = TopPool & { name?: string; label_vault?: string | null };
 
 export type PoolAndDate = {
   selectedPool: TopPoolWithName;
@@ -135,6 +135,7 @@ export async function getPoolAndDate({
           (knownPool ? knownVaultFor(knownPool, pool.pool_address) : undefined) ??
           (await getVaultsForWallet(pool.pool_address))[0], // ! nearly everyone has a single vault address
         name: knownPool?.name,
+        label_vault: pool.label_vault,
         sp: pool.total_staking_power,
       };
     })
@@ -144,6 +145,7 @@ export async function getPoolAndDate({
     .toSorted((a, b) => b.sp - a.sp)
     .map((pool) => ({
       name: pool.name,
+      label_vault: pool.label_vault,
       address: pool.address,
       vault_address: pool.vaultAddress,
     }));

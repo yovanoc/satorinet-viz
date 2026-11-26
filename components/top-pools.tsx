@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { addressesEqual, findKnownPool } from "@/lib/pool-utils";
+import { addressesEqual, poolDisplayName } from "@/lib/pool-utils";
 import { flexRender, useTable } from "@tanstack/react-table";
 import {
   tableFeatures,
@@ -23,6 +23,7 @@ import type { LivePool } from "@/lib/satorinet/api";
 interface Pool {
   pool_address: string;
   pool_name?: string;
+  label_vault?: string | null;
   total_staking_power: number;
   contributor_count: number;
 }
@@ -162,10 +163,10 @@ function MyRow({ row }: { row: TableRowModel<PoolRow> }) {
 
 const TopPools: FC<TopPoolsProps> = ({ pools, livePools }) => {
   const data: PoolRow[] = pools.map((pool) => {
-    const knownPool = findKnownPool(pool.pool_address);
+    const name = poolDisplayName(pool.pool_address, pool.label_vault);
     const livePool = livePools?.find((p) => addressesEqual(p.address, pool.pool_address));
     return {
-      pool_name: pool.pool_name || knownPool?.name || livePool?.alias || undefined,
+      pool_name: pool.pool_name || name || livePool?.alias || undefined,
       pool_address: pool.pool_address,
       total_staking_power: pool.total_staking_power,
       contributor_count: pool.contributor_count,

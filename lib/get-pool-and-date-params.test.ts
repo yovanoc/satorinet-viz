@@ -15,9 +15,10 @@ test("pool selection uses configured identities without bulk Redis reads", async
   const bulk = () => new Promise<never>(() => {});
   const hgetall = t.mock.method(redis, "hgetall", bulk);
   const keys = t.mock.method(redis, "keys", bulk);
+  const smembers = t.mock.method(redis, "smembers", async () => []);
   const { db } = await import("./db");
-  let rows: { pool_address: string; total_staking_power: number; contributor_count: number }[] = [];
-  const chain = { from: () => chain, where: () => chain, groupBy: () => chain, orderBy: () => chain, limit: () => chain, execute: async () => rows, then: (resolve: (value: typeof rows) => void) => resolve(rows) };
+  let rows: { pool_address: string; label_vault?: string | null; total_staking_power: number; contributor_count: number }[] = [];
+  const chain = { from: () => chain, where: () => chain, groupBy: () => chain, orderBy: () => chain, limit: () => chain, as: () => ({ pool_address: "pool_address", total_staking_power: "total_staking_power", contributor_count: "contributor_count" }), execute: async () => rows, then: (resolve: (value: typeof rows) => void) => resolve(rows) };
   t.mock.method(db, "select", () => chain as never);
   const { getPoolAndDate } = await import("./get-pool-and-date-params");
   const synapool = KNOWN_POOLS.find((pool) => pool.name === "Synapool")!;
@@ -36,6 +37,12 @@ test("pool selection uses configured identities without bulk Redis reads", async
   const populated = await resolve(configured.address);
   assert.equal(populated.selectedPool.name, configured.name);
   assert.equal(populated.selectedPool.vault_address, configured.base_vault_address);
+  const wallet = "0xedEff04f1B58bA671d0ce7a21992c0a18Fe51752";
+  const vault = "0x8656a54b5570d77d2da7ccc1bc3e927c993def3e";
+  rows = [{ pool_address: wallet, label_vault: vault, total_staking_power: 2, contributor_count: 1 }];
+  const unknown = await resolve(wallet);
+  assert.deepEqual(unknown.selectedPool, { address: wallet, vault_address: undefined, name: undefined, label_vault: vault });
+  assert.equal(smembers.mock.callCount(), 1);
   rows = [];
   const { hasContributionsToPool, getContributors } = await import("./db/queries/contributors");
   const { getPredictors } = await import("./db/queries/predictors");

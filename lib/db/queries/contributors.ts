@@ -4,15 +4,21 @@ import { poolAddressIn } from "../pool-filter";
 import { dailyContributorAddress } from "../schema";
 import { cacheLifeForDate } from "../cache-utils";
 
+const labelVault = sql<string | null>`case
+  when btrim(${dailyContributorAddress.pool_vault}) = '' then null
+  when ${dailyContributorAddress.pool_vault} ~* '^0x[0-9a-f]{40}$' then lower(${dailyContributorAddress.pool_vault})
+  else ${dailyContributorAddress.pool_vault}
+end`;
+
 export async function getTopPools(date: Date) {
   "use cache";
   cacheLifeForDate(date);
 
-  return db
+  const ranked = db
     .select({
       pool_address: dailyContributorAddress.pool_address,
-      total_staking_power: sql<number>`sum(${dailyContributorAddress.staking_power_contribution})`,
-      contributor_count: sql<number>`count(distinct ${dailyContributorAddress.contributor})`,
+      total_staking_power: sql<number>`sum(${dailyContributorAddress.staking_power_contribution})`.as("total_staking_power"),
+      contributor_count: sql<number>`count(distinct ${dailyContributorAddress.contributor})`.as("contributor_count"),
     })
     .from(dailyContributorAddress)
     .where(
@@ -26,6 +32,19 @@ export async function getTopPools(date: Date) {
       desc(sql`sum(${dailyContributorAddress.staking_power_contribution})`)
     )
     .limit(30)
+    .as("ranked");
+
+  return db
+    .select({
+      pool_address: ranked.pool_address,
+      label_vault: sql<string | null>`(select case when count(distinct ${labelVault}) = 1 then min(${labelVault}) else null end
+        from ${dailyContributorAddress}
+        where ${dailyContributorAddress.date} = ${date} and ${dailyContributorAddress.pool_address} = "ranked"."pool_address")`,
+      total_staking_power: ranked.total_staking_power,
+      contributor_count: ranked.contributor_count,
+    })
+    .from(ranked)
+    .orderBy(desc(ranked.total_staking_power))
     .execute();
 }
 
