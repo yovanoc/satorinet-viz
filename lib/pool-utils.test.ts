@@ -19,6 +19,7 @@ import {
   knownVaultFor,
   mergeKnownPool,
   poolAddressForms,
+  poolDisplayName,
 } from "./pool-utils";
 
 const DATE = new Date("2026-01-15T00:00:00.000Z");
@@ -272,4 +273,26 @@ test("audit commission matches Base rows regardless of address casing", () => {
     getAuditCommissionForPool(rows, "EcJRjWynLxVZcGSY5nXXXMmrQvddeLQRVY", "EKKtydH4pbq86aJmiNuEVR4kP17exCcV25"),
     { status: "valid", feePercent: 0.2 }
   );
+});
+
+
+test("observed vaults decorate names without becoming pool identities", () => {
+  const wallet = "0xedEff04f1B58bA671d0ce7a21992c0a18Fe51752";
+  const vault = "0x8656A54B5570d77D2DA7CCC1bc3E927C993DEF3E";
+  const configured = KNOWN_POOLS.find((pool) => pool.name === "Satorinet")!;
+  assert.equal(poolDisplayName(wallet, vault.toLowerCase()), "Synapool");
+  assert.equal(poolDisplayName(configured.address, vault), configured.name);
+  assert.equal(poolDisplayName(wallet), undefined);
+  assert.equal(poolDisplayName(wallet, null), undefined);
+  assert.equal(poolDisplayName(wallet, "unconfigured"), undefined);
+  assert.equal(mergeKnownPool({ address: wallet }).name, "Unknown Pool");
+  assert.deepEqual(poolAddressForms(wallet), [wallet, wallet.toLowerCase()]);
+  assert.equal(resolvePoolFee({ address: wallet }, DATE, null).source, "unknown");
+  const duplicate: Pool = { name: "duplicate", color: "#000", address: "duplicate", label_vault_address: vault };
+  KNOWN_POOLS.push(duplicate);
+  try {
+    assert.equal(poolDisplayName(wallet, vault), undefined);
+  } finally {
+    KNOWN_POOLS.pop();
+  }
 });

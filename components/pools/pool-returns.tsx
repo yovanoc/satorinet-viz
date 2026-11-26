@@ -2,7 +2,7 @@ import { getPoolsHistoricalEarnings } from "@/lib/db/queries/pools/historical-ea
 import { feeDateKey, getPoolFeeSnapshots } from "@/lib/db/queries/pools/fees";
 import { getMaxDelegatedStake } from "@/lib/db/queries/predictors/max-delegated-stake";
 import { getSatoriPriceForDateSafe } from "@/lib/livecoinwatch";
-import { mergeKnownPool } from "@/lib/pool-utils";
+import { mergeKnownPool, poolDisplayName } from "@/lib/pool-utils";
 import type { TopPoolWithName } from "@/lib/get-pool-and-date-params";
 import { cacheLifeForDate } from "@/lib/db/cache-utils";
 import {
@@ -46,7 +46,10 @@ export async function PoolReturns({ topPools, date }: PoolReturnsProps) {
   const series: PoolReturnSeries[] = earnings
     .map(({ pool, data }) => ({
       address: pool.address,
-      name: pool.name,
+      name: poolDisplayName(
+        pool.address,
+        topPools.find((topPool) => topPool.address === pool.address)?.label_vault
+      ) ?? pool.name,
       days: (data ?? [])
         .flatMap((d) => {
           const date = new Date(d.date);

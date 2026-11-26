@@ -37,6 +37,8 @@ export type Pool = {
   base_address?: string;
   /** EVM (Base) vault address, used by the database since 2026-11-01. */
   base_vault_address?: string;
+  /** Published vault used only to decorate labels, not to infer identity. */
+  label_vault_address?: string;
   staking_fees?: StakingFees[];
   temporary_fee_reductions?: TemporaryFeeReduction[];
 };
@@ -343,6 +345,7 @@ export const KNOWN_POOLS: Pool[] = [
     color: "#0b63f6",
     url: "https://synapool.com/",
     address: "0x8656A54B5570d77D2DA7CCC1bc3E927C993DEF3E",
+    label_vault_address: "0x8656A54B5570d77D2DA7CCC1bc3E927C993DEF3E",
   },
   // {
   //   name: 'Unknown',
