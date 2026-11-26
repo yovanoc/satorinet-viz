@@ -165,7 +165,7 @@ const TopPools: FC<TopPoolsProps> = ({ pools, livePools }) => {
     const knownPool = findKnownPool(pool.pool_address);
     const livePool = livePools?.find((p) => addressesEqual(p.address, pool.pool_address));
     return {
-      pool_name: knownPool?.name || livePool?.alias || undefined,
+      pool_name: pool.pool_name || knownPool?.name || livePool?.alias || undefined,
       pool_address: pool.pool_address,
       total_staking_power: pool.total_staking_power,
       contributor_count: pool.contributor_count,

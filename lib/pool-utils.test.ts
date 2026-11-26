@@ -195,6 +195,29 @@ test("findKnownPool resolves a pool from any Evrmore or Base address", () => {
   assert.equal(findKnownPool(undefined, null), undefined);
 });
 
+test("Synapool resolves from its Base address with its own brand color", () => {
+  const pool = findKnownPool("0x8656a54b5570d77d2da7ccc1bc3e927c993def3e");
+  assert.equal(pool?.name, "Synapool");
+  assert.equal(pool?.url, "https://synapool.com/");
+  assert.equal(pool?.color, "#0b63f6");
+  assert.equal(KNOWN_POOLS.filter((known) => known.color.toLowerCase() === pool?.color.toLowerCase()).length, 1);
+});
+
+test("linked Satorinet wallets retain identity across the migration", () => {
+  const legacy = mergeKnownPool({ address: "EcJRjWynLxVZcGSY5nXXXMmrQvddeLQRVY" });
+  const base = mergeKnownPool({ address: SATORINET_BASE.toLowerCase() });
+  assert.equal(base.name, legacy.name);
+  assert.equal(base.color, legacy.color);
+  assert.equal(findKnownPool(base.address), findKnownPool(legacy.address));
+});
+
+test("recognizing Synapool does not verify a fee without audit data", () => {
+  const fee = resolvePoolFee({ address: "0x8656A54B5570d77D2DA7CCC1bc3E927C993DEF3E" }, DATE, null);
+  assert.equal(fee.source, "unknown");
+  assert.equal(fee.fees, null);
+  assert.match(fee.warning ?? "", /fee is not verified/);
+});
+
 test("isSamePool links legacy Evrmore and Base addresses of one pool", () => {
   const evr = "EcJRjWynLxVZcGSY5nXXXMmrQvddeLQRVY";
   assert.equal(isSamePool(evr, SATORINET_BASE.toLowerCase()), true);

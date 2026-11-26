@@ -1,3 +1,5 @@
+import { getPoolIdentities } from "@/lib/pool-identity-server";
+import { findPoolIdentity } from "@/lib/pool-identity";
 import type { PoolData } from "@/components/pools/daily-contributor-address-card";
 import DailyContributorAddressCard from "@/components/pools/daily-contributor-address-card";
 import DatePickerWrapper from "@/components/date-picker-wrapper";
@@ -101,7 +103,8 @@ async function ContributorsAndPredictors({
 }
 
 async function PoolDataSection({ date, pool }: { date: Date; pool: TopPoolWithName }) {
-  const knownPool = findKnownPool(pool.address, pool.vault_address);
+  const identities = await getPoolIdentities();
+  const knownPool = findPoolIdentity(identities, pool.address, pool.vault_address)?.pool ?? findKnownPool(pool.address, pool.vault_address);
   let historicalData: Awaited<ReturnType<typeof getPoolHistoricalData>>;
   let workerStats: Awaited<ReturnType<typeof getPoolWorkerStats>>;
   let workerReward: WorkerReward | null;

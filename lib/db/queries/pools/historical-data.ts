@@ -1,3 +1,4 @@
+import { getPoolIdentities } from "@/lib/pool-identity-server";
 import { sql, and, or, eq, gte, lte } from "drizzle-orm";
 import { poolAddressIn } from "../../pool-filter";
 import { db } from "../..";
@@ -21,6 +22,7 @@ export async function getPoolHistoricalData(
   "use cache";
   cacheLifeForDate(date);
 
+  const identities = await getPoolIdentities();
   const knownPool = findKnownPool(pool.address, pool.vault_address);
 
   const fee =
@@ -66,8 +68,8 @@ export async function getPoolHistoricalData(
           CASE
             WHEN ${dailyPredictorAddress.reward_address} = ${dailyPredictorAddress.worker_address}
             OR ${dailyPredictorAddress.reward_address} = ${dailyPredictorAddress.worker_vault_address}
-            OR ${poolAddressIn(dailyPredictorAddress.pool_wallet, pool.address, vaultAddress)}
-            OR ${poolAddressIn(dailyPredictorAddress.pool_vault, pool.address, vaultAddress)}
+            OR ${poolAddressIn(dailyPredictorAddress.pool_wallet, pool.address, vaultAddress, identities)}
+            OR ${poolAddressIn(dailyPredictorAddress.pool_vault, pool.address, vaultAddress, identities)}
             THEN ${dailyPredictorAddress.balance}
             ELSE 0
           END
@@ -83,10 +85,10 @@ export async function getPoolHistoricalData(
         // ),
         or(
           // ! for before auto distribution
-          poolAddressIn(dailyPredictorAddress.reward_address, pool.address, vaultAddress),
+          poolAddressIn(dailyPredictorAddress.reward_address, pool.address, vaultAddress, identities),
           // ! after auto distribution
-          poolAddressIn(dailyPredictorAddress.pool_wallet, pool.address, vaultAddress),
-          poolAddressIn(dailyPredictorAddress.pool_vault, pool.address, vaultAddress),
+          poolAddressIn(dailyPredictorAddress.pool_wallet, pool.address, vaultAddress, identities),
+          poolAddressIn(dailyPredictorAddress.pool_vault, pool.address, vaultAddress, identities),
         ),
         // Without this the subquery aggregates the whole table history.
         gte(
@@ -129,7 +131,7 @@ export async function getPoolHistoricalData(
     .leftJoin(predictorAgg, eq(dailyContributorAddress.date, predictorAgg.date))
     .where(
       and(
-        poolAddressIn(dailyContributorAddress.pool_address, pool.address, vaultAddress),
+        poolAddressIn(dailyContributorAddress.pool_address, pool.address, vaultAddress, identities),
         gte(
           dailyContributorAddress.date,
           sql`${date}::timestamp - ${days} * interval '1 day'`,
