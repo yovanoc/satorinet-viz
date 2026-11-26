@@ -1,4 +1,3 @@
-import { getPoolIdentities } from "@/lib/pool-identity-server";
 import { and, or, gte, lte, sql } from "drizzle-orm";
 import { cacheLife } from "next/cache";
 import { db } from "../..";
@@ -14,7 +13,6 @@ export async function getPoolWorkerStats(
   "use cache";
   cacheLife("hours");
 
-  const identities = await getPoolIdentities();
   return db
     .select({
       date: dailyPredictorAddress.date,
@@ -41,20 +39,17 @@ export async function getPoolWorkerStats(
             dailyPredictorAddress.reward_address,
             poolAddress,
             poolVaultAddress,
-            identities,
           ),
           // ! after auto distribution
           poolAddressIn(
             dailyPredictorAddress.pool_wallet,
             poolAddress,
             poolVaultAddress,
-            identities,
           ),
           poolAddressIn(
             dailyPredictorAddress.pool_vault,
             poolAddress,
             poolVaultAddress,
-            identities,
           ),
         ),
         gte(

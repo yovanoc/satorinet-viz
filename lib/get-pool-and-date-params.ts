@@ -1,5 +1,3 @@
-import { getPoolIdentities } from "./pool-identity-server";
-import { findPoolIdentity } from "./pool-identity";
 import { KNOWN_POOLS, type TopPool } from "@/lib/known_pools";
 import { isValidAddress } from "./evr";
 import {
@@ -92,12 +90,6 @@ export async function getPoolAndDate({
   }
 
   const hasData = topPools.length > 0;
-  const identities = await getPoolIdentities();
-  const samePool = (a: string, b: string) => {
-    const identity = findPoolIdentity(identities, a);
-    return isSamePool(a, b) || (identity !== undefined && identity === findPoolIdentity(identities, b));
-  };
-
   // If there's no data at all (even after lookback), return a non-throwing
   // placeholder so routes can render an empty-state instead of crashing.
   if (!hasData) {
@@ -112,7 +104,7 @@ export async function getPoolAndDate({
 
     const selectedPool =
       topPoolsWithNames.find((p) =>
-        samePool(p.address, fallbackSelectedPoolAddress)
+        isSamePool(p.address, fallbackSelectedPoolAddress)
       ) ??
       topPoolsWithNames[0]!;
 
@@ -130,18 +122,17 @@ export async function getPoolAndDate({
 
   const selectedPoolAddress =
     pool && isValidPoolParam(pool)
-      ? topPools.find((p) => samePool(p.pool_address, pool))?.pool_address ??
+      ? topPools.find((p) => isSamePool(p.pool_address, pool))?.pool_address ??
         first
       : first;
 
   const topPoolsWithNamesData = await Promise.all(
     topPools.map(async (pool) => {
-      const knownPool = findPoolIdentity(identities, pool.pool_address)?.pool ?? findKnownPool(pool.pool_address);
-      const staticPool = findKnownPool(pool.pool_address);
+      const knownPool = findKnownPool(pool.pool_address);
       return {
         address: pool.pool_address,
         vaultAddress:
-          (staticPool ? knownVaultFor(staticPool, pool.pool_address) : undefined) ??
+          (knownPool ? knownVaultFor(knownPool, pool.pool_address) : undefined) ??
           (await getVaultsForWallet(pool.pool_address))[0], // ! nearly everyone has a single vault address
         name: knownPool?.name,
         sp: pool.total_staking_power,
