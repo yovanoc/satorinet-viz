@@ -1,5 +1,6 @@
 import { inArray, type AnyColumn, type SQL } from "drizzle-orm";
 import { poolAddressForms } from "@/lib/pool-utils";
+import { identityAddressForms, type PoolIdentity } from "@/lib/pool-identity";
 
 /**
  * Filter a column on every address a pool may be stored under (Evrmore and
@@ -12,7 +13,8 @@ import { poolAddressForms } from "@/lib/pool-utils";
 export function poolAddressIn(
   column: AnyColumn,
   address: string,
-  vaultAddress?: string | null
+  vaultAddress?: string | null,
+  identities?: readonly PoolIdentity[]
 ): SQL {
-  return inArray(column, poolAddressForms(address, vaultAddress));
+  return inArray(column, identities ? identityAddressForms(identities, address, vaultAddress) : poolAddressForms(address, vaultAddress));
 }

@@ -1,3 +1,4 @@
+import { getPoolIdentities } from "@/lib/pool-identity-server";
 import { sql, desc, and } from "drizzle-orm";
 import { db } from "..";
 import { poolAddressIn } from "../pool-filter";
@@ -41,6 +42,7 @@ export async function hasContributionsToPool(
   "use cache";
   cacheLifeForDate(date);
 
+  const identities = await getPoolIdentities();
   const result = await db
     .select({ count: sql<number>`count(*)` })
     .from(dailyContributorAddress)
@@ -49,7 +51,8 @@ export async function hasContributionsToPool(
         poolAddressIn(
           dailyContributorAddress.pool_address,
           poolAddress,
-          poolVaultAddress
+          poolVaultAddress,
+          identities
         ),
         sql`${dailyContributorAddress.date} = ${date}`,
         sql`${dailyContributorAddress.staking_power_contribution} > 0`
@@ -76,6 +79,7 @@ export async function getContributors(
   "use cache";
   cacheLifeForDate(date);
 
+  const identities = await getPoolIdentities();
   return db
     .select({
       contributor: dailyContributorAddress.contributor,
@@ -91,7 +95,8 @@ export async function getContributors(
         poolAddressIn(
           dailyContributorAddress.pool_address,
           poolAddress,
-          poolVaultAddress
+          poolVaultAddress,
+          identities
         ),
         sql`${dailyContributorAddress.date} = ${date}`,
         sql`${dailyContributorAddress.staking_power_contribution} > 0`

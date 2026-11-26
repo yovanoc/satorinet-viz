@@ -1,3 +1,5 @@
+import { getPoolIdentities } from "@/lib/pool-identity-server";
+import { findPoolIdentity } from "@/lib/pool-identity";
 import { PoolsStakingComparison } from "@/components/pools/pools-staking-comparison";
 import { PoolReturns } from "@/components/pools/pool-returns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +25,8 @@ function ymd(date: Date) {
 }
 
 async function TopPoolsCard({ date }: { date: Date }) {
-  const topPools = await getTopPools(date);
+  const [topPools, identities] = await Promise.all([getTopPools(date), getPoolIdentities()]);
+  const namedPools = topPools.map((pool) => ({ ...pool, pool_name: findPoolIdentity(identities, pool.pool_address)?.pool.name }));
 
   const isToday = normalizeToUTCMidnight(date).getTime() === getTodayMidnightUTC().getTime();
   const livePools = isToday ? await getLivePools() : [];
@@ -35,7 +38,7 @@ async function TopPoolsCard({ date }: { date: Date }) {
         </CardHeader>
         <CardContent className="pt-0">
           <div className="-mx-6">
-            <TopPools key={date.toISOString()} pools={topPools} date={date} livePools={livePools} />
+            <TopPools key={date.toISOString()} pools={namedPools} date={date} livePools={livePools} />
           </div>
         </CardContent>
       </Card>
