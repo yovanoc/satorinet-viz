@@ -142,7 +142,8 @@ export default async function AddressPage({
   params: Promise<{ address: string }>;
 }) {
   const address = (await params).address;
-  const baseAddress = await getBaseAddress(address);
+  const isBaseAddress = /^0x[0-9a-fA-F]{40}$/.test(address);
+  const baseAddress = isBaseAddress ? address : await getBaseAddress(address);
 
   return (
     <div className="flex w-full flex-col gap-8 px-4 py-6 lg:px-6">
@@ -175,31 +176,33 @@ export default async function AddressPage({
         <h2 className="text-lg font-semibold">Chains Overview</h2>
         <div
           className={
-            baseAddress
+            baseAddress && !isBaseAddress
               ? "grid grid-cols-1 sm:grid-cols-7 gap-6 w-full"
               : "grid grid-cols-1 w-full"
           }
         >
           {baseAddress && (
-            <div className="sm:col-span-2 border rounded-lg p-3 flex flex-col items-start bg-card min-w-[180px] max-h-[340px] overflow-auto">
+            <div className={`${isBaseAddress ? "" : "sm:col-span-2 "}border rounded-lg p-3 flex flex-col items-start bg-card min-w-[180px] max-h-[340px] overflow-auto`}>
               <h3 className="text-md font-semibold text-primary mb-4">Base Chain</h3>
               <Suspense fallback={<Skeleton className="h-8 w-full text-center mb-4" />}>
                 <BaseAddress baseAddress={baseAddress} />
               </Suspense>
             </div>
           )}
-          <div
-            className={
-              baseAddress
-                ? "sm:col-span-5 border rounded-lg p-8 flex flex-col items-start bg-card min-w-xs"
-                : "border rounded-lg p-8 flex flex-col items-start bg-card min-w-xs"
-            }
-          >
-            <h3 className="text-md font-semibold text-primary mb-4">Evrmore Chain</h3>
-            <Suspense fallback={<Skeleton className="h-8 w-full text-center mb-4" />}>
-              <EvrAddress address={address} />
-            </Suspense>
-          </div>
+          {!isBaseAddress && (
+            <div
+              className={
+                baseAddress
+                  ? "sm:col-span-5 border rounded-lg p-8 flex flex-col items-start bg-card min-w-xs"
+                  : "border rounded-lg p-8 flex flex-col items-start bg-card min-w-xs"
+              }
+            >
+              <h3 className="text-md font-semibold text-primary mb-4">Evrmore Chain</h3>
+              <Suspense fallback={<Skeleton className="h-8 w-full text-center mb-4" />}>
+                <EvrAddress address={address} />
+              </Suspense>
+            </div>
+          )}
         </div>
       </section>
 
