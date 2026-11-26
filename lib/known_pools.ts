@@ -338,6 +338,12 @@ export const KNOWN_POOLS: Pool[] = [
       },
     ]
   },
+  {
+    name: "Synapool",
+    color: "#0b63f6",
+    url: "https://synapool.com/",
+    address: "0x8656A54B5570d77D2DA7CCC1bc3E927C993DEF3E",
+  },
   // {
   //   name: 'Unknown',
   //   address: 'ETU972nu9naUffZuUkVFoHGpq2AZJdBjFi',
