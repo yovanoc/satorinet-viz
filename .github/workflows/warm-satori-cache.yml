@@ -15,11 +15,18 @@ on:
           Backfill historical days since this date
           (YYYY-MM-DD, earliest 2025-12-25)
         required: false
+      pool_names_date:
+        description: >-
+          Rebuild only the pool name index for one historical date
+          (YYYY-MM-DD, earliest 2025-12-25; omit backfill_since)
+        type: string
+        required: false
 
 concurrency:
   group: >-
     ${{ inputs.diagnostics_only && 'satori-probes' || 'warm-satori-cache' }}
   cancel-in-progress: false
+  queue: max
 
 permissions:
   contents: read
@@ -43,3 +50,5 @@ jobs:
         env:
           REDIS_URL: ${{ secrets.REDIS_URL }}
           BACKFILL_SINCE: ${{ inputs.backfill_since }}
+          POOL_NAMES_DATE: ${{ inputs.pool_names_date }}
+          POOL_NAMES_DATABASE_URL: ${{ secrets.POOL_NAMES_DATABASE_URL }}

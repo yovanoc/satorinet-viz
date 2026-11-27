@@ -3,6 +3,8 @@ import { feeDateKey, getPoolFeeSnapshots } from "@/lib/db/queries/pools/fees";
 import { getMaxDelegatedStake } from "@/lib/db/queries/predictors/max-delegated-stake";
 import { getSatoriPriceForDateSafe } from "@/lib/livecoinwatch";
 import { mergeKnownPool, poolDisplayName } from "@/lib/pool-utils";
+import { normalizePoolAddress } from "@/lib/pool-name-index";
+import type { readPoolNameIndex } from "@/lib/pool-name-index-server";
 import type { TopPoolWithName } from "@/lib/get-pool-and-date-params";
 import { cacheLifeForDate } from "@/lib/db/cache-utils";
 import {
@@ -15,7 +17,7 @@ interface PoolReturnsProps {
   date: Date;
 }
 
-export async function PoolReturns({ topPools, date }: PoolReturnsProps) {
+async function getPoolReturnData({ topPools, date }: PoolReturnsProps) {
   "use cache";
   cacheLifeForDate(date);
 
@@ -46,10 +48,7 @@ export async function PoolReturns({ topPools, date }: PoolReturnsProps) {
   const series: PoolReturnSeries[] = earnings
     .map(({ pool, data }) => ({
       address: pool.address,
-      name: poolDisplayName(
-        pool.address,
-        topPools.find((topPool) => topPool.address === pool.address)?.label_vault
-      ) ?? pool.name,
+      name: pool.name,
       days: (data ?? [])
         .flatMap((d) => {
           const date = new Date(d.date);
@@ -70,11 +69,29 @@ export async function PoolReturns({ topPools, date }: PoolReturnsProps) {
 
   if (series.length === 0) return null;
 
-  return (
-    <PoolReturnsTable
-      series={series}
-      satoriPrice={satoriPrice}
-      fullStakeAmount={fullStakeAmount ?? 0}
-    />
-  );
+  return { series, satoriPrice, fullStakeAmount: fullStakeAmount ?? 0 };
+}
+
+export async function PoolReturns({ topPools, date, poolNames }: PoolReturnsProps & {
+  poolNames: ReturnType<typeof readPoolNameIndex>;
+}) {
+  // Keep the optional index out of the financial cache key and resolve labels per request.
+  const [data, names] = await Promise.all([getPoolReturnData({ topPools, date }), poolNames]);
+  if (!data) return null;
+
+  const series = data.series.map((pool) => {
+    const key = normalizePoolAddress(pool.address);
+    const name = key === null ? undefined : names?.[key];
+    return {
+      ...pool,
+      name: name === undefined
+        ? poolDisplayName(
+            pool.address,
+            topPools.find((topPool) => topPool.address === pool.address)?.label_vault
+          ) ?? pool.name
+        : name ?? "Unknown Pool",
+    };
+  });
+
+  return <PoolReturnsTable {...data} series={series} />;
 }

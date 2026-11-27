@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { addressesEqual, poolDisplayName } from "@/lib/pool-utils";
+import { addressesEqual } from "@/lib/pool-utils";
 import { flexRender, useTable } from "@tanstack/react-table";
 import {
   tableFeatures,
@@ -22,8 +22,7 @@ import type { LivePool } from "@/lib/satorinet/api";
 
 interface Pool {
   pool_address: string;
-  pool_name?: string;
-  label_vault?: string | null;
+  pool_name: string;
   total_staking_power: number;
   contributor_count: number;
 }
@@ -50,14 +49,13 @@ const getColumns = (isLive: boolean): TableColumnDef<PoolRow>[] => {
       accessorKey: "pool",
       header: "Pool",
       cell: ({ row }) => {
-        const name = row.original.pool_name ?? "Unknown Pool";
         return (
           <Link
             href={`/address/${row.original.pool_address}`}
             className="block min-w-0"
           >
             <div className="min-w-0 text-sm font-bold text-primary truncate">
-              {name}
+              {row.original.pool_name}
             </div>
             <div className="min-w-0 text-xs text-muted-foreground truncate">
               {row.original.pool_address}
@@ -163,10 +161,9 @@ function MyRow({ row }: { row: TableRowModel<PoolRow> }) {
 
 const TopPools: FC<TopPoolsProps> = ({ pools, livePools }) => {
   const data: PoolRow[] = pools.map((pool) => {
-    const name = poolDisplayName(pool.pool_address, pool.label_vault);
     const livePool = livePools?.find((p) => addressesEqual(p.address, pool.pool_address));
     return {
-      pool_name: pool.pool_name || name || livePool?.alias || undefined,
+      pool_name: pool.pool_name,
       pool_address: pool.pool_address,
       total_staking_power: pool.total_staking_power,
       contributor_count: pool.contributor_count,

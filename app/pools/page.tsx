@@ -1,4 +1,6 @@
-import { findKnownPool } from "@/lib/pool-utils";
+import { addressesEqual, poolDisplayName } from "@/lib/pool-utils";
+import { normalizePoolAddress } from "@/lib/pool-name-index";
+import { readPoolNameIndex } from "@/lib/pool-name-index-server";
 import { PoolsStakingComparison } from "@/components/pools/pools-staking-comparison";
 import { PoolReturns } from "@/components/pools/pool-returns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,12 +25,27 @@ function ymd(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-async function TopPoolsCard({ date }: { date: Date }) {
+async function TopPoolsCard({ date, poolNames }: {
+  date: Date;
+  poolNames: ReturnType<typeof readPoolNameIndex>;
+}) {
   const topPools = await getTopPools(date);
-  const namedPools = topPools.map((pool) => ({ ...pool, pool_name: findKnownPool(pool.pool_address)?.name }));
-
   const isToday = normalizeToUTCMidnight(date).getTime() === getTodayMidnightUTC().getTime();
-  const livePools = isToday ? await getLivePools() : [];
+  const [names, livePools] = await Promise.all([poolNames, isToday ? getLivePools() : []]);
+  const namedPools = topPools.map((pool) => {
+    const key = normalizePoolAddress(pool.pool_address);
+    const name = key === null ? undefined : names?.[key];
+    return {
+      pool_address: pool.pool_address,
+      total_staking_power: pool.total_staking_power,
+      contributor_count: pool.contributor_count,
+      pool_name: name === undefined
+        ? poolDisplayName(pool.pool_address, pool.label_vault) ||
+          livePools.find((live) => addressesEqual(live.address, pool.pool_address))?.alias ||
+          "Unknown Pool"
+        : name ?? "Unknown Pool",
+    };
+  });
 
   return (
       <Card className="@container/card overflow-hidden">
@@ -78,6 +95,8 @@ export default async function PoolsPage({
     );
   }
 
+  const poolNames = readPoolNameIndex(ymd(selectedDate));
+
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 w-full max-w-[100vw] overflow-x-hidden">
       <PageHeader
@@ -111,7 +130,7 @@ export default async function PoolsPage({
         <Suspense
           fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}
         >
-          <TopPoolsCard date={selectedDate} />
+          <TopPoolsCard date={selectedDate} poolNames={poolNames} />
         </Suspense>
         <Suspense
           fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}
@@ -123,7 +142,7 @@ export default async function PoolsPage({
         <Suspense
           fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}
         >
-          <PoolReturns topPools={topPoolsWithNames} date={selectedDate} />
+          <PoolReturns topPools={topPoolsWithNames} date={selectedDate} poolNames={poolNames} />
         </Suspense>
       </div>
     </div>
