@@ -5,6 +5,7 @@
  *
  *   REDIS_URL=... pnpm warm                              # latest + today + yesterday
  *   REDIS_URL=... BACKFILL_SINCE=2025-12-25 pnpm warm    # + all historical days (resumable)
+ *   REDIS_URL=... POOL_NAMES_DATABASE_URL=... POOL_NAMES_DATE=2026-11-26 pnpm warm # name index only
  *
  * Keys written match what lib/satorinet/{api,audit}.ts read:
  *   satorinet:raw:<path>                      latest JSON endpoints (TTL 26h)
@@ -15,6 +16,8 @@ import { config } from "dotenv";
 config({ path: [".env.local", ".env"], quiet: true });
 import { Redis } from "ioredis";
 import { impitFetch } from "../lib/satorinet/transport";
+import { isPoolNameIndexDay } from "../lib/pool-name-index";
+import { MAX_NAME_AUDIT_BYTES, parseAudit, warmPoolNames } from "./warm-pool-names";
 
 const REDIS_CONNECT_TIMEOUT_MS = 5_000;
 
@@ -82,58 +85,123 @@ async function connectRedis(): Promise<void> {
   }
 }
 
-/** Throttled GET with 429 backoff; throws on HTTP errors, Cloudflare challenges, and data-gap 404/500s. */
-async function get(url: string): Promise<string> {
+class AuditGap extends Error {}
+
+function isAuditGap(body: string): boolean {
+  try {
+    const error = JSON.parse(body);
+    return [error, error?.detail, error?.message, error?.error].includes("No audit found");
+  } catch {
+    return false;
+  }
+}
+
+async function readBoundedAudit(res: Response): Promise<string> {
+  const reader = res.body?.getReader();
+  if (!reader) throw new Error("missing stakers audit body");
+  const chunks: Uint8Array[] = [];
+  let bytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) return Buffer.concat(chunks, bytes).toString("utf8");
+    bytes += value.byteLength;
+    if (bytes > MAX_NAME_AUDIT_BYTES) {
+      await reader.cancel();
+      throw new Error("oversized stakers audit");
+    }
+    chunks.push(value);
+  }
+}
+
+/** Throttled GET with 429 backoff; throws on upstream failures. */
+async function get(url: string, names?: "collect" | "backfill"): Promise<string> {
   for (let attempt = 0; ; attempt++) {
     await sleep(DELAY_MS);
     const res = await impitFetch(url, {
       signal: AbortSignal.timeout(60_000),
     });
-    const body = await res.text();
+    const body = names === "backfill" ? await readBoundedAudit(res) : await res.text();
     if (res.status === 429 && attempt < 5) {
       console.log(`429, backing off 60s (${url})`);
       await sleep(60_000);
       continue;
     }
+    if (names && res.status === 404 && isAuditGap(body)) throw new AuditGap(`HTTP 404: ${url}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
     if (body.includes("Just a moment")) throw new Error(`Cloudflare challenge: ${url}`);
     return body;
   }
 }
 
-async function warmJsonLatest(): Promise<void> {
+async function warmJsonLatest(): Promise<string | undefined> {
+  let registry;
   for (const path of ["satori-price", "wallet-holders", "holder-aggregation", "pools"]) {
     try {
       const body = await get(`https://satorinet.io/api/${path}`);
       JSON.parse(body); // sanity: never store an HTML error page
       await redis.setex(`satorinet:raw:${path}`, TTL_RAW, body);
+      if (path === "pools") registry = body;
       console.log(`ok   ${path}`);
     } catch (e) {
       warmFailures++;
       console.error(`FAIL ${path}: ${describeError(e)}`);
     }
   }
+  return registry;
 }
 
-async function warmAudit(day: string | null, today = dayStr(new Date())): Promise<void> {
+async function warmAudit(day: string | null, today: string, collectNames = false): Promise<string | null | undefined> {
   const mutable = day !== null && day === today;
+  let stakers;
   for (const kind of ["stakers", "workers", "predictors"]) {
+    const collect = collectNames && day !== null && kind === "stakers";
     const key = `satorinet:raw:audit:${kind}:${day ?? "latest"}`;
     try {
-      if (day && !mutable && (await redis.ttl(key)) === -1) continue; // immutable, already warmed
+      if (day && !mutable && (await redis.ttl(key)) === -1) {
+        if (collect) stakers = await redis.getrange(key, 0, MAX_NAME_AUDIT_BYTES);
+        continue; // immutable, already warmed
+      }
       const url = day
         ? `https://network.satorinet.io/api/v1/audit/${kind}?date=${day}`
         : `https://network.satorinet.io/api/v1/audit/${kind}/latest`;
-      const body = await get(url);
+      const body = await get(url, collect ? "collect" : undefined);
       if (body.startsWith("{")) throw new Error("no audit data");
       if (day && mutable) await redis.setex(key, TTL_TODAY_LB, body);
       else if (day) await redis.set(key, body);
       else await redis.setex(key, TTL_RAW, body);
+      // Raw warming keeps its existing behavior even when names cannot use the body.
+      if (collect && Buffer.byteLength(body) <= MAX_NAME_AUDIT_BYTES) stakers = body;
       console.log(`ok   audit ${kind} ${day ?? "latest"}`);
     } catch (e) {
+      if (collect && e instanceof AuditGap) stakers = null;
       if (!day) warmFailures++;
       console.error(`FAIL audit ${kind} ${day ?? "latest"}: ${describeError(e)}`);
     }
+  }
+  return stakers;
+}
+
+async function backfillPoolNames(day: string, today: string, database: string): Promise<void> {
+  let registry;
+  let body;
+  try {
+    const key = `satorinet:raw:audit:stakers:${day}`;
+    registry = await get("https://satorinet.io/api/pools");
+    if ((await redis.ttl(key)) === -1) {
+      const cached = await redis.getrange(key, 0, MAX_NAME_AUDIT_BYTES);
+      try {
+        parseAudit(cached, day);
+        body = cached;
+      } catch {
+        // Refetch invalid evidence without overwriting the permanent raw key.
+      }
+    }
+    body ??= await get(`https://network.satorinet.io/api/v1/audit/stakers?date=${day}`, "backfill");
+  } catch (error) {
+    if (error instanceof AuditGap) body = null;
+  }
+  if (!(await warmPoolNames(redis, database, registry, [{ day, body }], today))) {
+    throw new Error(`pool name backfill did not publish ${day}`);
   }
 }
 
@@ -179,22 +247,40 @@ function* daysBetween(from: string, to: string): Generator<string> {
 }
 
 async function main(): Promise<void> {
+  const now = Date.now();
+  const today = dayStr(new Date(now));
+  const yesterday = dayStr(new Date(now - 86_400_000));
+  const database = process.env.POOL_NAMES_DATABASE_URL?.trim();
+  const namesDate = process.env.POOL_NAMES_DATE;
+  const since = process.env.BACKFILL_SINCE;
+  if (namesDate) {
+    if (!isPoolNameIndexDay(namesDate) || namesDate < EARLIEST || namesDate > yesterday) {
+      throw new Error("POOL_NAMES_DATE must be one historical YYYY-MM-DD date (earliest 2025-12-25)");
+    }
+    if (since) throw new Error("POOL_NAMES_DATE and BACKFILL_SINCE cannot be combined");
+    if (!database) throw new Error("POOL_NAMES_DATABASE_URL is required for pool name backfill");
+  }
+
   redis = createRedis(process.env.REDIS_URL);
   redis.on("error", onRedisError);
   try {
     await connectRedis();
+    if (namesDate && database) return await backfillPoolNames(namesDate, today, database);
 
-    const today = dayStr(new Date());
-    const yesterday = dayStr(new Date(Date.now() - 86_400_000));
-
-    await warmJsonLatest();
+    const registry = await warmJsonLatest();
     await warmAudit(null, today);
-    await warmAudit(today, today);
-    await warmAudit(yesterday, today);
+    const current = await warmAudit(today, today, Boolean(database));
+    const finalized = await warmAudit(yesterday, today, Boolean(database));
     await warmLeaderboard(today, false);
     await warmLeaderboard(yesterday, true);
 
-    const since = process.env.BACKFILL_SINCE;
+    if (database) {
+      await warmPoolNames(redis, database, registry, [
+        { day: today, body: current },
+        { day: yesterday, body: finalized },
+      ], today);
+    }
+
     if (since) {
       console.log(`Backfilling ${since} -> ${yesterday} (resumable, skips existing keys)`);
       for (const day of daysBetween(since < EARLIEST ? EARLIEST : since, yesterday)) {
