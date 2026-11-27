@@ -296,3 +296,22 @@ test("observed vaults decorate names without becoming pool identities", () => {
     KNOWN_POOLS.pop();
   }
 });
+
+for (const [name, alias, vault] of [
+    ["Namaste Club", "0xbB28Ce614addF0C80Cfd860fb0138a32A545f4Db", "0x2FadEe6Bab6d8D51DA45B9952348ABfc1e0B5f3D"],
+    ["kube2", "0xefDDC297F1a6b12416cCBc46e7f91D24d36C4638", "0x3bCABA7c82Bc69be55941c992374bc17934A7111"],
+  ]) {
+  test(`${name} registry labels are display-only`, () => {
+    assert.equal(poolDisplayName(vault!.toLowerCase()), name);
+    assert.equal(poolDisplayName(alias!, vault!.toLowerCase()), name);
+    assert.equal(findKnownPool(vault), undefined);
+    assert.equal(isSamePool(alias, vault), false);
+    assert.deepEqual(poolAddressForms(alias!), [alias!, alias!.toLowerCase()]);
+    assert.equal(poolDisplayName(alias!), undefined);
+    assert.equal(poolDisplayName(alias!, "unknown"), undefined);
+    assert.equal(poolDisplayName(KNOWN_POOLS[0]!.address, vault), "Satorinet");
+    const duplicate: Pool = { name: "conflict", color: "#000", address: "conflict", label_vault_address: vault };
+    KNOWN_POOLS.push(duplicate);
+    try { assert.equal(poolDisplayName(alias!, vault), undefined); } finally { KNOWN_POOLS.pop(); }
+  });
+}

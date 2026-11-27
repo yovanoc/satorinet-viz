@@ -362,3 +362,9 @@ export const KNOWN_POOLS: Pool[] = [
 export function mostWantedTop(pools: TopPoolWithName[]) {
   return pools.slice(0, 4);
 }
+
+// Display-only addresses published by https://satorinet.io/api/pools (2026-11-26).
+export const VERIFIED_POOL_LABELS = [
+  { name: "Namaste Club", address: "0x2FadEe6Bab6d8D51DA45B9952348ABfc1e0B5f3D" },
+  { name: "kube2", address: "0x3bCABA7c82Bc69be55941c992374bc17934A7111" },
+];
