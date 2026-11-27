@@ -43,7 +43,28 @@ export async function PoolReturns({ topPools, date }: PoolReturnsProps) {
   );
   const feeSnapshots = await getPoolFeeSnapshots(pools, feeDates);
 
-  const series: PoolReturnSeries[] = earnings
+  const series = buildPoolReturnSeries(earnings, topPools, feeSnapshots);
+
+  if (series.length === 0) return null;
+
+  return (
+    <PoolReturnsTable
+      series={series}
+      satoriPrice={satoriPrice}
+      fullStakeAmount={fullStakeAmount ?? 0}
+    />
+  );
+}
+
+export function buildPoolReturnSeries(
+  earnings: {
+    pool: { address: string; name: string };
+    data: { date: string; earnings_per_staking_power: number }[] | null;
+  }[],
+  topPools: TopPoolWithName[],
+  feeSnapshots: Awaited<ReturnType<typeof getPoolFeeSnapshots>>
+): PoolReturnSeries[] {
+  return earnings
     .map(({ pool, data }) => ({
       address: pool.address,
       name: poolDisplayName(
@@ -67,14 +88,4 @@ export async function PoolReturns({ topPools, date }: PoolReturnsProps) {
         .sort((a, b) => a.date.localeCompare(b.date)),
     }))
     .filter((s) => s.days.length > 0);
-
-  if (series.length === 0) return null;
-
-  return (
-    <PoolReturnsTable
-      series={series}
-      satoriPrice={satoriPrice}
-      fullStakeAmount={fullStakeAmount ?? 0}
-    />
-  );
 }

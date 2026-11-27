@@ -1,4 +1,4 @@
-import { KNOWN_POOLS, type Pool, type StakingFee } from "./known_pools";
+import { KNOWN_POOLS, VERIFIED_POOL_LABELS, type Pool, type StakingFee } from "./known_pools";
 
 export type FeeSource = "audit" | "known" | "unknown";
 
@@ -410,13 +410,19 @@ export function findKnownPool(
 export function poolDisplayName(address: string, labelVault?: string | null): string | undefined {
   const known = findKnownPool(address);
   if (known) return known.name;
+  const direct = VERIFIED_POOL_LABELS.find((pool) => addressesEqual(pool.address, address));
+  if (direct) return direct.name;
   if (!labelVault) return undefined;
   const matches = KNOWN_POOLS.filter((pool) =>
     [pool.vault_address, pool.base_vault_address, pool.label_vault_address].some((vault) =>
       addressesEqual(vault, labelVault)
     )
   );
-  return matches.length === 1 ? matches[0]!.name : undefined;
+  const labels = [
+    ...matches,
+    ...VERIFIED_POOL_LABELS.filter((pool) => addressesEqual(pool.address, labelVault)),
+  ];
+  return labels.length === 1 ? labels[0]!.name : undefined;
 }
 
 /** True when both addresses designate the same pool, whatever their network. */
